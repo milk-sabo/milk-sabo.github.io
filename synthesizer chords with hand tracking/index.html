@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle of Fifths - Multi-Instrument Synth</title>
+    <!-- โหลดไลบรารี MediaPipe -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <!-- โหลดไลบรารี Tone.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #121212;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            background-color: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        .input_video {
+            display: none;
+        }
+        .output_canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            /* ลบ transform: scaleX(-1) ออกจากตรงนี้ เพื่อไม่ให้ตัวอักษรกลับด้าน */
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 20px;
+            z-index: 10;
+        }
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #9c27b0;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #7b1fa2;
+        }
+        select {
+            padding: 10px;
+            font-size: 16px;
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 5px;
+            outline: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>Circle of Fifths - Multi-Instrument Controller</h2>
+    <p>เลื่อนปลายนิ้วชี้เพื่อเปลี่ยนคอร์ด และสามารถเลือกเครื่องดนตรีประเภทอื่นด้านล่างได้</p>
+    <div class="container">
+        <div class="loading" id="loadingText">กำลังเปิดกล้องและโหลดโมเดล...</div>
+        <video class="input_video"></video>
+        <canvas class="output_canvas" width="640" height="480"></canvas>
+    </div>
+    <div class="controls">
+        <button id="startAudioBtn">เปิดใช้งานระบบเสียง (Start Audio)</button>
+        <div>
+            <label for="instrumentSelect">เครื่องดนตรี: </label>
+            <select id="instrumentSelect" disabled>
+                <option value="guitar">Guitar Synth</option>
+                <option value="pad">Warm Space Pad</option>
+                <option value="chimes">Crystal Chimes</option>
+            </select>
+        </div>
+    </div>
+    <script>
+        const videoElement = document.querySelector('.input_video');
+        const canvasElement = document.querySelector('.output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const loadingText = document.getElementById('loadingText');
+        const startAudioBtn = document.getElementById('startAudioBtn');
+        const instrumentSelect = document.getElementById('instrumentSelect');
+        // ==========================================
+        // ส่วนการเตรียมเสียงเครื่องดนตรีชนิดต่างๆ
+        // ==========================================
+        let activeSynth;
+        // ชนิดที่ 1: Guitar Synth (ค่าเริ่มต้น)
+        const guitarSynth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "triangle" },
+            envelope: { attack: 0.05, decay: 1.5, sustain: 0.5, release: 1.5 }
+        }).toDestination();
+        guitarSynth.volume.value = -10;
+        // ชนิดที่ 2: Warm Space Pad (เสียงหนานุ่มนวล ลากยาว)
+        const padSynth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "sawtooth" },
+            envelope: { attack: 0.4, decay: 2.0, sustain: 0.8, release: 3.0 }
+        }).toDestination();
+        padSynth.volume.value = -16; // ลดความดังลงเพิ่มเติมเนื่องจากเป็นคลื่น Sawtooth
+        // ชนิดที่ 3: Crystal Chimes (เสียงคล้ายกระดิ่งแก้ว FM Synthesis)
+        const chimeSynth = new Tone.PolySynth(Tone.FMSynth, {
+            harmonicity: 3,
+            modulationIndex: 10,
+            envelope: { attack: 0.01, decay: 1.2, sustain: 0.2, release: 2.0 }
+        }).toDestination();
+        chimeSynth.volume.value = -18;
+        // ตั้งค่าตัวเริ่มต้น
+        activeSynth = guitarSynth;
+        // สลับประเภทเครื่องดนตรีเมื่อมีการเปลี่ยนค่าตัวเลือก
+        instrumentSelect.addEventListener('change', (e) => {
+            if (activeSynth) activeSynth.releaseAll(); // หยุดเสียงเครื่องดนตรีชนิดเก่าทันทีที่เปลี่ยน
+            
+            if (e.target.value === "guitar") activeSynth = guitarSynth;
+            else if (e.target.value === "pad") activeSynth = padSynth;
+            else if (e.target.value === "chimes") activeSynth = chimeSynth;
+        });
+        // ==========================================
+        // ส่วนควบคุมแผงวงกลมคอร์ด
+        // ==========================================
+        const centerX = 320;
+        const centerY = 240;
+        const layoutRadius = 170;
+        const padRadius = 30;
+        const chords = [
+            { label: "C", notes: ["C3", "E3", "G3", "C4"] },
+            { label: "G", notes: ["G3", "B3", "D4", "G4"] },
+            { label: "D", notes: ["D3", "F#3", "A3", "D4"] },
+            { label: "A", notes: ["A3", "C#4", "E4", "A4"] },
+            { label: "E", notes: ["E3", "G#3", "B3", "E4"] },
+            { label: "B", notes: ["B3", "D#4", "F#4", "B4"] },
+            { label: "F#", notes: ["F#3", "A#3", "C#4", "F#4"] },
+            { label: "Db", notes: ["Db3", "F3", "Ab3", "Db4"] },
+            { label: "Ab", notes: ["Ab3", "C4", "Eb4", "Ab4"] },
+            { label: "Eb", notes: ["Eb3", "G3", "Bb3", "Eb4"] },
+            { label: "Bb", notes: ["Bb3", "D4", "F4", "Bb4"] },
+            { label: "F", notes: ["F3", "A3", "C4", "F4"] }
+        ];
+        let audioInitialized = false;
+        chords.forEach((chord, index) => {
+            const angleRad = (index * 2 * Math.PI) / chords.length - Math.PI / 2;
+            chord.x = centerX + layoutRadius * Math.cos(angleRad);
+            chord.y = centerY + layoutRadius * Math.sin(angleRad);
+            chord.wasInside = false;
+            chord.active = false;
+            chord.triggerTime = 0;
+        });
+        startAudioBtn.addEventListener('click', async () => {
+            await Tone.start();
+            audioInitialized = true;
+            startAudioBtn.innerText = "ระบบเสียงพร้อมใช้งานแล้ว";
+            startAudioBtn.style.backgroundColor = "#4caf50";
+            startAudioBtn.disabled = true;
+            instrumentSelect.disabled = false; // ปลดล็อกฟังก์ชันเลือกเครื่องดนตรี
+        });
+        function drawChordCircle() {
+            const now = Date.now();
+            
+            canvasCtx.beginPath();
+            canvasCtx.arc(centerX, centerY, layoutRadius, 0, 2 * Math.PI);
+            canvasCtx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+            canvasCtx.lineWidth = 1;
+            canvasCtx.stroke();
+            chords.forEach(chord => {
+                if (chord.active && now - chord.triggerTime > 250) {
+                    chord.active = false;
+                }
+                canvasCtx.beginPath();
+                canvasCtx.arc(chord.x, chord.y, padRadius, 0, 2 * Math.PI);
+                
+                if (chord.active) {
+                    canvasCtx.fillStyle = "rgba(156, 39, 176, 0.45)";
+                    canvasCtx.strokeStyle = "#9c27b0";
+                    canvasCtx.lineWidth = 4;
+                } else if (chord.wasInside) {
+                    canvasCtx.fillStyle = "rgba(0, 188, 212, 0.2)";
+                    canvasCtx.strokeStyle = "#00bcd4";
+                    canvasCtx.lineWidth = 2;
+                } else {
+                    canvasCtx.fillStyle = "rgba(255, 255, 255, 0.04)";
+                    canvasCtx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+                    canvasCtx.lineWidth = 1.5;
+                }
+                canvasCtx.fill();
+                canvasCtx.stroke();
+                canvasCtx.fillStyle = chord.active ? "#e040fb" : "#ffffff";
+                canvasCtx.font = "bold 13px Arial";
+                canvasCtx.textAlign = "center";
+                canvasCtx.textBaseline = "middle";
+                canvasCtx.fillText(chord.label, chord.x, chord.y);
+            });
+        }
+        function checkChordPads(fingerX, fingerY) {
+            chords.forEach(chord => {
+                const distance = Math.hypot(fingerX - chord.x, fingerY - chord.y);
+                const isInside = distance < padRadius;
+                if (isInside) {
+                    if (!chord.wasInside) {
+                        playChord(chord);
+                        chord.wasInside = true;
+                    }
+                } else {
+                    chord.wasInside = false;
+                }
+            });
+        }
+        function playChord(chordObj) {
+            if (!audioInitialized) return;
+            
+            activeSynth.releaseAll(); // หยุดเสียงเครื่องดนตรีปัจจุบันทันทีก่อนขึ้นคอร์ดใหม่
+            activeSynth.triggerAttackRelease(chordObj.notes, "1n");
+            
+            chordObj.active = true;
+            chordObj.triggerTime = Date.now();
+        }
+        function onResults(results) {
+            loadingText.style.display = 'none';
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            // 1. วาดวิดีโอและจุดเชื่อมโยงของมือในสถานะ 'กลับซ้ายขวา' (Mirrored Space)
+            canvasCtx.save();
+            canvasCtx.translate(canvasElement.width, 0);
+            canvasCtx.scale(-1, 1);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+            if (results.multiHandLandmarks) {
+                for (const landmarks of results.multiHandLandmarks) {
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+                        color: 'rgba(255,255,255,0.15)',
+                        lineWidth: 1
+                    });
+                    drawLandmarks(canvasCtx, landmarks, {
+                        color: '#9c27b0',
+                        lineWidth: 1,
+                        radius: 2
+                    });
+                }
+            }
+            canvasCtx.restore(); // พิกัดหลักถูกปรับกลับมาเป็นพิกัดปกติแบบไม่อ่านกลับด้าน (Normal Space)
+            // 2. วาดแผงวงกลมคอร์ดและตัวหนังสือคอร์ดแบบปกติ
+            drawChordCircle();
+            // 3. จัดการพิกัดตำแหน่งของปลายนิ้วชี้เพื่อประมวลผลและการวาดเป้าเล็งสัมผัส
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                const indexTip = landmarks[8];
+                // แปลงพิกัดการตรวจจับแนวราบ (X) จากฝั่งกล้องให้กลับด้านมาตรงกันกับภาพที่แปลงแล้ว
+                const fingerX = (1 - indexTip.x) * canvasElement.width;
+                const fingerY = indexTip.y * canvasElement.height;
+                // วาดจุดติดตามตำแหน่งที่ปลายนิ้วชี้แบบพิกัดปกติ
+                canvasCtx.beginPath();
+                canvasCtx.arc(fingerX, fingerY, 8, 0, 2 * Math.PI);
+                canvasCtx.fillStyle = '#00bcd4';
+                canvasCtx.fill();
+                checkChordPads(fingerX, fingerY);
+            } else {
+                chords.forEach(chord => chord.wasInside = false);
+            }
+            canvasCtx.restore();
+        }
+        const hands = new Hands({locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        }});
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.6,
+            minTrackingConfidence: 0.6
+        });
+        hands.onResults(onResults);
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({image: videoElement});
+            },
+            width: 640,
+            height: 480
+        });
+        camera.start();
+    </script>
+</body>
+</html>
