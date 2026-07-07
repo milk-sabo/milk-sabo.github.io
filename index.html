@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>milkomilk</title>
+    <style>
+        /* CSS Reset & Variable Setup */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #475569;
+            --text-bright: #0f172a;
+            --primary: #4f46e5;
+            /* Indigo */
+            --primary-light: #e0e7ff;
+            --border-color: #f1f5f9;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            /* เพิ่มลายจุดจางๆ ด้านหลังแบบเว็บสมัยใหม่ */
+            background-image: radial-gradient(#e2e8f0 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 60px 20px;
+        }
+
+        .container {
+            max-width: 1040px;
+            margin: 0 auto;
+        }
+
+        /* Modern Header */
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .badge {
+            display: inline-block;
+            background-color: var(--primary-light);
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 16px;
+        }
+
+        header h1 {
+            font-size: 2.75rem;
+            font-weight: 800;
+            color: var(--text-bright);
+            letter-spacing: -0.5px;
+            margin-bottom: 12px;
+            /* เอฟเฟกต์อักษรไล่สี */
+            background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: #64748b;
+            font-size: 1.1rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Game Grid Layout */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .game-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        /* Card Hover Effects */
+        .game-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(79, 70, 229, 0.3);
+            box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.1), 0 10px 10px -5px rgba(79, 70, 229, 0.04);
+        }
+
+        /* Interactive Thumbnail with Gradient Background */
+        .game-thumb {
+            width: 100%;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* สีพาสเทลไล่เฉดตามสไตล์เกม */
+        .thumb-pink {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        }
+
+        .thumb-blue {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+
+        .thumb-green {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        }
+
+        .game-thumb span {
+            font-size: 4rem;
+            transition: var(--transition);
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.08));
+        }
+
+        /* เอฟเฟกต์หมุนและขยายไอคอนตอนชี้ */
+        .game-card:hover .game-thumb span {
+            transform: scale(1.2) rotate(6deg);
+        }
+
+        /* Card Content */
+        .game-info {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            justify-content: space-between;
+        }
+
+        .game-title {
+            color: var(--text-bright);
+            font-size: 1.35rem;
+            margin-bottom: 8px;
+            font-weight: 700;
+            transition: var(--transition);
+        }
+
+        .game-card:hover .game-title {
+            color: var(--primary);
+        }
+
+        .game-desc {
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            color: var(--text-color);
+            height: 4.2em;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+
+        .game-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .game-tag {
+            font-size: 0.75rem;
+            background-color: var(--primary-light);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        /* Modern styled play button */
+        .play-btn {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: var(--transition);
+        }
+
+        .game-card:hover .play-btn {
+            transform: translateX(4px);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            padding-top: 30px;
+            border-top: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            
+            <h1>My Web App</h1>
+            <p>รวมเว็บ App เล่นๆ สำหรับใช้งาน</p>
+        </header>
+
+        <!-- Game Grid -->
+        <main class="game-grid">
+
+            <!-- Game 1 -->
+            <a href="http://milk-sabo.github.io/Gachapon.html" class="game-card" target="_blank">
+                <div class="game-thumb thumb-pink">
+                    <span>🔴</span>
+                </div>
+                <div class="game-info">
+                    <div>
+                        <h2 class="game-title">Gachapon</h2>
+                        <p class="game-desc">ตู้สุ่มรายชื่อแบบญี่ปุ่นเมื่อกดและหมุนแป้น จะมีแคปซูลทรงไข่หล่นลงมาให้ลุ้นชื่อด้านใน</p>
+                    </div>
+                    <div class="game-meta">
+                        <span class="game-tag">random</span>
+                        <span class="play-btn">Go &rarr;</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Game 2 -->
+            <a href="https://milk-sabo.github.io/LuckyDraw.html" class="game-card" target="_blank">
+                <div class="game-thumb thumb-blue">
+                    <span>🎰</span>
+                </div>
+                <div class="game-info">
+                    <div>
+                        <h2 class="game-title">LuckyDraw</h2>
+                        <p class="game-desc">ระบบสุ่มจับรางวัล จะทำให้ผู้ร่วมงานมีส่วนร่วมไปกับงานนั้นๆ
+                        เพราะคุณจะเป็นหนึ่งในผู้ร่วมงานและจะมีสิทธิ์ได้รับการถูกสุ่ม</p>
+                    </div>
+                    <div class="game-meta">
+                        <span class="game-tag">random</span>
+                        <span class="play-btn">Go &rarr;</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Game 3 -->
+           <a href="https://milk-sabo.github.io/wheelspin.html" class="game-card" target="_blank">
+                <div class="game-thumb thumb-green">
+                    <span>🛞</span>
+                </div>
+                <div class="game-info">
+                    <div>
+                        <h2 class="game-title">ชื่อเกมที่ 3</h2>
+                        <p class="game-desc">
+                            ระบบสุ่มจับรางวัลในรูปแบบวงล้อหมุน หมุนสุ่มรายชื่อ</p>
+                    </div>
+                    <div class="game-meta">
+                        <span class="game-tag">Shooter</span>
+                        <span class="play-btn">PLAY &rarr;</span>
+                    </div>
+                </div>
+            </a>
+          
+
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <p>&copy; milkomilk.</p>
+        </footer>
+    </div>
+
+</body>
+
+</html>
