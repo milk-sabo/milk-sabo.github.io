@@ -208,14 +208,9 @@
             z-index: 10;
         }
 
-        /* ------------------------------------------------------------- */
-        /* ปรับขนาดวงล้อได้ที่นี่ (ปรับแล้ว ระบบจะคำนวณความคมชัดให้แบบ HD อัตโนมัติ) */
-        /* ------------------------------------------------------------- */
         .wheel-outer {
             width: 800px;
-            /* แก้ไขขนาดความกว้างที่นี่ */
             height: 800px;
-            /* แก้ไขขนาดความสูงที่นี่ */
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.4);
             border: 12px solid rgba(255, 255, 255, 0.9);
@@ -620,7 +615,6 @@
         </div>
         <div class="wheel-outer">
             <div class="wheel-container">
-                <!-- นำแอตทริบิวต์ width/height ใน HTML ออกเพื่อให้สคริปต์คำนวณแบบ HD แทน -->
                 <canvas id="wheelCanvas"></canvas>
             </div>
         </div>
@@ -692,7 +686,6 @@
             updateCountAndDraw();
         };
 
-        // ตรวจจับเมื่อผู้ใช้ปรับขนาดหน้าจอ เพื่อคำนวณสัดส่วนความชัดใหม่
         window.onresize = function() {
             resizeCanvas();
             drawWheel();
@@ -707,8 +700,6 @@
             settingsModal.classList.toggle('active'); 
         }
 
-        // --- DYNAMIC RETINA / RESIZE FUNCTION ---
-        // ฟังก์ชันนี้จะดึงขนาดจริงจาก CSS และทวีคูณพิกเซลภายในตามคุณสมบัติหน้าจอจริงเพื่อแก้ปัญหาตัวหนังสือแตก
         function resizeCanvas() {
             const rect = canvas.parentNode.getBoundingClientRect();
             const dpr = window.devicePixelRatio || 1;
@@ -716,11 +707,9 @@
             visualWidth = rect.width;
             visualHeight = rect.height;
             
-            // ขยายหน่วยความละเอียดแบบ Physical Pixel
             canvas.width = visualWidth * dpr;
             canvas.height = visualHeight * dpr;
             
-            // ปรับ Scale ของ Context ให้เท่ากับ DPR
             ctx.resetTransform();
             ctx.scale(dpr, dpr);
         }
@@ -769,7 +758,7 @@
                 ctx.fillStyle = '#f1f2f6';
                 ctx.fill();
                 ctx.fillStyle = '#636e72';
-                ctx.font = 'bold 20px Kanit';
+                ctx.font = 'bold 24px Kanit';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText('กรุณาเติมรายชื่อผู้โชคดี', centerX, centerY);
@@ -777,6 +766,15 @@
             }
 
             const arcSize = (2 * Math.PI) / numSegments;
+
+            // กำหนดขนาดฟอนต์เริ่มต้นสูงสุดตามจำนวนช่อง
+            let baseFontSize = 36;
+            if (numSegments > 40) baseFontSize = 16;
+            else if (numSegments > 25) baseFontSize = 20;
+            else if (numSegments > 15) baseFontSize = 26;
+            else if (numSegments > 8) baseFontSize = 30;
+
+            const maxTextWidth = radius - 75; // ระยะจากขอบขวาเข้าสู่ใจกลางวงล้อ
 
             for (let i = 0; i < numSegments; i++) {
                 const angle = currentAngle + (i * arcSize);
@@ -798,16 +796,25 @@
                 ctx.translate(centerX, centerY);
                 ctx.rotate(angle + (arcSize / 2));
                 
+                // คำนวณขนาดย่อฟอนต์อัตโนมัติตามความยาวของชื่อ
+                let fontSize = baseFontSize;
+                ctx.font = `bold ${fontSize}px Kanit`;
+                const text = namesArray[i];
+
+                // ค่อยๆ ลดขนาดฟอนต์ถ้าความกว้างชื่อเกินความยาวช่องวงล้อ
+                while (ctx.measureText(text).width > maxTextWidth && fontSize > 10) {
+                    fontSize -= 1;
+                    ctx.font = `bold ${fontSize}px Kanit`;
+                }
+
                 ctx.fillStyle = '#ffffff';
-                ctx.font = numSegments > 20 ? 'bold 12px Kanit' : 'bold 16px Kanit';
                 ctx.textAlign = 'right';
                 ctx.textBaseline = 'middle';
                 
-                ctx.shadowColor = 'rgba(0,0,0,0.4)';
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
                 ctx.shadowBlur = 4;
 
-                const displayName = namesArray[i].length > 12 ? namesArray[i].substring(0, 10) + '...' : namesArray[i];
-                ctx.fillText(displayName, radius - 30, 0);
+                ctx.fillText(text, radius - 25, 0);
                 ctx.restore();
             }
         }
