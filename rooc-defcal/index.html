@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RooC - Defense & Damage Calculator</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: #1e293b;
+            --panel-border: #334155;
+            --input-bg: #0f172a;
+
+            --text-white: #f8fafc;
+            --text-dim: #94a3b8;
+
+            --defender-color: #38bdf8;
+            --defender-bg: rgba(56, 189, 248, 0.05);
+
+            --attacker-color: #f97316;
+            --attacker-bg: rgba(249, 115, 22, 0.05);
+
+            --p-color: #ff5252;
+            --m-color: #38bdf8;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Kanit', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-white);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .app-window {
+            width: 100%;
+            max-width: 1100px;
+            /* ขยายความกว้างรวมเพื่อรองรับฟอนต์ใหญ่ */
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        /* Header Bar */
+        .window-header {
+            grid-column: 1 / -1;
+            padding: 20px 28px;
+            background: rgba(15, 23, 42, 0.6);
+            border-bottom: 1px solid var(--panel-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+        }
+
+        .window-title {
+            font-size: 22px;
+            /* ขยายจาก 16px */
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-subtext {
+            font-size: 16px;
+            /* ขยายจาก 11px */
+            color: var(--text-dim);
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #22c55e;
+        }
+
+        /* Panels */
+        .panel {
+            padding: 28px;
+        }
+
+        .panel-inputs {
+            border-right: 1px solid var(--panel-border);
+            background: rgba(15, 23, 42, 0.2);
+        }
+
+        .panel-title {
+            font-size: 20px;
+            /* ขยายจาก 14px */
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+
+        /* Role Boxes */
+        .role-box {
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 20px;
+            border: 1px solid var(--panel-border);
+        }
+
+        .role-box.defender {
+            background: var(--defender-bg);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .role-box.attacker {
+            background: var(--attacker-bg);
+            border-color: rgba(249, 115, 22, 0.3);
+        }
+
+        .role-header {
+            font-size: 18px;
+            /* ขยายจาก 13px */
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .role-header.defender-title {
+            color: var(--defender-color);
+        }
+
+        .role-header.attacker-title {
+            color: var(--attacker-color);
+        }
+
+        .role-badge {
+            font-size: 13px;
+            /* ขยายจาก 10px */
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .defender .role-badge {
+            background: rgba(56, 189, 248, 0.2);
+            color: var(--defender-color);
+        }
+
+        .attacker .role-badge {
+            background: rgba(249, 115, 22, 0.2);
+            color: var(--attacker-color);
+        }
+
+        /* --- HELP TOOLTIP STYLES --- */
+        .help-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .help-btn {
+            color: var(--defender-color);
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .help-btn:hover {
+            background: rgba(56, 189, 248, 0.2);
+            color: #fff;
+        }
+
+        .help-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            top: 125%;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background-color: #0f172a;
+            border: 1px solid var(--defender-color);
+            border-radius: 8px;
+            padding: 6px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+            z-index: 100;
+            transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+            pointer-events: none;
+        }
+
+        .help-tooltip img {
+            display: block;
+            max-width: 800px;
+            /* ปรับขนาดความกว้างของรูปได้ที่นี่ */
+            width: 800px;
+            //height: auto;
+            border-radius: 4px;
+        }
+
+        /* เมื่อ Hover ให้แสดงรูป */
+        .help-container:hover .help-tooltip {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* --------------------------- */
+
+        /* Input Controls */
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field label {
+            font-size: 15px;
+            /* ขยายจาก 11px */
+            color: var(--text-dim);
+            font-weight: 500;
+        }
+
+        .field input {
+            background: var(--input-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: var(--text-white);
+            font-size: 18px;
+            /* ขยายจาก 14px */
+            font-weight: 600;
+            outline: none;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .defender input:focus {
+            border-color: var(--defender-color);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+        }
+
+        .attacker input:focus {
+            border-color: var(--attacker-color);
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+        }
+
+        /* Output Displays */
+        .output-card {
+            background: var(--input-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .output-card.p-card {
+            border-left: 6px solid var(--p-color);
+        }
+
+        .output-card.m-card {
+            border-left: 6px solid var(--m-color);
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            /* ขยายจาก 12px */
+            font-weight: 600;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        .output-value {
+            font-size: 42px;
+            /* ขยายจาก 32px */
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 12px;
+        }
+
+        .output-card.p-card .output-value {
+            color: var(--p-color);
+        }
+
+        .output-card.m-card .output-value {
+            color: var(--m-color);
+        }
+
+        /* Visual Progress Bar */
+        .bar-bg {
+            height: 10px;
+            /* เพิ่มความหนาของหลอด */
+            background: #334155;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+
+        .p-fill {
+            background: var(--p-color);
+        }
+
+        .m-fill {
+            background: var(--m-color);
+        }
+
+        /* Detailed Stats Table */
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 16px;
+            /* ขยายจาก 12px */
+            margin-top: 14px;
+        }
+
+        .stats-table th {
+            text-align: left;
+            color: var(--text-dim);
+            padding: 10px 0;
+            font-weight: 500;
+            border-bottom: 2px solid var(--panel-border);
+            font-size: 16px;
+        }
+
+        .stats-table td {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+        }
+
+        .stats-table td.num {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-window {
+                grid-template-columns: 1fr;
+            }
+
+            .panel-inputs {
+                border-right: none;
+                border-bottom: 1px solid var(--panel-border);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-window">
+
+        <!-- Window Header -->
+        <div class="window-header">
+            <div class="window-title">
+                <div class="status-dot"></div>
+                DEF & DAMAGE SIMULATOR
+            </div>
+            <div class="header-subtext">BASE DAMAGE: 100,000</div>
+        </div>
+
+        <!-- LEFT PANEL: INPUTS (Categorized by Role) -->
+        <div class="panel panel-inputs">
+            <div class="panel-title">⚙️ ตั้งค่าสเตตัส (INPUTS)</div>
+
+            <!-- 1. DEFENDER SECTION -->
+            <div class="role-box defender">
+                <div class="role-header defender-title">
+                    <span>🛡️ ผู้โดนโจมตี (DEFENDER)</span>
+
+                    <!-- ส่วนปุ่ม Help พร้อมระบบ Hover โชว์รูปภาพ -->
+                    <div class="help-container">
+                        <span class="help-btn">Help❓</span>
+                        <div class="help-tooltip">
+                            <img src="https://milk-sabo.github.io/img/ex01.png" alt="Help Guide">
+                        </div>
+                    </div>
+
+                    <span class="role-badge">พลังป้องกัน</span>
+                </div>
+                <div class="input-grid">
+                    <div class="field">
+                        <label>Equip P.DEF</label>
+                        <input type="number" id="equipPdef" value="5990">
+                    </div>
+                    <div class="field">
+                        <label>P.DEF %</label>
+                        <input type="number" id="pdefPercent" value="51">
+                    </div>
+                    <div class="field">
+                        <label>Equip M.DEF</label>
+                        <input type="number" id="equipMdef" value="1461">
+                    </div>
+                    <div class="field">
+                        <label>M.DEF %</label>
+                        <input type="number" id="mdefPercent" value="16">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. ATTACKER SECTION -->
+            <div class="role-box attacker">
+                <div class="role-header attacker-title">
+                    <span>⚔️ ผู้โจมตี (ATTACKER)</span>
+                    <span class="role-badge">เจาะเกราะ</span>
+                </div>
+                <div class="input-grid">
+                    <div class="field">
+                        <label>Ignore P.DEF (กายภาพ)</label>
+                        <input type="number" id="ignorePdef" value="2795">
+                    </div>
+                    <div class="field">
+                        <label>Ignore M.DEF (เวท)</label>
+                        <input type="number" id="ignoreMdef" value="655">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT PANEL: OUTPUTS -->
+        <div class="panel">
+            <div class="panel-title">📊 ผลลัพธ์คำนวณ (RESULTS)</div>
+
+            <!-- Physical Result Card -->
+            <div class="output-card p-card">
+                <div class="output-header">
+                    <span>PHYSICAL DAMAGE TAKEN</span>
+                    <span id="pdmgTakenPercent">0%</span>
+                </div>
+                <div class="output-value" id="finalPdmg">0</div>
+                <div class="bar-bg">
+                    <div class="bar-fill p-fill" id="pBar" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- Magic Result Card -->
+            <div class="output-card m-card">
+                <div class="output-header">
+                    <span>MAGIC DAMAGE TAKEN</span>
+                    <span id="mdmgTakenPercent">0%</span>
+                </div>
+                <div class="output-value" id="finalMdmg">0</div>
+                <div class="bar-bg">
+                    <div class="bar-fill m-fill" id="mBar" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- Breakdown Table -->
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>สรุปค่าป้องกัน</th>
+                        <th style="text-align: right; color: var(--p-color);">PHYSICAL</th>
+                        <th style="text-align: right; color: var(--m-color);">MAGIC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Real DEF</td>
+                        <td class="num" id="realPdef">0</td>
+                        <td class="num" id="realMdef">0</td>
+                    </tr>
+                    <tr>
+                        <td>DEF หลังเจาะเกราะ</td>
+                        <td class="num" id="pdefAfterIgnore">0</td>
+                        <td class="num" id="mdefAfterIgnore">0</td>
+                    </tr>
+                    <tr>
+                        <td>DEF สุทธิ (+%)</td>
+                        <td class="num" id="pdefPlusPercent">0</td>
+                        <td class="num" id="mdefPlusPercent">0</td>
+                    </tr>
+                    <tr>
+                        <td>อัตราการลดทอน (%)</td>
+                        <td class="num" id="pdmgPercent" style="color: var(--p-color); font-size: 22px;">0%</td>
+                        <td class="num" id="mdmgPercent" style="color: var(--m-color); font-size: 22px;">0%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        function formatNum(num, decimals = 0) {
+            return Number(num).toLocaleString('en-US', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+        }
+
+        function calculate() {
+            // Read Inputs
+            const equipPdef = parseFloat(document.getElementById('equipPdef').value) || 0;
+            const equipMdef = parseFloat(document.getElementById('equipMdef').value) || 0;
+            const pdefPercent = parseFloat(document.getElementById('pdefPercent').value) || 0;
+            const mdefPercent = parseFloat(document.getElementById('mdefPercent').value) || 0;
+            const ignorePdef = parseFloat(document.getElementById('ignorePdef').value) || 0;
+            const ignoreMdef = parseFloat(document.getElementById('ignoreMdef').value) || 0;
+
+            const rawPdmg = 100000;
+            const rawMdmg = 100000;
+
+            // Calculations
+            const realPdef = equipPdef / (1 + (pdefPercent / 100));
+            const realMdef = equipMdef / (1 + (mdefPercent / 100));
+
+            const pdefAfterIgnore = Math.max(0, realPdef - ignorePdef);
+            const mdefAfterIgnore = Math.max(0, realMdef - ignoreMdef);
+
+            const pdefPlusPercent = pdefAfterIgnore * (1 + (pdefPercent / 100));
+            const mdefPlusPercent = mdefAfterIgnore * (1 + (mdefPercent / 100));
+
+            const pdmgRedPct = (pdefPlusPercent / (pdefPlusPercent + 641)) * 100;
+            const mdmgRedPct = (mdefPlusPercent / (mdefPlusPercent + 188.8)) * 100;
+
+            const pdmgPercentVal = -pdmgRedPct;
+            const mdmgPercentVal = -mdmgRedPct;
+
+            const pdmgTakenPct = Math.max(0, 100 + pdmgPercentVal);
+            const mdmgTakenPct = Math.max(0, 100 + mdmgPercentVal);
+
+            const finalPdmg = rawPdmg * (pdmgTakenPct / 100);
+            const finalMdmg = rawMdmg * (mdmgTakenPct / 100);
+
+            // Update Text
+            document.getElementById('realPdef').innerText = formatNum(Math.round(realPdef));
+            document.getElementById('realMdef').innerText = formatNum(Math.round(realMdef));
+
+            document.getElementById('pdefAfterIgnore').innerText = formatNum(Math.round(pdefAfterIgnore));
+            document.getElementById('mdefAfterIgnore').innerText = formatNum(Math.round(mdefAfterIgnore));
+
+            document.getElementById('pdefPlusPercent').innerText = formatNum(Math.round(pdefPlusPercent));
+            document.getElementById('mdefPlusPercent').innerText = formatNum(mdefPlusPercent, 2);
+
+            document.getElementById('pdmgPercent').innerText = formatNum(pdmgPercentVal, 2) + '%';
+            document.getElementById('mdmgPercent').innerText = formatNum(mdmgPercentVal, 2) + '%';
+
+            document.getElementById('pdmgTakenPercent').innerText = 'โดนจริง ' + formatNum(pdmgTakenPct, 2) + '%';
+            document.getElementById('mdmgTakenPercent').innerText = 'โดนจริง ' + formatNum(mdmgTakenPct, 2) + '%';
+
+            document.getElementById('finalPdmg').innerText = formatNum(Math.round(finalPdmg));
+            document.getElementById('finalMdmg').innerText = formatNum(Math.round(finalMdmg));
+
+            // Update Visual Bars
+            document.getElementById('pBar').style.width = Math.min(100, pdmgTakenPct) + '%';
+            document.getElementById('mBar').style.width = Math.min(100, mdmgTakenPct) + '%';
+        }
+
+        // Event Listeners
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', calculate);
+        });
+
+        calculate();
+    </script>
+
+</body>
+
+</html>
