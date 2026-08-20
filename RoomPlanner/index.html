@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Room 3  Space Planner — 11.5m × 15.0m</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        warmWhite: '#FCFCFA',
+                        oat: '#EFECE6',
+                        oatDark: '#D8D3C5',
+                        charcoal: '#18181B',
+                        charcoalLight: '#27272A',
+                        wallCustom: '#E6E1BC',
+                        floorCustom: '#C4C2C0',
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"Space Grotesk"', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #ECE8DF;
+            color: #18181B;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+        .blueprint-canvas {
+            background-color: #E2DDD3;
+            background-image:
+                linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+                linear-gradient(to right, rgba(0, 0, 0, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+            background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+        }
+        .glass-panel {
+            background: rgba(252, 252, 250, 0.94);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(216, 211, 197, 0.8);
+        }
+        .item-card {
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.08);
+        }
+        .screen-wall-btn.active {
+            background-color: #2563EB;
+            color: #ffffff;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+        }
+        @keyframes drawSheet {
+            0% {
+                clip-path: polygon(0 0, 0 0, 0 100%, 0% 100%);
+                opacity: 0;
+            }
+            100% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                opacity: 1;
+            }
+        }
+        .spec-animating {
+            animation: drawSheet 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @media print {
+            body {
+                overflow: visible !important;
+            }
+            header,
+            aside,
+            main {
+                display: none !important;
+            }
+            #exportModal {
+                position: static !important;
+                display: block !important;
+                background: #ffffff !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                padding: 0 !important;
+                opacity: 1 !important;
+            }
+            #exportModal.hidden {
+                display: none !important;
+            }
+            #exportModal>div {
+                max-height: none !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+            #exportModal .overflow-y-auto {
+                overflow: visible !important;
+            }
+            #specSheetPrintArea {
+                animation: none !important;
+                box-shadow: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col antialiased">
+    <!-- TOP TOOLBAR -->
+    <header class="h-16 border-b border-oatDark bg-warmWhite px-5 flex items-center justify-between z-30 shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2.5">
+                <div
+                    class="w-9 h-9 bg-charcoal text-warmWhite rounded-xl flex items-center justify-center font-mono font-bold text-lg shadow-sm">
+                    Erc<span class="text-blue-500">.</span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-bold text-sm tracking-tight text-charcoal">Room 3  Space Planner</h1>
+                    </div>
+                </div>
+            </div>
+            <div class="h-5 w-px bg-oatDark mx-1"></div>
+            <div class="flex items-center gap-1.5 bg-oat/70 p-1 rounded-xl border border-oatDark">
+                <span class="text-xs font-bold text-charcoal/70 px-2 flex items-center gap-1">
+                    <i data-lucide="tv" class="w-3.5 h-3.5 text-blue-600"></i>
+                    ตำแหน่งจอ 86":
+                </span>
+                <button onclick="setScreenWall('left')" id="btnWallLeft" class="screen-wall-btn active px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1">
+                    <span>⬅️ ผนังซ้าย</span>
+                </button>
+                <button onclick="setScreenWall('top')" id="btnWallTop" class="screen-wall-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-charcoal/70 hover:text-charcoal transition-all flex items-center gap-1">
+                    <span>⬆️ ผนังบน</span>
+                </button>
+                <button onclick="setScreenWall('right')" id="btnWallRight" class="screen-wall-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-charcoal/70 hover:text-charcoal transition-all flex items-center gap-1">
+                    <span>➡️ ผนังขวา</span>
+                </button>
+                <button onclick="setScreenWall('bottom')" id="btnWallBottom" class="screen-wall-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-charcoal/70 hover:text-charcoal transition-all flex items-center gap-1">
+                    <span>⬇️ ผนังล่าง</span>
+                </button>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="btnToggleWalls" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-charcoal border border-oatDark shadow-sm hover:bg-oat transition-all">
+                <span id="wallIconContainer" class="flex items-center"><i data-lucide="eye" class="w-4 h-4 text-blue-600"></i></span>
+                <span id="textWallToggle">ซ่อนผนัง (Cutaway)</span>
+            </button>
+            <div class="flex items-center bg-oat p-1 rounded-xl border border-oatDark">
+                <button id="btnView3D" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-charcoal shadow-sm transition-all">
+                    <i data-lucide="box" class="w-3.5 h-3.5 text-blue-600"></i>
+                    <span>3D View</span>
+                </button>
+                <button id="btnView2D" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-charcoal/60 hover:text-charcoal transition-all">
+                    <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
+                    <span>2D Plan</span>
+                </button>
+                <button id="btnResetCam" title="Reset View" class="p-1.5 ml-1 rounded-lg text-charcoal/50 hover:text-charcoal hover:bg-white">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="btnExportPDF" class="flex items-center gap-2 px-4 py-2 bg-charcoal hover:bg-charcoalLight text-warmWhite rounded-xl text-xs font-bold shadow-md transition-all">
+                <i data-lucide="file-down" class="w-4 h-4 text-blue-400"></i>
+                <span>พิมพ์ใบผังแปลน</span>
+            </button>
+        </div>
+    </header>
+    <!-- MAIN WORKSPACE -->
+    <div class="flex-1 flex overflow-hidden relative">
+        <!-- LEFT SIDEBAR -->
+        <aside class="w-80 bg-warmWhite border-r border-oatDark flex flex-col z-20 shrink-0">
+            <div class="p-3 border-b border-oatDark bg-oat/30">
+                <div class="grid grid-cols-2 p-1 bg-oat rounded-lg text-xs font-medium">
+                    <button id="tabTemplates" class="py-1.5 rounded-md bg-white font-bold text-charcoal shadow-sm">ผังมาตรฐาน</button>
+                    <button id="tabCatalog" class="py-1.5 rounded-md text-charcoal/60 hover:text-charcoal">เพิ่มเฟอร์นิเจอร์</button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                <div id="panelTemplates" class="space-y-3">
+                    <div class="text-[11px] font-mono font-bold uppercase text-charcoal/50">รูปแบบผังมาตรฐาน (โต๊ะ
+                        1.80m)</div>
+                    <!-- U-Shape 17 Desks -->
+                    <div id="card_ushape"
+                        class="item-card cursor-pointer p-3.5 bg-blue-50/60 rounded-xl border-2 border-blue-500/70 shadow-sm"
+                        onclick="selectTemplate('ushape_exact')">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="font-bold text-sm text-charcoal flex items-center gap-1.5">
+                                <i data-lucide="layout" class="w-4 h-4 text-blue-600"></i>
+                                ผัง U-Shape (17 โต๊ะ / 34 ที่นั่ง)
+                            </span>
+                            <span class="text-[10px] font-mono px-2 py-0.5 bg-blue-600 text-white font-bold rounded-full">180×75 cm</span>
+                        </div>
+                        <p class="text-xs text-charcoal/70 mb-2 leading-relaxed">
+                            • <strong>ปีกซ้าย:</strong> 6 โต๊ะ (2 แถว: 3 - 3) หันเข้าหากึ่งกลาง<br>
+                            • <strong>ปีกขวา:</strong> 10 โต๊ะ (3 แถว: 3 - 3 - 4) หันเข้าหากึ่งกลาง<br>
+                            • <strong>โต๊ะประธาน VIP:</strong> 1 โต๊ะ กึ่งกลางหลังสุด หันตรงเข้าหาจอ 86"
+                        </p>
+                    </div>
+                    <!-- Classroom 17 Desks (Spacious Aisles) -->
+                    <div id="card_classroom"
+                        class="item-card cursor-pointer p-3.5 bg-white rounded-xl border border-oatDark hover:border-charcoal shadow-sm"
+                        onclick="selectTemplate('classroom_17')">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-bold text-sm text-charcoal">ผังอบรมสัมมนา (17 โต๊ะ / 34 ที่นั่ง)</span>
+                            <span class="text-[10px] font-mono px-2 py-0.5 bg-blue-100 text-blue-800 font-bold rounded-full">เว้นทางเดินโปร่ง</span>
+                        </div>
+                        <p class="text-xs text-charcoal/60 leading-relaxed">
+                            • 4 แถว แถวละ 4 โต๊ะ (เว้นทางเดินกลาง 1.5m และช่องระหว่างโต๊ะ)<br>
+                            • <strong>โต๊ะผู้สอน 1 โต๊ะ:</strong> อยู่ด้านหน้าซ้ายมือ หันหน้าเข้าหาผู้อบรม
+                        </p>
+                    </div>
+                    <!-- Theater 60 Seats -->
+                    <div id="card_theater"
+                        class="item-card cursor-pointer p-3.5 bg-white rounded-xl border border-oatDark hover:border-charcoal shadow-sm"
+                        onclick="selectTemplate('theater_60')">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-bold text-sm text-charcoal">ผังบรรยายล้วน (60 ที่นั่ง)</span>
+                            <span class="text-[10px] font-mono px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded-full">เว้นทางเดินกลาง</span>
+                        </div>
+                        <p class="text-xs text-charcoal/60 leading-relaxed">
+                            เก้าอี้ 6 แถว แถวละ 10 ตัว (ซ้าย 5 • ทางเดิน • ขวา 5) หันหน้าตรงเข้าหาจอ
+                        </p>
+                    </div>
+                    <!-- Empty Room -->
+                    <div class="item-card cursor-pointer p-3.5 bg-white rounded-xl border border-dashed border-charcoal/30 hover:border-charcoal"
+                        onclick="selectTemplate('empty')">
+                        <div class="font-bold text-sm text-charcoal">ห้องเปล่า (เปิดโล่ง)</div>
+                        <p class="text-xs text-charcoal/60">คงไว้เฉพาะจอ 86 นิ้ว เสา 4 มุม และผนังกระจก</p>
+                    </div>
+                </div>
+                <div id="panelCatalog" class="space-y-2.5 hidden">
+                    <div class="text-[11px] font-mono font-bold uppercase text-charcoal/50 mb-1">
+                        คลิกเพื่อวางเฟอร์นิเจอร์</div>
+                    <div onclick="spawnItem('deskGroup')"
+                        class="item-card cursor-pointer p-3 bg-white rounded-xl border border-oatDark hover:border-charcoal flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-8 h-8 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-xs">
+                                2P</div>
+                            <div>
+                                <h5 class="text-xs font-bold text-charcoal">ชุดโต๊ะคู่ (180 × 75 ซม.)</h5>
+                                <p class="text-[10px] text-charcoal/50 font-mono">1.8m Desk + 2 Chairs</p>
+                            </div>
+                        </div>
+                        <button class="w-6 h-6 rounded-md bg-oat hover:bg-charcoal hover:text-white text-xs font-bold">+</button>
+                    </div>
+                    <div onclick="spawnItem('chair')"
+                        class="item-card cursor-pointer p-3 bg-white rounded-xl border border-oatDark hover:border-charcoal flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-8 h-8 rounded-lg bg-stone-200 text-stone-700 flex items-center justify-center">
+                                <i data-lucide="armchair" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-xs font-bold text-charcoal">เก้าอี้สัมมนาเดี่ยว</h5>
+                                <p class="text-[10px] text-charcoal/50 font-mono">Ergonomic Task Chair</p>
+                            </div>
+                        </div>
+                        <button class="w-6 h-6 rounded-md bg-oat hover:bg-charcoal hover:text-white text-xs font-bold">+</button>
+                    </div>
+                    <div onclick="spawnItem('screen')"
+                        class="item-card cursor-pointer p-3 bg-white rounded-xl border border-oatDark hover:border-charcoal flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-charcoal text-white flex items-center justify-center">
+                                <i data-lucide="tv" class="w-4 h-4 text-blue-400"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-xs font-bold text-charcoal">จอ 86" (195.7 × 10.3 ซม.)</h5>
+                                <p class="text-[10px] text-charcoal/50 font-mono">4K Interactive Screen</p>
+                            </div>
+                        </div>
+                        <button class="w-6 h-6 rounded-md bg-oat hover:bg-charcoal hover:text-white text-xs font-bold">+</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Capacity Dashboard -->
+            <div class="p-4 border-t border-oatDark bg-white/70">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-mono uppercase font-bold text-charcoal/70">สถิติความจุห้อง</span>
+                    <span id="badgeTarget" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-mono">17 โต๊ะ (34 ที่นั่ง)</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="p-2 bg-oat/50 rounded-lg text-center border border-oatDark/50">
+                        <div class="text-[9px] text-charcoal/60 font-mono uppercase">จำนวนที่นั่ง</div>
+                        <div id="metricSeatCount" class="text-lg font-bold font-mono text-blue-600">34</div>
+                    </div>
+                    <div class="p-2 bg-oat/50 rounded-lg text-center border border-oatDark/50">
+                        <div class="text-[9px] text-charcoal/60 font-mono uppercase">ความหนาแน่น</div>
+                        <div id="metricDensity" class="text-sm font-bold font-mono text-charcoal mt-1">0.20
+                            <span class="text-[8px] font-normal">p/m²</span>
+                        </div>
+                    </div>
+                    <div class="p-2 bg-oat/50 rounded-lg text-center border border-oatDark/50">
+                        <div class="text-[9px] text-charcoal/60 font-mono uppercase">พื้นที่/คน</div>
+                        <div id="metricSqmPerson" class="text-sm font-bold font-mono text-charcoal mt-1">5.1
+                            <span class="text-[8px] font-normal">m²</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <!-- 3D VIEWPORT CANVAS -->
+        <main class="flex-1 relative blueprint-canvas overflow-hidden">
+            <div id="threeCanvasContainer" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+            <div class="absolute top-4 left-4 pointer-events-none flex flex-col gap-2">
+                <div
+                    class="glass-panel px-3.5 py-2 rounded-xl text-xs font-mono text-charcoal shadow-sm flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
+                    <span>จอ 86": <strong id="statusScreenWall" class="text-blue-700">ผนังด้านซ้าย (Left Wall)</strong></span>
+                </div>
+                <div
+                    class="glass-panel px-3 py-1.5 rounded-lg text-[11px] font-mono text-charcoal/80 flex items-center gap-2">
+                    <span class="w-3.5 h-3.5 rounded-full border border-charcoal/40 shadow-sm" style="background:#C4C2C0;"></span>
+                    <span>พื้น: <strong>#C4C2C0</strong></span>
+                    <span class="text-charcoal/40">|</span>
+                    <span class="w-3.5 h-3.5 rounded-full border border-charcoal/40 shadow-sm" style="background:#FFDBB0;"></span>
+                    <span>โต๊ะ: <strong>#FFDBB0</strong></span>
+                </div>
+            </div>
+            <div id="selectionGizmoBar"
+                class="absolute bottom-6 left-1/2 -translate-x-1/2 glass-panel p-2 rounded-2xl shadow-xl flex items-center gap-2 hidden transition-all z-20">
+                <div class="px-3 py-1 text-xs font-mono font-bold text-charcoal border-r border-oatDark">
+                    <span id="selectedItemLabel">เลือกชิ้นงาน</span>
+                </div>
+                <button id="btnRotateSelected" class="px-3 py-1.5 hover:bg-oat text-charcoal rounded-xl text-xs flex items-center gap-1 font-semibold transition-colors">
+                    <i data-lucide="rotate-cw" class="w-4 h-4"></i>
+                    <span>หมุน 45° (R)</span>
+                </button>
+                <button id="btnDeleteSelected" class="px-3 py-1.5 hover:bg-red-50 text-red-600 rounded-xl text-xs flex items-center gap-1 font-semibold transition-colors">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    <span>ลบ (Del)</span>
+                </button>
+            </div>
+        </main>
+    </div>
+    <!-- EXPORT SPEC MODAL -->
+    <div id="exportModal"
+        class="fixed inset-0 z-50 bg-charcoal/75 backdrop-blur-sm flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div
+            class="bg-warmWhite border border-oatDark rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-oatDark flex items-center justify-between bg-oat/30">
+                <h3 class="font-bold text-base text-charcoal flex items-center gap-2">
+                    <i data-lucide="file-check" class="w-5 h-5 text-blue-600"></i>
+                    พิมพ์ใบผังแปลนห้องประชุม (11.5m × 15.0m) — พร้อมผัง 2D
+                </h3>
+                <button id="btnCloseExportModal" class="p-1.5 hover:bg-oat rounded-lg text-charcoal/60">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 bg-[#FAF8F5]">
+                <div id="specSheetPrintArea"
+                    class="bg-white border border-oatDark p-6 rounded-xl shadow-sm spec-animating space-y-5 font-mono text-xs">
+                    <div class="flex justify-between items-start border-b-2 border-charcoal pb-4">
+                        <div>
+                            <div class="text-lg font-bold font-sans text-charcoal">COMMERCIAL SPACE SPECIFICATION SHEET
+                            </div>
+                            <div class="text-xs text-charcoal/60 mt-0.5" id="exportSubtitle">ผังห้องประชุม 11.5m × 15.0m
+                                พร้อมโต๊ะ 180×75 ซม. และจอ 86 นิ้ว</div>
+                        </div>
+                        <div class="text-right">
+                            <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded">OFFICIAL LAYOUT</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 p-3 bg-oat/30 rounded-lg">
+                        <div>
+                            <span class="text-charcoal/50 text-[10px] block">ขนาดห้องสุทธิ</span>
+                            <strong class="text-sm font-sans" id="exportRoomDim">11.5m × 15.0m (172.5 m²)</strong>
+                        </div>
+                        <div>
+                            <span class="text-charcoal/50 text-[10px] block">ความจุรวม</span>
+                            <strong class="text-sm font-sans text-blue-600" id="exportCapacity">34 ที่นั่ง</strong>
+                        </div>
+                        <div>
+                            <span class="text-charcoal/50 text-[10px] block">ตำแหน่งจอหลัก</span>
+                            <strong class="text-sm font-sans text-blue-700" id="exportScreenPos">ผนังด้านซ้าย</strong>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="font-bold text-xs uppercase text-charcoal mb-2">สรุปรายการเฟอร์นิเจอร์ในผัง</div>
+                        <table class="w-full text-left text-xs border border-oatDark">
+                            <thead class="bg-oat/50">
+                                <tr class="border-b border-oatDark">
+                                    <th class="p-2">รายการ</th>
+                                    <th class="p-2 text-center">สเปกขนาด</th>
+                                    <th class="p-2 text-center">จำนวนชุด</th>
+                                    <th class="p-2 text-right">ที่นั่งรวม</th>
+                                </tr>
+                            </thead>
+                            <tbody id="exportTableBody" class="divide-y divide-oatDark"></tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <div class="font-bold text-xs uppercase text-charcoal mb-2 flex items-center gap-1.5">
+                            <i data-lucide="layout-grid" class="w-3.5 h-3.5 text-blue-600"></i>
+                            ผังแปลน 2D มุมมองจากด้านบน (Top-View Floor Plan)
+                        </div>
+                        <div class="border border-oatDark rounded-lg p-3 bg-white flex justify-center">
+                            <canvas id="export2DPlanCanvas" class="max-w-full h-auto"></canvas>
+                        </div>
+                        <div class="flex flex-wrap justify-between gap-1 mt-1.5 text-[10px] text-charcoal/60 font-mono">
+                            <span id="exportCanvasFooter">ห้อง 11.5m × 15.0m (172.5 m²) • เส้นกริด 1 เมตร</span>
+                            <span>โต๊ะ #FFDBB0 • เก้าอี้ (น้ำเงิน/ทองประธาน) • จอ (ดำ) • ผนังกระจก (เส้นประฟ้า)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-3 border-t border-oatDark flex justify-end gap-3 bg-white">
+                <button onclick="window.print()" class="px-4 py-2 bg-oat hover:bg-oatDark text-charcoal rounded-xl text-xs font-bold flex items-center gap-2">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>พิมพ์เอกสาร</span>
+                </button>
+                <button onclick="confirmDownloadPDF()" class="px-5 py-2 bg-charcoal hover:bg-charcoalLight text-white rounded-xl text-xs font-bold flex items-center gap-2">
+                    <i data-lucide="check" class="w-4 h-4 text-blue-400"></i>
+                    <span>ยืนยันแบบแปลน (บันทึก PNG)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- THREE.JS ENGINE SCRIPT -->
+    <script>
+        const config = {
+            roomWidth: 11.5,
+            roomLength: 15.0,
+            wallColor: 0xE6E1BC,
+            floorColor: 0xC4C2C0,
+            deskColor: 0xFFDBB0,
+            deskWidth: 1.80,
+            deskDepth: 0.75,
+            screenWidth: 4.1,
+            screenThick: 0.103,
+            chairColor: 0x2563EB,
+            chairmanColor: 0xD97706,
+        };
+        const state = {
+            screenWall: 'left',
+            currentTemplate: 'ushape_exact',
+            showWalls: true,
+            objects: [],
+            selectedObject: null,
+            cameraMode: '3D'
+        };
+        let scene, camera, renderer, controls, raycaster, mouse;
+        let roomMesh, floorMesh, gridHelper, pillarsGroup, exitGroup, glassWallGroup;
+        const container = document.getElementById('threeCanvasContainer');
+        function initThree() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xD8D3C5);
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.5, 200);
+            camera.position.set(15, 18, 14);
+            renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.LinearToneMapping;
+            renderer.toneMappingExposure = 1.0;
+            container.appendChild(renderer.domElement);
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 - 0.05;
+            controls.target.set(0, 0, 0);
+            const ambLight = new THREE.AmbientLight(0xffffff, 0.75);
+            scene.add(ambLight);
+            const sunLight = new THREE.DirectionalLight(0xffffff, 0.45);
+            sunLight.position.set(10, 20, 15);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.bias = -0.0003;
+            scene.add(sunLight);
+            const fillLight = new THREE.DirectionalLight(0xffffff, 0.25);
+            fillLight.position.set(-15, 15, -15);
+            scene.add(fillLight);
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+            buildRoomArchitecture();
+            applyLayout();
+            window.addEventListener('resize', onResize);
+            container.addEventListener('pointerdown', onPointerDown);
+            container.addEventListener('pointermove', onPointerMove);
+            container.addEventListener('pointerup', onPointerUp);
+            window.addEventListener('keydown', onKeyDown);
+            animate();
+        }
+        function buildRoomArchitecture() {
+            if (roomMesh) scene.remove(roomMesh);
+            if (floorMesh) scene.remove(floorMesh);
+            if (gridHelper) scene.remove(gridHelper);
+            if (pillarsGroup) scene.remove(pillarsGroup);
+            if (exitGroup) scene.remove(exitGroup);
+            if (glassWallGroup) scene.remove(glassWallGroup);
+            const W = config.roomWidth;
+            const L = config.roomLength;
+            const H = 4.0;
+            const wallT = 0.3;
+            const floorGeo = new THREE.PlaneGeometry(W, L);
+            const floorMat = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(config.floorColor),
+                roughness: 0.7,
+                metalness: 0.0
+            });
+            floorMesh = new THREE.Mesh(floorGeo, floorMat);
+            floorMesh.rotation.x = -Math.PI / 2;
+            floorMesh.receiveShadow = true;
+            scene.add(floorMesh);
+            gridHelper = new THREE.GridHelper(Math.max(W, L), Math.max(W, L), 0x8E8C8A, 0xA9A7A5);
+            gridHelper.position.y = 0.01;
+            scene.add(gridHelper);
+            const wallGroup = new THREE.Group();
+            const sideWallMat = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(config.wallColor),
+                roughness: 0.75,
+                metalness: 0.0
+            });
+            const baseboardMat = new THREE.MeshStandardMaterial({ color: 0x2B2A27, roughness: 0.5 });
+            const topWallSolid = new THREE.Mesh(new THREE.BoxGeometry(W - 2.0, H, wallT), sideWallMat);
+            topWallSolid.position.set(1.0, H / 2, -L / 2);
+            topWallSolid.receiveShadow = true;
+            topWallSolid.castShadow = true;
+            wallGroup.add(topWallSolid);
+            const topDoorLintel = new THREE.Mesh(new THREE.BoxGeometry(2.0, H - 2.5, wallT), sideWallMat);
+            topDoorLintel.position.set(-W / 2 + 1.0, H - (H - 2.5) / 2, -L / 2);
+            topDoorLintel.receiveShadow = true;
+            wallGroup.add(topDoorLintel);
+            const topBaseboard = new THREE.Mesh(new THREE.BoxGeometry(W - 2.0, 0.15, wallT + 0.04), baseboardMat);
+            topBaseboard.position.set(1.0, 0.075, -L / 2);
+            wallGroup.add(topBaseboard);
+            const leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallT, H, L), sideWallMat);
+            leftWall.position.set(-W / 2, H / 2, 0);
+            leftWall.receiveShadow = true;
+            leftWall.castShadow = true;
+            wallGroup.add(leftWall);
+            const leftBaseboard = new THREE.Mesh(new THREE.BoxGeometry(wallT + 0.04, 0.15, L), baseboardMat);
+            leftBaseboard.position.set(-W / 2, 0.075, 0);
+            wallGroup.add(leftBaseboard);
+            const rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallT, H, L), sideWallMat);
+            rightWall.position.set(W / 2, H / 2, 0);
+            rightWall.receiveShadow = true;
+            rightWall.castShadow = true;
+            wallGroup.add(rightWall);
+            const rightBaseboard = new THREE.Mesh(new THREE.BoxGeometry(wallT + 0.04, 0.15, L), baseboardMat);
+            rightBaseboard.position.set(W / 2, 0.075, 0);
+            wallGroup.add(rightBaseboard);
+            roomMesh = wallGroup;
+            scene.add(roomMesh);
+            glassWallGroup = new THREE.Group();
+            const glassMat = new THREE.MeshStandardMaterial({
+                color: 0x88C4E2,
+                roughness: 0.1,
+                metalness: 0.7,
+                transparent: true,
+                opacity: 0.35
+            });
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.3 });
+            const glassPane = new THREE.Mesh(new THREE.BoxGeometry(W, H - 0.2, 0.04), glassMat);
+            glassPane.position.set(0, H / 2, L / 2);
+            glassWallGroup.add(glassPane);
+            const topHeader = new THREE.Mesh(new THREE.BoxGeometry(W + 0.2, 0.14, 0.18), frameMat);
+            topHeader.position.set(0, H - 0.07, L / 2);
+            glassWallGroup.add(topHeader);
+            const bottomHeader = new THREE.Mesh(new THREE.BoxGeometry(W + 0.2, 0.14, 0.18), frameMat);
+            bottomHeader.position.set(0, 0.07, L / 2);
+            glassWallGroup.add(bottomHeader);
+            const mullions = 6;
+            for (let i = 0; i <= mullions; i++) {
+                const mx = -W / 2 + (i * (W / mullions));
+                const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.1, H, 0.16), frameMat);
+                mullion.position.set(mx, H / 2, L / 2);
+                mullion.castShadow = true;
+                glassWallGroup.add(mullion);
+            }
+            scene.add(glassWallGroup);
+            pillarsGroup = new THREE.Group();
+            const pillarGeo = new THREE.BoxGeometry(0.8, H, 0.8);
+            const pillarMat = new THREE.MeshStandardMaterial({ color: 0xD8D2AD, roughness: 0.7 });
+            [
+                [-W / 2 + 0.4, -L / 2 + 0.4],
+                [ W / 2 - 0.4, -L / 2 + 0.4],
+                [-W / 2 + 0.4,  L / 2 - 0.4],
+                [ W / 2 - 0.4,  L / 2 - 0.4],
+            ].forEach(([px, pz]) => {
+                const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+                pillar.position.set(px, H / 2, pz);
+                pillar.castShadow = true;
+                pillar.receiveShadow = true;
+                pillarsGroup.add(pillar);
+            });
+            scene.add(pillarsGroup);
+            exitGroup = new THREE.Group();
+            const exitSign = new THREE.Mesh(
+                new THREE.BoxGeometry(1.5, 0.4, 0.08),
+                new THREE.MeshStandardMaterial({ color: 0x059669, emissive: 0x10B981, emissiveIntensity: 0.8 })
+            );
+            exitSign.position.set(-W / 2 + 1.0, 2.7, -L / 2 + 0.05);
+            exitGroup.add(exitSign);
+            const doorLeaf = new THREE.Mesh(
+                new THREE.BoxGeometry(1.8, 2.4, 0.06),
+                new THREE.MeshStandardMaterial({ color: 0x2A2A2A, metalness: 0.3 })
+            );
+            doorLeaf.position.set(-W / 2 + 0.9, 1.2, -L / 2 - 0.2);
+            doorLeaf.rotation.y = 0.45;
+            exitGroup.add(doorLeaf);
+            const egressFloor = new THREE.Mesh(
+                new THREE.PlaneGeometry(2.0, 2.4),
+                new THREE.MeshStandardMaterial({ color: 0x10B981, transparent: true, opacity: 0.28 })
+            );
+            egressFloor.rotation.x = -Math.PI / 2;
+            egressFloor.position.set(-W / 2 + 1.0, 0.02, -L / 2 + 1.2);
+            exitGroup.add(egressFloor);
+            scene.add(exitGroup);
+            updateWallsVisibility();
+        }
+        function toggleWallsVisibility() {
+            state.showWalls = !state.showWalls;
+            updateWallsVisibility();
+            const textEl = document.getElementById('textWallToggle');
+            const iconWrap = document.getElementById('wallIconContainer');
+            if (state.showWalls) {
+                textEl.textContent = 'ซ่อนผนัง (Cutaway)';
+                iconWrap.innerHTML = '<i data-lucide="eye" class="w-4 h-4 text-blue-600"></i>';
+            } else {
+                textEl.textContent = 'แสดงผนัง (Show Walls)';
+                iconWrap.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4 text-amber-600"></i>';
+            }
+            lucide.createIcons();
+        }
+        function updateWallsVisibility() {
+            if (roomMesh) roomMesh.visible = state.showWalls;
+            if (pillarsGroup) pillarsGroup.visible = state.showWalls;
+            if (glassWallGroup) glassWallGroup.visible = state.showWalls;
+            if (exitGroup) exitGroup.visible = state.showWalls;
+        }
+        function createSingleChairMesh(customColor = null) {
+            const chairGroup = new THREE.Group();
+            const plasticMat = new THREE.MeshStandardMaterial({ color: 0x242424, roughness: 0.6 });
+            const cushionMat = new THREE.MeshStandardMaterial({ color: customColor || config.chairColor, roughness: 0.6 });
+            const legMat = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.7 });
+            const seat = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.05, 0.44), cushionMat);
+            seat.position.y = 0.44;
+            seat.castShadow = true;
+            chairGroup.add(seat);
+            const back = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.38, 0.04), plasticMat);
+            back.position.set(0, 0.65, -0.20);
+            back.castShadow = true;
+            chairGroup.add(back);
+            const lGeo = new THREE.CylinderGeometry(0.018, 0.015, 0.44, 8);
+            [[-0.18, -0.18], [-0.18, 0.18], [0.18, -0.18], [0.18, 0.18]].forEach(([x, z]) => {
+                const l = new THREE.Mesh(lGeo, legMat);
+                l.position.set(x, 0.22, z);
+                chairGroup.add(l);
+            });
+            return chairGroup;
+        }
+        function createDualDeskCluster(isSpecial = false, specialTitle = null) {
+            const group = new THREE.Group();
+            group.userData = {
+                type: 'deskGroup',
+                title: specialTitle || (isSpecial ? 'โต๊ะประธาน VIP 180×75 ซม.' : 'ชุดโต๊ะคู่ 180×75 ซม.')
+            };
+            const woodMat = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(config.deskColor),
+                roughness: 0.75,
+                metalness: 0.0
+            });
+            const frameMat = new THREE.MeshStandardMaterial({ color: isSpecial ? 0x1A1A1A : 0x222222, roughness: 0.6 });
+            const top = new THREE.Mesh(new THREE.BoxGeometry(config.deskWidth, 0.04, config.deskDepth), woodMat);
+            top.position.set(0, 0.74, 0.10);
+            top.castShadow = true;
+            top.receiveShadow = true;
+            group.add(top);
+            const legGeo = new THREE.BoxGeometry(0.045, 0.74, 0.045);
+            const lx = config.deskWidth / 2 - 0.05;
+            const lz = config.deskDepth / 2 - 0.05;
+            [[-lx, -lz], [-lx, lz], [lx, -lz], [lx, lz]].forEach(([x, z]) => {
+                const leg = new THREE.Mesh(legGeo, frameMat);
+                leg.position.set(x, 0.37, z + 0.10);
+                leg.castShadow = true;
+                group.add(leg);
+            });
+            [-0.45, 0.45].forEach(cx => {
+                const chair = createSingleChairMesh(isSpecial ? config.chairmanColor : null);
+                chair.position.set(cx, 0, -0.50);
+                group.add(chair);
+            });
+            return group;
+        }
+        function createChair() {
+            const c = createSingleChairMesh();
+            c.userData = { type: 'chair', title: 'เก้าอี้สัมมนาเดี่ยว' };
+            return c;
+        }
+        function createMobileScreen() {
+            const group = new THREE.Group();
+            group.userData = { type: 'screen', title: `จอ 86" (195.7 × 10.3 ซม.)` };
+            const baseMat = new THREE.MeshStandardMaterial({ color: 0x1F1F1F, roughness: 0.4 });
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+            const baseH = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 0.85), baseMat);
+            baseH.position.y = 0.1;
+            group.add(baseH);
+            const poleGeo = new THREE.CylinderGeometry(0.045, 0.045, 2.0, 12);
+            [-0.45, 0.45].forEach(px => {
+                const pole = new THREE.Mesh(poleGeo, baseMat);
+                pole.position.set(px, 1.1, 0);
+                group.add(pole);
+            });
+            const screenFrame = new THREE.Mesh(
+                new THREE.BoxGeometry(config.screenWidth, 2, config.screenThick),
+                frameMat
+            );
+            screenFrame.position.set(0, 1.8, 0);
+            screenFrame.castShadow = true;
+            group.add(screenFrame);
+            const screenGlass = new THREE.Mesh(
+                new THREE.PlaneGeometry(config.screenWidth - 0.2, 1.8),
+                new THREE.MeshStandardMaterial({ color: 0x2563EB, roughness: 0.1, emissive: 0x1D4ED8, emissiveIntensity: 0.3 })
+            );
+            screenGlass.position.set(0, 1.8, config.screenThick / 2 + 0.002);
+            group.add(screenGlass);
+            return group;
+        }
+        function clearAllObjects() {
+            state.objects.forEach(obj => scene.remove(obj));
+            state.objects = [];
+            deselectCurrent();
+        }
+        function addObject(mesh, x = 0, z = 0, rotY = null) {
+            mesh.position.set(x, 0, z);
+            if (rotY !== null) {
+                mesh.rotation.y = rotY;
+            }
+            scene.add(mesh);
+            state.objects.push(mesh);
+            return mesh;
+        }
+        function applyLayout() {
+            clearAllObjects();
+            const W = config.roomWidth;
+            const L = config.roomLength;
+            const wall = state.screenWall;
+            // วางจอ 86 นิ้ว
+            const screen = createMobileScreen();
+            if (wall === 'top') {
+                addObject(screen, 0, -L / 2 + 1.2, 0);
+            } else if (wall === 'left') {
+                addObject(screen, -W / 2 + 1.2, 0, Math.PI / 2);
+            } else if (wall === 'right') {
+                addObject(screen, W / 2 - 1.2, 0, -Math.PI / 2);
+            } else if (wall === 'bottom') {
+                addObject(screen, 0, L / 2 - 1.2, Math.PI);
+            }
+            if (state.currentTemplate === 'ushape_exact') {
+                buildExplicitUShape(wall);
+            } else if (state.currentTemplate === 'classroom_17') {
+                buildExplicitClassroom(wall);
+            } else if (state.currentTemplate === 'theater_60') {
+                buildExplicitTheater(wall);
+            }
+            updateMetrics();
+        }
+        /**
+         * 🎯 ผัง U-Shape (17 โต๊ะ / 34 ที่นั่ง)
+         */
+        function buildExplicitUShape(wall) {
+            const items = [];
+            const stepU = 1.90;
+            // ปีกซ้าย 6 โต๊ะ (2 แถว: 3 - 3)
+            [-1, 0, 1].forEach(i => items.push({ u: i * stepU, v: -1.9, type: 'left' }));
+            [-1, 0, 1].forEach(i => items.push({ u: i * stepU, v: -3.4, type: 'left' }));
+            // ปีกขวา 10 โต๊ะ (3 แถว: 3 - 3 - 4)
+            [-1, 0, 1].forEach(i => items.push({ u: i * stepU, v: 1.9, type: 'right' }));
+            [-1, 0, 1].forEach(i => items.push({ u: i * stepU, v: 3.4, type: 'right' }));
+            [-1.5, -0.5, 0.5, 1.5].forEach(i => items.push({ u: i * stepU, v: 4.8, type: 'right' }));
+            // ประธาน VIP 1 โต๊ะ
+            items.push({ u: 3.4, v: 0.0, type: 'chairman' });
+            items.forEach(item => {
+                let x = 0, z = 0, rotY = 0;
+                const isVIP = (item.type === 'chairman');
+                const desk = createDualDeskCluster(isVIP);
+                if (wall === 'left') {
+                    x = item.u; z = item.v;
+                    if (item.type === 'left') rotY = 0;
+                    else if (item.type === 'right') rotY = Math.PI;
+                    else if (item.type === 'chairman') rotY = -Math.PI / 2;
+                } else if (wall === 'right') {
+                    x = -item.u; z = -item.v;
+                    if (item.type === 'left') rotY = Math.PI;
+                    else if (item.type === 'right') rotY = 0;
+                    else if (item.type === 'chairman') rotY = 0;
+                } else if (wall === 'top') {
+                    x = item.v; z = item.u;
+                    if (item.type === 'left') rotY = Math.PI / 2;
+                    else if (item.type === 'right') rotY = -Math.PI / 2;
+                    else if (item.type === 'chairman') rotY = Math.PI;
+                } else if (wall === 'bottom') {
+                    x = -item.v; z = -item.u;
+                    if (item.type === 'left') rotY = -Math.PI / 2;
+                    else if (item.type === 'right') rotY = Math.PI / 2;
+                    else if (item.type === 'chairman') rotY = 0;
+                }
+                addObject(desk, x, z, rotY);
+            });
+        }
+        /**
+         * 🎯 ผังอบรมสัมมนา Classroom (17 โต๊ะ / 34 ที่นั่ง):
+         * - เว้นช่องทางเดินกลาง (Aisle) กว้าง 1.50m และเว้นช่องระหว่างโต๊ะข้างละ 0.60m
+         * - ผู้อบรม 4 แถว แถวละ 4 โต๊ะ = 16 โต๊ะ
+         * - 1 โต๊ะผู้สอน อยู่ด้านหน้าฝั่งซ้ายของผู้อบรม หันหน้าเข้าหาผู้อบรม
+         */
+        function buildExplicitClassroom(wall) {
+            const items = [];
+            // ผู้อบรม 4 แถวแนวลึก (u)
+            const rowsU = [-1.5, 0.5, 2.2, 4];
+            
+            // จัด 4 คอลัมน์ (v) โดยเว้นทางเดินกลางกว้าง 1.5m และเว้นช่องโต๊ะข้าง 0.60m
+            // ฝั่งซ้าย: v = -3.55 (โต๊ะ 1), v = -1.55 (โต๊ะ 2) | [ทางเดินกลาง 1.5m] | ฝั่งขวา: v = +1.55 (โต๊ะ 3), v = +3.55 (โต๊ะ 4)
+            const colsV = [-3.65, -1.55, 1.55, 3.65];
+            rowsU.forEach(u => {
+                colsV.forEach(v => {
+                    items.push({ u, v, type: 'student' });
+                });
+            });
+            // โต๊ะผู้สอน 1 โต๊ะ: อยู่ข้างหน้า (u = -3.2) ฝั่งซ้ายของผู้อบรม (v = -2.55)
+            items.push({ u: -3.2, v: 3.25, type: 'trainer' });
+            items.forEach(item => {
+                let x = 0, z = 0, rotY = 0;
+                const isTrainer = (item.type === 'trainer');
+                const desk = createDualDeskCluster(isTrainer, isTrainer ? 'โต๊ะผู้สอน 180×75 ซม.' : null);
+                if (wall === 'left') {
+                    x = item.u; z = item.v;
+                    rotY = isTrainer ? Math.PI / 2 : -Math.PI / 2;
+                } else if (wall === 'right') {
+                    x = -item.u; z = -item.v;
+                    rotY = isTrainer ? -Math.PI / 2 : Math.PI / 2;
+                } else if (wall === 'top') {
+                    x = item.v; z = item.u;
+                    rotY = isTrainer ? 0 : Math.PI;
+                } else if (wall === 'bottom') {
+                    x = -item.v; z = -item.u;
+                    rotY = isTrainer ? Math.PI : 0;
+                }
+                addObject(desk, x, z, rotY);
+            });
+        }
+        /**
+         * 🎯 ผังบรรยายล้วน Theater (60 ที่นั่ง):
+         * - 6 แถว แถวละ 10 ตัว (ซ้าย 5 ตัว • ทางเดินกลาง • ขวา 5 ตัว)
+         */
+        function buildExplicitTheater(wall) {
+            const rowsU = [-2.5, -1.2, -0.1, 1.1, 2.4, 3.7]; // 6 แถว
+            const leftWingV = [-5.0, -4.0, -3.0, -2.0, -1.0]; // ซ้าย 5 ตัว
+            const rightWingV = [1.0, 2.0, 3.0, 4.0, 5.0];    // ขวา 5 ตัว
+            const colsV = [...leftWingV, ...rightWingV];
+            rowsU.forEach(u => {
+                colsV.forEach(v => {
+                    const chair = createChair();
+                    let x = 0, z = 0, rotY = 0;
+                    if (wall === 'left') {
+                        x = u; z = v; rotY = -Math.PI / 2;
+                    } else if (wall === 'right') {
+                        x = -u; z = -v; rotY = Math.PI / 2;
+                    } else if (wall === 'top') {
+                        x = v; z = u; rotY = Math.PI;
+                    } else if (wall === 'bottom') {
+                        x = -v; z = -u; rotY = 0;
+                    }
+                    addObject(chair, x, z, rotY);
+                });
+            });
+        }
+        function updateMetrics() {
+            let seats = 0;
+            state.objects.forEach(o => {
+                if (o.userData.type === 'deskGroup') seats += 2;
+                else if (o.userData.type === 'chair') seats += 1;
+            });
+            const area = config.roomWidth * config.roomLength;
+            document.getElementById('metricSeatCount').textContent = seats;
+            document.getElementById('metricDensity').innerHTML =
+                (seats / area).toFixed(2) + ' <span class="text-[8px] font-normal">p/m²</span>';
+            document.getElementById('metricSqmPerson').innerHTML = seats > 0
+                ? (area / seats).toFixed(1) + ' <span class="text-[8px] font-normal">m²</span>'
+                : '— <span class="text-[8px] font-normal">m²</span>';
+        }
+        function setScreenWall(wall) {
+            state.screenWall = wall;
+            ['left', 'top', 'right', 'bottom'].forEach(w => {
+                const btn = document.getElementById('btnWall' + w.charAt(0).toUpperCase() + w.slice(1));
+                if (btn) btn.classList.toggle('active', w === wall);
+            });
+            const labels = {
+                left: 'ผนังด้านซ้าย (Left Wall)',
+                top: 'ผนังด้านบน (Top Wall)',
+                right: 'ผนังด้านขวา (Right Wall)',
+                bottom: 'ผนังด้านล่าง (Bottom Wall)'
+            };
+            document.getElementById('statusScreenWall').textContent = labels[wall];
+            applyLayout();
+        }
+        function selectTemplate(t) {
+            state.currentTemplate = t;
+            const activeCls = 'item-card cursor-pointer p-3.5 bg-blue-50/60 rounded-xl border-2 border-blue-500/70 shadow-sm';
+            const idleCls = 'item-card cursor-pointer p-3.5 bg-white rounded-xl border border-oatDark hover:border-charcoal shadow-sm';
+            const map = { ushape_exact: 'card_ushape', classroom_17: 'card_classroom', theater_60: 'card_theater' };
+            Object.values(map).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.className = idleCls;
+            });
+            if (map[t]) document.getElementById(map[t]).className = activeCls;
+            const badges = {
+                ushape_exact: '17 โต๊ะ (34 ที่นั่ง)',
+                classroom_17: '17 โต๊ะ (34 ที่นั่ง)',
+                theater_60: '60 ที่นั่ง (Theater)',
+                empty: 'Open Space'
+            };
+            document.getElementById('badgeTarget').textContent = badges[t] || 'Custom';
+            applyLayout();
+        }
+        function spawnItem(type) {
+            let mesh;
+            if (type === 'deskGroup') mesh = createDualDeskCluster(false);
+            else if (type === 'chair') mesh = createChair();
+            else if (type === 'screen') mesh = createMobileScreen();
+            else return;
+            const spawnX = (Math.random() - 0.5) * (config.roomWidth - 4);
+            const spawnZ = (Math.random() - 0.5) * (config.roomLength - 4);
+            addObject(mesh, spawnX, spawnZ, 0);
+            selectObject(mesh);
+            updateMetrics();
+        }
+        function switchTab(tab) {
+            const isTemplates = tab === 'templates';
+            document.getElementById('panelTemplates').classList.toggle('hidden', !isTemplates);
+            document.getElementById('panelCatalog').classList.toggle('hidden', isTemplates);
+            document.getElementById('tabTemplates').className = isTemplates
+                ? 'py-1.5 rounded-md bg-white font-bold text-charcoal shadow-sm'
+                : 'py-1.5 rounded-md text-charcoal/60 hover:text-charcoal';
+            document.getElementById('tabCatalog').className = !isTemplates
+                ? 'py-1.5 rounded-md bg-white font-bold text-charcoal shadow-sm'
+                : 'py-1.5 rounded-md text-charcoal/60 hover:text-charcoal';
+        }
+        let pointerDownPos = null;
+        function onPointerDown(e) {
+            pointerDownPos = { x: e.clientX, y: e.clientY };
+        }
+        function onPointerMove(e) { }
+        function onPointerUp(e) {
+            if (!pointerDownPos) return;
+            const dx = e.clientX - pointerDownPos.x;
+            const dy = e.clientY - pointerDownPos.y;
+            pointerDownPos = null;
+            if (Math.sqrt(dx * dx + dy * dy) > 6) return;
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(state.objects, true);
+            if (hits.length) {
+                let node = hits[0].object;
+                while (node && !state.objects.includes(node)) node = node.parent;
+                if (node) selectObject(node);
+                else deselectCurrent();
+            } else {
+                deselectCurrent();
+            }
+        }
+        function selectObject(obj) {
+            deselectCurrent(false);
+            state.selectedObject = obj;
+            obj.traverse(child => {
+                if (child.isMesh && child.material && child.material.emissive) {
+                    child.userData._origEmissive = child.material.emissive.getHex();
+                    child.userData._origEmissiveI = child.material.emissiveIntensity;
+                    child.material.emissive.setHex(0x1D4ED8);
+                    child.material.emissiveIntensity = 0.22;
+                }
+            });
+            document.getElementById('selectedItemLabel').textContent = obj.userData.title || 'ชิ้นงาน';
+            document.getElementById('selectionGizmoBar').classList.remove('hidden');
+        }
+        function deselectCurrent(updateUI = true) {
+            if (state.selectedObject) {
+                state.selectedObject.traverse(child => {
+                    if (child.isMesh && child.material && child.material.emissive && child.userData._origEmissive !== undefined) {
+                        child.material.emissive.setHex(child.userData._origEmissive);
+                        child.material.emissiveIntensity = child.userData._origEmissiveI;
+                        delete child.userData._origEmissive;
+                        delete child.userData._origEmissiveI;
+                    }
+                });
+                state.selectedObject = null;
+            }
+            if (updateUI) document.getElementById('selectionGizmoBar').classList.add('hidden');
+        }
+        function rotateSelected() {
+            if (state.selectedObject) state.selectedObject.rotation.y += Math.PI / 4;
+        }
+        function deleteSelected() {
+            if (!state.selectedObject) return;
+            scene.remove(state.selectedObject);
+            state.objects = state.objects.filter(o => o !== state.selectedObject);
+            deselectCurrent();
+            updateMetrics();
+        }
+        function onKeyDown(e) {
+            if (e.key === 'Escape') { closeExportModal(); return; }
+            if (!state.selectedObject) return;
+            if (e.key === 'r' || e.key === 'R') rotateSelected();
+            else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); }
+        }
+        function setCameraMode(mode) {
+            state.cameraMode = mode;
+            const base = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all';
+            const btn3D = document.getElementById('btnView3D');
+            const btn2D = document.getElementById('btnView2D');
+            if (mode === '2D') {
+                btn3D.className = base + ' text-charcoal/60 hover:text-charcoal';
+                btn2D.className = base + ' bg-white text-charcoal shadow-sm';
+                camera.position.set(0, 30, 0.001);
+                controls.target.set(0, 0, 0);
+                controls.enableRotate = false;
+            } else {
+                btn2D.className = base + ' text-charcoal/60 hover:text-charcoal';
+                btn3D.className = base + ' bg-white text-charcoal shadow-sm';
+                controls.enableRotate = true;
+                camera.position.set(15, 18, 14);
+                controls.target.set(0, 0, 0);
+            }
+        }
+        function resetCamera() {
+            if (state.cameraMode === '2D') setCameraMode('3D');
+            else {
+                camera.position.set(15, 18, 14);
+                controls.target.set(0, 0, 0);
+            }
+        }
+        function openExportModal() {
+            populateExportSpecs();
+            render2DPlan();
+            const sheet = document.getElementById('specSheetPrintArea');
+            sheet.classList.remove('spec-animating');
+            void sheet.offsetWidth;
+            sheet.classList.add('spec-animating');
+            const modal = document.getElementById('exportModal');
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => modal.classList.remove('opacity-0'));
+        }
+        function closeExportModal() {
+            const modal = document.getElementById('exportModal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+        function populateExportSpecs() {
+            let desks = 0, specialDesks = 0, chairs = 0, screens = 0;
+            state.objects.forEach(o => {
+                const t = o.userData.type;
+                if (t === 'deskGroup') {
+                    const title = o.userData.title || '';
+                    if (title.includes('VIP') || title.includes('ประธาน') || title.includes('ผู้สอน')) specialDesks++;
+                    else desks++;
+                } else if (t === 'chair') chairs++;
+                else if (t === 'screen') screens++;
+            });
+            const totalSeats = (desks + specialDesks) * 2 + chairs;
+            const posLabels = {
+                left: 'ผนังด้านซ้าย (Left Wall)',
+                top: 'ผนังด้านบน (Top Wall)',
+                right: 'ผนังด้านขวา (Right Wall)',
+                bottom: 'ผนังด้านล่าง (Glass Wall)'
+            };
+            const shortPos = { left: 'ผนังซ้าย', top: 'ผนังบน', right: 'ผนังขวา', bottom: 'ผนังล่าง' };
+            const area = (config.roomWidth * config.roomLength).toFixed(1);
+            document.getElementById('exportRoomDim').textContent = `${config.roomWidth}m × ${config.roomLength}m (${area} m²)`;
+            document.getElementById('exportCapacity').textContent = `${totalSeats} ที่นั่ง`;
+            document.getElementById('exportScreenPos').textContent = posLabels[state.screenWall] || '—';
+            document.getElementById('exportSubtitle').textContent =
+                `ผังห้องประชุม ${config.roomWidth}m × ${config.roomLength}m พร้อมโต๊ะ 180×75 ซม. และจอ 86 นิ้ว (${shortPos[state.screenWall] || ''})`;
+            document.getElementById('exportCanvasFooter').textContent = `ห้อง ${config.roomWidth}m × ${config.roomLength}m (${area} m²) • เส้นกริด 1 เมตร`;
+            const rows = [];
+            if (desks > 0) rows.push(['ชุดโต๊ะคู่สัมมนา 180×75 ซม.', '1.80 × 0.75 ม.', desks + ' ชุด', (desks * 2) + ' ที่นั่ง']);
+            if (specialDesks > 0) rows.push(['โต๊ะประธาน / โต๊ะผู้สอน VIP', '1.80 × 0.75 ม.', specialDesks + ' ชุด', (specialDesks * 2) + ' ที่นั่ง']);
+            if (chairs > 0) rows.push(['เก้าอี้สัมมนาเดี่ยว', '0.45 × 0.45 ม.', chairs + ' ตัว', chairs + ' ที่นั่ง']);
+            if (screens > 0) rows.push(['จออินเทอร์แอกทีฟ 86 นิ้ว', '195.7 × 10.3 ซม.', screens + ' เครื่อง', '—']);
+            document.getElementById('exportTableBody').innerHTML = rows.map(r => `
+                <tr>
+                    <td class="p-2">${r[0]}</td>
+                    <td class="p-2 text-center font-mono">${r[1]}</td>
+                    <td class="p-2 text-center font-mono">${r[2]}</td>
+                    <td class="p-2 text-right font-mono font-bold">${r[3]}</td>
+                </tr>`).join('') ||
+                '<tr><td class="p-2 text-charcoal/50" colspan="4">ไม่มีเฟอร์นิเจอร์ในผัง</td></tr>';
+        }
+        function confirmDownloadPDF() {
+            try {
+                const link = document.createElement('a');
+                link.download = `floorplan-${config.roomWidth}x${config.roomLength}.png`;
+                link.href = document.getElementById('export2DPlanCanvas').toDataURL('image/png');
+                link.click();
+            } catch (err) { }
+            closeExportModal();
+        }
+        function render2DPlan() {
+            const canvas = document.getElementById('export2DPlanCanvas');
+            if (!canvas) return;
+            const S = 32;
+            const W = config.roomWidth;
+            const L = config.roomLength;
+            const M = 64;
+            canvas.width = W * S + M * 2;
+            canvas.height = L * S + M * 2;
+            const ctx = canvas.getContext('2d');
+            const px = x => M + (x + W / 2) * S;
+            const pz = z => M + (z + L / 2) * S;
+            const line = (x1, y1, x2, y2) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); };
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#C4C2C0';
+            ctx.fillRect(px(-W / 2), pz(-L / 2), W * S, L * S);
+            ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+            ctx.lineWidth = 1;
+            for (let gx = 1; gx < W; gx++) line(px(-W / 2 + gx), pz(-L / 2), px(-W / 2 + gx), pz(L / 2));
+            for (let gz = 1; gz < L; gz++) line(px(-W / 2), pz(-L / 2 + gz), px(W / 2), pz(-L / 2 + gz));
+            ctx.fillStyle = 'rgba(16,185,129,0.30)';
+            ctx.fillRect(px(-W / 2), pz(-L / 2), 2 * S, 2.4 * S);
+            ctx.strokeStyle = '#2B2A27';
+            ctx.lineCap = 'butt';
+            ctx.lineWidth = 0.3 * S;
+            line(px(-W / 2), pz(-L / 2), px(-W / 2), pz(L / 2));
+            line(px(W / 2), pz(-L / 2), px(W / 2), pz(L / 2));
+            line(px(-W / 2 + 2), pz(-L / 2), px(W / 2), pz(-L / 2));
+            ctx.lineWidth = 2;
+            line(px(-W / 2 + 2), pz(-L / 2), px(-W / 2 + 2), pz(-L / 2 + 1.8));
+            ctx.setLineDash([4, 3]);
+            ctx.beginPath();
+            ctx.arc(px(-W / 2 + 2), pz(-L / 2), 1.8 * S, Math.PI / 2, Math.PI);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.strokeStyle = '#2563EB';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 5]);
+            line(px(-W / 2), pz(L / 2), px(W / 2), pz(L / 2));
+            ctx.setLineDash([]);
+            [[-W / 2 + 0.4, -L / 2 + 0.4], [W / 2 - 0.4, -L / 2 + 0.4],
+             [-W / 2 + 0.4, L / 2 - 0.4], [W / 2 - 0.4, L / 2 - 0.4]].forEach(([cx, cz]) => {
+                ctx.fillStyle = '#9D9B99';
+                ctx.strokeStyle = '#2B2A27';
+                ctx.lineWidth = 1.5;
+                ctx.fillRect(px(cx - 0.4), pz(cz - 0.4), 0.8 * S, 0.8 * S);
+                ctx.strokeRect(px(cx - 0.4), pz(cz - 0.4), 0.8 * S, 0.8 * S);
+            });
+            const drawDesk = (obj) => {
+                const title = obj.userData.title || '';
+                const vip = title.includes('VIP') || title.includes('ประธาน') || title.includes('ผู้สอน');
+                ctx.save();
+                ctx.translate(px(obj.position.x), pz(obj.position.z));
+                ctx.rotate(-obj.rotation.y);
+                // ท็อปโต๊ะ
+                ctx.fillStyle = '#FFDBB0';
+                ctx.strokeStyle = '#C88A3C';
+                ctx.lineWidth = 1.4;
+                ctx.fillRect(-config.deskWidth / 2 * S, (0.10 - config.deskDepth / 2) * S, config.deskWidth * S, config.deskDepth * S);
+                ctx.strokeRect(-config.deskWidth / 2 * S, (0.10 - config.deskDepth / 2) * S, config.deskWidth * S, config.deskDepth * S);
+                // เก้าอี้ 2 ตัว
+                const cz = -0.50 * S;
+                [-0.45, 0.45].forEach(cx => {
+                    ctx.fillStyle = vip ? '#D97706' : '#3B82F6';
+                    ctx.strokeStyle = vip ? '#92400E' : '#1E40AF';
+                    ctx.lineWidth = 1.1;
+                    ctx.fillRect(cx * S - 0.22 * S, cz - 0.22 * S, 0.44 * S, 0.44 * S);
+                    ctx.strokeRect(cx * S - 0.22 * S, cz - 0.22 * S, 0.44 * S, 0.44 * S);
+                    ctx.fillStyle = vip ? '#B45309' : '#1E3A8A';
+                    ctx.fillRect(cx * S - 0.21 * S, cz - 0.20 * S, 0.42 * S, 0.07 * S);
+                });
+                ctx.restore();
+            };
+            const drawChair = (obj) => {
+                ctx.save();
+                ctx.translate(px(obj.position.x), pz(obj.position.z));
+                ctx.rotate(-obj.rotation.y);
+                ctx.fillStyle = '#3B82F6';
+                ctx.strokeStyle = '#1E40AF';
+                ctx.lineWidth = 1.1;
+                ctx.fillRect(-0.22 * S, -0.22 * S, 0.44 * S, 0.44 * S);
+                ctx.strokeRect(-0.22 * S, -0.22 * S, 0.44 * S, 0.44 * S);
+                ctx.fillStyle = '#1E3A8A';
+                ctx.fillRect(-0.21 * S, -0.20 * S, 0.42 * S, 0.07 * S);
+                ctx.restore();
+            };
+            const drawScreen = (obj) => {
+                ctx.save();
+                ctx.translate(px(obj.position.x), pz(obj.position.z));
+                ctx.rotate(-obj.rotation.y);
+                ctx.fillStyle = '#4B5563';
+                ctx.strokeStyle = '#111827';
+                ctx.lineWidth = 1.1;
+                ctx.fillRect(-0.9 * S, -0.425 * S, 1.8 * S, 0.85 * S);
+                ctx.strokeRect(-0.9 * S, -0.425 * S, 1.8 * S, 0.85 * S);
+                ctx.fillStyle = '#111827';
+                ctx.fillRect(-config.screenWidth / 2 * S, -config.screenThick / 2 * S, config.screenWidth * S, config.screenThick * S);
+                ctx.fillStyle = '#2563EB';
+                ctx.fillRect(-config.screenWidth / 2 * S, config.screenThick / 2 * S - 3, config.screenWidth * S, 3);
+                ctx.restore();
+            };
+            state.objects.forEach(obj => {
+                const t = obj.userData.type;
+                if (t === 'deskGroup') drawDesk(obj);
+                else if (t === 'chair') drawChair(obj);
+                else if (t === 'screen') drawScreen(obj);
+            });
+            ctx.textAlign = 'center';
+            ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
+            ctx.fillStyle = '#065F46';
+            ctx.fillText('ประตูทางเข้า / EXIT', px(-W / 2 + 1), pz(-L / 2 + 3.2));
+            ctx.fillStyle = '#1D4ED8';
+            ctx.fillText('ผนังกระจก (Glass Curtain Wall)', px(0), pz(L / 2 - 0.8));
+            const scr = state.objects.find(o => o.userData.type === 'screen');
+            if (scr) {
+                const v = new THREE.Vector3(-scr.position.x, 0, -scr.position.z);
+                if (v.length() > 0.01) {
+                    v.normalize();
+                    ctx.fillStyle = '#111827';
+                    ctx.fillText('จอ 86" (195.7 ซม.)', px(scr.position.x + v.x), pz(scr.position.z + v.z));
+                }
+            }
+            ctx.strokeStyle = '#18181B';
+            ctx.fillStyle = '#18181B';
+            ctx.lineWidth = 1;
+            ctx.font = 'bold 12px "Space Grotesk", monospace';
+            const yTop = M - 26;
+            line(px(-W / 2), yTop, px(W / 2), yTop);
+            [px(-W / 2), px(W / 2)].forEach(x => line(x, yTop - 5, x, yTop + 5));
+            ctx.fillText(config.roomWidth.toFixed(2) + ' m.', px(0), yTop - 7);
+            const xRight = px(W / 2) + 26;
+            line(xRight, pz(-L / 2), xRight, pz(L / 2));
+            [pz(-L / 2), pz(L / 2)].forEach(y => line(xRight - 5, y, xRight + 5, y));
+            ctx.save();
+            ctx.translate(xRight + 16, pz(0));
+            ctx.rotate(Math.PI / 2);
+            ctx.fillText(config.roomLength.toFixed(2) + ' m.', 0, 0);
+            ctx.restore();
+            const ly = canvas.height - 26;
+            let lx = M;
+            ctx.font = '10px "Plus Jakarta Sans", sans-serif';
+            ctx.textAlign = 'left';
+            [['#FFDBB0', 'โต๊ะ 180×75 ซม.'], ['#D97706', 'โต๊ะประธาน/ผู้สอน'], ['#3B82F6', 'เก้าอี้'], ['#111827', 'จอ 86"'],
+             ['#2B2A27', 'ผนัง/เสา'], ['#2563EB', 'ผนังกระจก']].forEach(([c, label]) => {
+                ctx.fillStyle = c;
+                ctx.fillRect(lx, ly - 9, 12, 12);
+                ctx.strokeStyle = '#6B7280';
+                ctx.lineWidth = 0.8;
+                ctx.strokeRect(lx, ly - 9, 12, 12);
+                ctx.fillStyle = '#18181B';
+                ctx.fillText(label, lx + 16, ly + 1);
+                lx += 16 + ctx.measureText(label).width + 16;
+            });
+        }
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        function onResize() {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+        document.getElementById('btnToggleWalls').addEventListener('click', toggleWallsVisibility);
+        document.getElementById('btnView3D').addEventListener('click', () => setCameraMode('3D'));
+        document.getElementById('btnView2D').addEventListener('click', () => setCameraMode('2D'));
+        document.getElementById('btnResetCam').addEventListener('click', resetCamera);
+        document.getElementById('btnExportPDF').addEventListener('click', openExportModal);
+        document.getElementById('btnCloseExportModal').addEventListener('click', closeExportModal);
+        document.getElementById('btnRotateSelected').addEventListener('click', rotateSelected);
+        document.getElementById('btnDeleteSelected').addEventListener('click', deleteSelected);
+        document.getElementById('tabTemplates').addEventListener('click', () => switchTab('templates'));
+        document.getElementById('tabCatalog').addEventListener('click', () => switchTab('catalog'));
+        document.getElementById('exportModal').addEventListener('click', (e) => {
+            if (e.target.id === 'exportModal') closeExportModal();
+        });
+        initThree();
+        lucide.createIcons();
+    </script>
+</body>
+</html>
