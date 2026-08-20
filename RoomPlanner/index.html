@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room 3  Space Planner — 11.5m × 15.0m</title>
+    <title>3D Room 3 Space Planner — 11.5m × 15.0m</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Three.js & OrbitControls -->
@@ -134,9 +134,21 @@
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <h1 class="font-bold text-sm tracking-tight text-charcoal">Room 3  Space Planner</h1>
+                        <h1 class="font-bold text-sm tracking-tight text-charcoal">Room 3 Space Planner</h1>
                     </div>
                 </div>
+            </div>
+            <div class="h-5 w-px bg-oatDark mx-1"></div>
+            <!-- UNDO / REDO CONTROLS -->
+            <div class="flex items-center bg-oat/70 p-1 rounded-xl border border-oatDark">
+                <button id="btnUndo" title="ย้อนกลับ (Ctrl+Z)" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-charcoal/70 hover:text-charcoal hover:bg-white transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-charcoal/70">
+                    <i data-lucide="undo-2" class="w-3.5 h-3.5"></i>
+                    <span>Undo</span>
+                </button>
+                <button id="btnRedo" title="ทำซ้ำ (Ctrl+Y)" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-charcoal/70 hover:text-charcoal hover:bg-white transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-charcoal/70">
+                    <i data-lucide="redo-2" class="w-3.5 h-3.5"></i>
+                    <span>Redo</span>
+                </button>
             </div>
             <div class="h-5 w-px bg-oatDark mx-1"></div>
             <div class="flex items-center gap-1.5 bg-oat/70 p-1 rounded-xl border border-oatDark">
@@ -335,6 +347,11 @@
                     <span class="w-3.5 h-3.5 rounded-full border border-charcoal/40 shadow-sm" style="background:#FFDBB0;"></span>
                     <span>โต๊ะ: <strong>#FFDBB0</strong></span>
                 </div>
+                <div
+                    class="glass-panel px-3 py-1.5 rounded-lg text-[11px] font-mono text-charcoal/70 flex items-center gap-2">
+                    <i data-lucide="move" class="w-3.5 h-3.5 text-blue-600"></i>
+                    <span>คลิกค้างแล้วลากเพื่อ<strong>ย้ายตำแหน่ง</strong> | <strong>Ctrl+Z</strong> เพื่อย้อนกลับ</span>
+                </div>
             </div>
             <div id="selectionGizmoBar"
                 class="absolute bottom-6 left-1/2 -translate-x-1/2 glass-panel p-2 rounded-2xl shadow-xl flex items-center gap-2 hidden transition-all z-20">
@@ -461,6 +478,18 @@
         let scene, camera, renderer, controls, raycaster, mouse;
         let roomMesh, floorMesh, gridHelper, pillarsGroup, exitGroup, glassWallGroup;
         const container = document.getElementById('threeCanvasContainer');
+        // Dragging & History State
+        const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const planeIntersect = new THREE.Vector3();
+        let isDragging = false;
+        let dragTarget = null;
+        let dragOffset = new THREE.Vector3();
+        let dragStartPos = null;
+        let hasMovedSignificantly = false;
+        const undoStack = [];
+        const redoStack = [];
+        const MAX_HISTORY = 40;
+        let isPerformingHistoryAction = false;
         function initThree() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0xD8D3C5);
@@ -495,14 +524,96 @@
             raycaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
             buildRoomArchitecture();
-            applyLayout();
+            applyLayout(false);
+            recordState(); // Save initial state
             window.addEventListener('resize', onResize);
             container.addEventListener('pointerdown', onPointerDown);
-            container.addEventListener('pointermove', onPointerMove);
-            container.addEventListener('pointerup', onPointerUp);
+            window.addEventListener('pointermove', onPointerMove);
+            window.addEventListener('pointerup', onPointerUp);
             window.addEventListener('keydown', onKeyDown);
             animate();
         }
+        /* ------------------ HISTORY (UNDO / REDO) ------------------ */
+        function captureCurrentSnapshot() {
+            return {
+                screenWall: state.screenWall,
+                currentTemplate: state.currentTemplate,
+                objects: state.objects.map(obj => ({
+                    type: obj.userData.type,
+                    title: obj.userData.title,
+                    x: obj.position.x,
+                    y: obj.position.y,
+                    z: obj.position.z,
+                    rotY: obj.rotation.y,
+                    isSpecial: obj.userData.isSpecial || false
+                }))
+            };
+        }
+        function recordState() {
+            if (isPerformingHistoryAction) return;
+            const snapshot = captureCurrentSnapshot();
+            undoStack.push(JSON.stringify(snapshot));
+            if (undoStack.length > MAX_HISTORY) undoStack.shift();
+            redoStack.length = 0; // Clear redo on new action
+            updateUndoRedoButtons();
+        }
+        function restoreSnapshot(snapshotJson) {
+            isPerformingHistoryAction = true;
+            const data = JSON.parse(snapshotJson);
+            
+            clearAllObjects();
+            state.screenWall = data.screenWall;
+            state.currentTemplate = data.currentTemplate;
+            // Sync Wall Buttons
+            ['left', 'top', 'right', 'bottom'].forEach(w => {
+                const btn = document.getElementById('btnWall' + w.charAt(0).toUpperCase() + w.slice(1));
+                if (btn) btn.classList.toggle('active', w === data.screenWall);
+            });
+            const labels = {
+                left: 'ผนังด้านซ้าย (Left Wall)',
+                top: 'ผนังด้านบน (Top Wall)',
+                right: 'ผนังด้านขวา (Right Wall)',
+                bottom: 'ผนังด้านล่าง (Bottom Wall)'
+            };
+            document.getElementById('statusScreenWall').textContent = labels[data.screenWall] || '';
+            // Restore Objects
+            data.objects.forEach(item => {
+                let mesh;
+                if (item.type === 'deskGroup') {
+                    mesh = createDualDeskCluster(item.isSpecial, item.title);
+                } else if (item.type === 'chair') {
+                    mesh = createChair();
+                } else if (item.type === 'screen') {
+                    mesh = createMobileScreen();
+                }
+                if (mesh) {
+                    addObject(mesh, item.x, item.z, item.rotY);
+                }
+            });
+            updateMetrics();
+            isPerformingHistoryAction = false;
+            updateUndoRedoButtons();
+        }
+        function undo() {
+            if (undoStack.length <= 1) return;
+            const current = undoStack.pop();
+            redoStack.push(current);
+            const prev = undoStack[undoStack.length - 1];
+            restoreSnapshot(prev);
+        }
+        function redo() {
+            if (redoStack.length === 0) return;
+            const next = redoStack.pop();
+            undoStack.push(next);
+            restoreSnapshot(next);
+        }
+        function updateUndoRedoButtons() {
+            const btnUndo = document.getElementById('btnUndo');
+            const btnRedo = document.getElementById('btnRedo');
+            if (btnUndo) btnUndo.disabled = undoStack.length <= 1;
+            if (btnRedo) btnRedo.disabled = redoStack.length === 0;
+        }
+        /* ------------------ ARCHITECTURE ------------------ */
         function buildRoomArchitecture() {
             if (roomMesh) scene.remove(roomMesh);
             if (floorMesh) scene.remove(floorMesh);
@@ -676,6 +787,7 @@
             const group = new THREE.Group();
             group.userData = {
                 type: 'deskGroup',
+                isSpecial: isSpecial,
                 title: specialTitle || (isSpecial ? 'โต๊ะประธาน VIP 180×75 ซม.' : 'ชุดโต๊ะคู่ 180×75 ซม.')
             };
             const woodMat = new THREE.MeshStandardMaterial({
@@ -753,12 +865,12 @@
             state.objects.push(mesh);
             return mesh;
         }
-        function applyLayout() {
+        function applyLayout(shouldRecord = true) {
             clearAllObjects();
             const W = config.roomWidth;
             const L = config.roomLength;
             const wall = state.screenWall;
-            // วางจอ 86 นิ้ว
+            
             const screen = createMobileScreen();
             if (wall === 'top') {
                 addObject(screen, 0, -L / 2 + 1.2, 0);
@@ -777,21 +889,16 @@
                 buildExplicitTheater(wall);
             }
             updateMetrics();
+            if (shouldRecord) recordState();
         }
-        /**
-         * 🎯 ผัง U-Shape (17 โต๊ะ / 34 ที่นั่ง)
-         */
         function buildExplicitUShape(wall) {
             const items = [];
             const stepU = 1.90;
-            // ปีกซ้าย 6 โต๊ะ (2 แถว: 3 - 3)
             [-1, 0, 1].forEach(i => items.push({ u: i * stepU, v: -1.9, type: 'left' }));
             [-1, 0, 1].forEach(i => items.push({ u: i * stepU, v: -3.4, type: 'left' }));
-            // ปีกขวา 10 โต๊ะ (3 แถว: 3 - 3 - 4)
             [-1, 0, 1].forEach(i => items.push({ u: i * stepU, v: 1.9, type: 'right' }));
             [-1, 0, 1].forEach(i => items.push({ u: i * stepU, v: 3.4, type: 'right' }));
             [-1.5, -0.5, 0.5, 1.5].forEach(i => items.push({ u: i * stepU, v: 4.8, type: 'right' }));
-            // ประธาน VIP 1 โต๊ะ
             items.push({ u: 3.4, v: 0.0, type: 'chairman' });
             items.forEach(item => {
                 let x = 0, z = 0, rotY = 0;
@@ -821,26 +928,15 @@
                 addObject(desk, x, z, rotY);
             });
         }
-        /**
-         * 🎯 ผังอบรมสัมมนา Classroom (17 โต๊ะ / 34 ที่นั่ง):
-         * - เว้นช่องทางเดินกลาง (Aisle) กว้าง 1.50m และเว้นช่องระหว่างโต๊ะข้างละ 0.60m
-         * - ผู้อบรม 4 แถว แถวละ 4 โต๊ะ = 16 โต๊ะ
-         * - 1 โต๊ะผู้สอน อยู่ด้านหน้าฝั่งซ้ายของผู้อบรม หันหน้าเข้าหาผู้อบรม
-         */
         function buildExplicitClassroom(wall) {
             const items = [];
-            // ผู้อบรม 4 แถวแนวลึก (u)
             const rowsU = [-1.5, 0.5, 2.2, 4];
-            
-            // จัด 4 คอลัมน์ (v) โดยเว้นทางเดินกลางกว้าง 1.5m และเว้นช่องโต๊ะข้าง 0.60m
-            // ฝั่งซ้าย: v = -3.55 (โต๊ะ 1), v = -1.55 (โต๊ะ 2) | [ทางเดินกลาง 1.5m] | ฝั่งขวา: v = +1.55 (โต๊ะ 3), v = +3.55 (โต๊ะ 4)
             const colsV = [-3.65, -1.55, 1.55, 3.65];
             rowsU.forEach(u => {
                 colsV.forEach(v => {
                     items.push({ u, v, type: 'student' });
                 });
             });
-            // โต๊ะผู้สอน 1 โต๊ะ: อยู่ข้างหน้า (u = -3.2) ฝั่งซ้ายของผู้อบรม (v = -2.55)
             items.push({ u: -3.2, v: 3.25, type: 'trainer' });
             items.forEach(item => {
                 let x = 0, z = 0, rotY = 0;
@@ -862,14 +958,10 @@
                 addObject(desk, x, z, rotY);
             });
         }
-        /**
-         * 🎯 ผังบรรยายล้วน Theater (60 ที่นั่ง):
-         * - 6 แถว แถวละ 10 ตัว (ซ้าย 5 ตัว • ทางเดินกลาง • ขวา 5 ตัว)
-         */
         function buildExplicitTheater(wall) {
-            const rowsU = [-2.5, -1.2, -0.1, 1.1, 2.4, 3.7]; // 6 แถว
-            const leftWingV = [-5.0, -4.0, -3.0, -2.0, -1.0]; // ซ้าย 5 ตัว
-            const rightWingV = [1.0, 2.0, 3.0, 4.0, 5.0];    // ขวา 5 ตัว
+            const rowsU = [-2.5, -1.2, -0.1, 1.1, 2.4, 3.7];
+            const leftWingV = [-5.0, -4.0, -3.0, -2.0, -1.0];
+            const rightWingV = [1.0, 2.0, 3.0, 4.0, 5.0];
             const colsV = [...leftWingV, ...rightWingV];
             rowsU.forEach(u => {
                 colsV.forEach(v => {
@@ -915,7 +1007,7 @@
                 bottom: 'ผนังด้านล่าง (Bottom Wall)'
             };
             document.getElementById('statusScreenWall').textContent = labels[wall];
-            applyLayout();
+            applyLayout(true);
         }
         function selectTemplate(t) {
             state.currentTemplate = t;
@@ -934,7 +1026,7 @@
                 empty: 'Open Space'
             };
             document.getElementById('badgeTarget').textContent = badges[t] || 'Custom';
-            applyLayout();
+            applyLayout(true);
         }
         function spawnItem(type) {
             let mesh;
@@ -947,6 +1039,7 @@
             addObject(mesh, spawnX, spawnZ, 0);
             selectObject(mesh);
             updateMetrics();
+            recordState();
         }
         function switchTab(tab) {
             const isTemplates = tab === 'templates';
@@ -959,32 +1052,92 @@
                 ? 'py-1.5 rounded-md bg-white font-bold text-charcoal shadow-sm'
                 : 'py-1.5 rounded-md text-charcoal/60 hover:text-charcoal';
         }
+        /* ------------------ INTERACTION & DRAGGING ------------------ */
         let pointerDownPos = null;
-        function onPointerDown(e) {
-            pointerDownPos = { x: e.clientX, y: e.clientY };
-        }
-        function onPointerMove(e) { }
-        function onPointerUp(e) {
-            if (!pointerDownPos) return;
-            const dx = e.clientX - pointerDownPos.x;
-            const dy = e.clientY - pointerDownPos.y;
-            pointerDownPos = null;
-            if (Math.sqrt(dx * dx + dy * dy) > 6) return;
+        function updateMouseCoords(e) {
             const rect = renderer.domElement.getBoundingClientRect();
             mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
             mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        }
+        function onPointerDown(e) {
+            if (e.button !== 0) return; // Only left click
+            pointerDownPos = { x: e.clientX, y: e.clientY };
+            updateMouseCoords(e);
             raycaster.setFromCamera(mouse, camera);
+            
             const hits = raycaster.intersectObjects(state.objects, true);
-            if (hits.length) {
+            if (hits.length > 0) {
                 let node = hits[0].object;
                 while (node && !state.objects.includes(node)) node = node.parent;
-                if (node) selectObject(node);
-                else deselectCurrent();
-            } else {
-                deselectCurrent();
+                if (node) {
+                    dragTarget = node;
+                    selectObject(node);
+                    
+                    // Intersect with ground plane to get offset
+                    if (raycaster.ray.intersectPlane(floorPlane, planeIntersect)) {
+                        dragOffset.copy(planeIntersect).sub(dragTarget.position);
+                        dragStartPos = dragTarget.position.clone();
+                    }
+                    isDragging = true;
+                    hasMovedSignificantly = false;
+                    controls.enabled = false; // Disable orbit while moving item
+                }
+            }
+        }
+        function onPointerMove(e) {
+            if (isDragging && dragTarget) {
+                updateMouseCoords(e);
+                raycaster.setFromCamera(mouse, camera);
+                if (raycaster.ray.intersectPlane(floorPlane, planeIntersect)) {
+                    const targetX = planeIntersect.x - dragOffset.x;
+                    const targetZ = planeIntersect.z - dragOffset.z;
+                    
+                    // Clamp inside room
+                    const halfW = (config.roomWidth / 2) - 0.4;
+                    const halfL = (config.roomLength / 2) - 0.4;
+                    
+                    dragTarget.position.x = Math.max(-halfW, Math.min(halfW, targetX));
+                    dragTarget.position.z = Math.max(-halfL, Math.min(halfL, targetZ));
+                    
+                    if (dragStartPos && dragStartPos.distanceTo(dragTarget.position) > 0.08) {
+                        hasMovedSignificantly = true;
+                    }
+                }
+            }
+        }
+        function onPointerUp(e) {
+            if (isDragging) {
+                isDragging = false;
+                controls.enabled = true;
+                if (hasMovedSignificantly) {
+                    recordState();
+                }
+                dragTarget = null;
+                dragStartPos = null;
+                pointerDownPos = null;
+                return;
+            }
+            if (pointerDownPos) {
+                const dx = e.clientX - pointerDownPos.x;
+                const dy = e.clientY - pointerDownPos.y;
+                pointerDownPos = null;
+                if (Math.sqrt(dx * dx + dy * dy) < 6) {
+                    updateMouseCoords(e);
+                    raycaster.setFromCamera(mouse, camera);
+                    const hits = raycaster.intersectObjects(state.objects, true);
+                    if (hits.length) {
+                        let node = hits[0].object;
+                        while (node && !state.objects.includes(node)) node = node.parent;
+                        if (node) selectObject(node);
+                        else deselectCurrent();
+                    } else {
+                        deselectCurrent();
+                    }
+                }
             }
         }
         function selectObject(obj) {
+            if (state.selectedObject === obj) return;
             deselectCurrent(false);
             state.selectedObject = obj;
             obj.traverse(child => {
@@ -1013,7 +1166,10 @@
             if (updateUI) document.getElementById('selectionGizmoBar').classList.add('hidden');
         }
         function rotateSelected() {
-            if (state.selectedObject) state.selectedObject.rotation.y += Math.PI / 4;
+            if (state.selectedObject) {
+                state.selectedObject.rotation.y += Math.PI / 4;
+                recordState();
+            }
         }
         function deleteSelected() {
             if (!state.selectedObject) return;
@@ -1021,9 +1177,24 @@
             state.objects = state.objects.filter(o => o !== state.selectedObject);
             deselectCurrent();
             updateMetrics();
+            recordState();
         }
         function onKeyDown(e) {
             if (e.key === 'Escape') { closeExportModal(); return; }
+            
+            // Undo: Ctrl+Z or Cmd+Z
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+                e.preventDefault();
+                undo();
+                return;
+            }
+            // Redo: Ctrl+Y or Ctrl+Shift+Z
+            if (((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) ||
+                ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'z' || e.key === 'Z'))) {
+                e.preventDefault();
+                redo();
+                return;
+            }
             if (!state.selectedObject) return;
             if (e.key === 'r' || e.key === 'R') rotateSelected();
             else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); }
@@ -1174,13 +1345,11 @@
                 ctx.save();
                 ctx.translate(px(obj.position.x), pz(obj.position.z));
                 ctx.rotate(-obj.rotation.y);
-                // ท็อปโต๊ะ
                 ctx.fillStyle = '#FFDBB0';
                 ctx.strokeStyle = '#C88A3C';
                 ctx.lineWidth = 1.4;
                 ctx.fillRect(-config.deskWidth / 2 * S, (0.10 - config.deskDepth / 2) * S, config.deskWidth * S, config.deskDepth * S);
                 ctx.strokeRect(-config.deskWidth / 2 * S, (0.10 - config.deskDepth / 2) * S, config.deskWidth * S, config.deskDepth * S);
-                // เก้าอี้ 2 ตัว
                 const cz = -0.50 * S;
                 [-0.45, 0.45].forEach(cx => {
                     ctx.fillStyle = vip ? '#D97706' : '#3B82F6';
@@ -1284,6 +1453,8 @@
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
         }
+        document.getElementById('btnUndo').addEventListener('click', undo);
+        document.getElementById('btnRedo').addEventListener('click', redo);
         document.getElementById('btnToggleWalls').addEventListener('click', toggleWallsVisibility);
         document.getElementById('btnView3D').addEventListener('click', () => setCameraMode('3D'));
         document.getElementById('btnView2D').addEventListener('click', () => setCameraMode('2D'));
