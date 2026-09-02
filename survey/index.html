@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="th" class="scroll-smooth" style="font-size: 16px;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบประเมินความพึงพอใจ IT Help Desk - สำนักงาน กกพ.</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap"
+        rel="stylesheet">
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.82);
+            --glass-border: rgba(255, 255, 255, 0.95);
+            --glass-shine: rgba(255, 255, 255, 0.9);
+            --glass-shadow: rgba(15, 23, 42, 0.08);
+            --accent: #0284c7;
+            --accent-glow: rgba(2, 132, 199, 0.35);
+        }
+        * {
+            box-sizing: border-box;
+            transition: font-size 0.25s ease, line-height 0.25s ease;
+        }
+        body {
+            font-family: 'Prompt', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+        .bg-scene {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 40%, #eff6ff 70%, #fdf4ff 100%);
+        }
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(90px);
+            opacity: 0.65;
+            will-change: transform;
+            pointer-events: none;
+        }
+        .blob-1 {
+            width: 550px;
+            height: 550px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.4), rgba(186, 230, 253, 0.2), transparent 70%);
+            top: -10%;
+            left: -5%;
+            animation: blobFloat1 18s ease-in-out infinite alternate;
+        }
+        .blob-2 {
+            width: 650px;
+            height: 650px;
+            background: radial-gradient(circle, rgba(192, 132, 252, 0.35), rgba(233, 213, 255, 0.15), transparent 70%);
+            bottom: -15%;
+            right: -10%;
+            animation: blobFloat2 22s ease-in-out infinite alternate;
+        }
+        .blob-3 {
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(45, 212, 191, 0.3), rgba(204, 251, 241, 0.1), transparent 70%);
+            top: 45%;
+            left: 60%;
+            animation: blobFloat3 20s ease-in-out infinite alternate;
+        }
+        .blob-4 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(251, 191, 36, 0.25), rgba(254, 243, 199, 0.1), transparent 70%);
+            top: 15%;
+            right: 15%;
+            animation: blobFloat4 25s ease-in-out infinite alternate;
+        }
+        .blob-5 {
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(244, 114, 182, 0.25), rgba(252, 231, 243, 0.1), transparent 70%);
+            bottom: 20%;
+            left: 10%;
+            animation: blobFloat5 16s ease-in-out infinite alternate;
+        }
+        @keyframes blobFloat1 {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                transform: translate(80px, 60px) scale(1.1);
+            }
+        }
+        @keyframes blobFloat2 {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                transform: translate(-100px, -80px) scale(1.15);
+            }
+        }
+        @keyframes blobFloat3 {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                transform: translate(-120px, -60px) scale(1.08);
+            }
+        }
+        @keyframes blobFloat4 {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                transform: translate(-50px, 80px) scale(1.05);
+            }
+        }
+        @keyframes blobFloat5 {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                transform: translate(70px, -50px) scale(1.08);
+            }
+        }
+        .glass-card {
+            position: relative;
+            background: var(--glass-bg);
+            backdrop-filter: blur(28px) saturate(1.5);
+            -webkit-backdrop-filter: blur(28px) saturate(1.5);
+            border-radius: 28px;
+            box-shadow:
+                0 25px 60px -15px rgba(0, 0, 0, 0.08),
+                0 0 0 1px rgba(255, 255, 255, 0.9),
+                inset 0 2px 4px rgba(255, 255, 255, 0.9);
+            animation: cardEntrance 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes cardEntrance {
+            from {
+                opacity: 0;
+                transform: translateY(24px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 28px;
+            padding: 1.5px;
+            background: linear-gradient(135deg,
+                    rgba(56, 189, 248, 0.6),
+                    rgba(168, 85, 247, 0.4),
+                    rgba(45, 212, 191, 0.5),
+                    rgba(251, 191, 36, 0.4),
+                    rgba(56, 189, 248, 0.6));
+            background-size: 300% 300%;
+            animation: borderShimmer 10s ease infinite;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            z-index: 1;
+        }
+        @keyframes borderShimmer {
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+        .glass-card>* {
+            position: relative;
+            z-index: 2;
+        }
+        .progress-glow-bar {
+            background: linear-gradient(90deg, #0284c7, #8b5cf6, #10b981);
+            background-size: 200% 100%;
+            animation: gradientMove 3s linear infinite;
+            box-shadow: 0 0 12px rgba(2, 132, 199, 0.4);
+            transition: width 0.4s ease;
+        }
+        @keyframes gradientMove {
+            0% {
+                background-position: 100% 0%;
+            }
+            100% {
+                background-position: -100% 0%;
+            }
+        }
+        .font-btn {
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 0.825rem;
+            font-weight: 500;
+            color: #475569;
+            background: rgba(241, 245, 249, 0.8);
+            border: 1px solid #e2e8f0;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .font-btn:hover {
+            background: #ffffff;
+            color: #0284c7;
+            border-color: #38bdf8;
+            transform: translateY(-1px);
+        }
+        .font-btn.active {
+            background: linear-gradient(135deg, #0284c7, #6366f1);
+            color: #ffffff;
+            border-color: #0284c7;
+            box-shadow: 0 3px 10px rgba(2, 132, 199, 0.3);
+            font-weight: 600;
+        }
+        .reveal-item {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-item.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .glass-inner {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            border-radius: 18px;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+        }
+        .glass-inner:hover {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: rgba(2, 132, 199, 0.35);
+            box-shadow: 0 10px 25px rgba(2, 132, 199, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+            transform: translateY(-2px);
+        }
+        .rating-label {
+            position: relative;
+            border: 1px solid #e2e8f0;
+            background: rgba(255, 255, 255, 0.85);
+            color: #475569;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+        .rating-label:hover {
+            background: #f0f9ff;
+            border-color: #38bdf8;
+            color: #0284c7;
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
+        }
+        .rating-label:active {
+            transform: scale(0.95);
+        }
+        .rating-input:checked+label {
+            background: linear-gradient(135deg, #0284c7, #6366f1) !important;
+            color: #ffffff !important;
+            font-weight: 600;
+            border-color: #0284c7 !important;
+            box-shadow: 0 6px 18px rgba(2, 132, 199, 0.35);
+            transform: scale(1.05);
+            animation: springPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes springPop {
+            0% {
+                transform: scale(0.85);
+            }
+            60% {
+                transform: scale(1.12);
+            }
+            100% {
+                transform: scale(1.05);
+            }
+        }
+        .option-card {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        }
+        .option-card:hover {
+            background: #ffffff;
+            border-color: #38bdf8;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(2, 132, 199, 0.08);
+        }
+        .option-card:active {
+            transform: scale(0.98);
+        }
+        .option-card.selected {
+            background: linear-gradient(135deg, rgba(240, 249, 255, 0.95), rgba(245, 243, 255, 0.95));
+            border-color: #0284c7;
+            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.12);
+            transform: translateY(-1px);
+        }
+        .custom-radio,
+        .custom-check {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #cbd5e1;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: #ffffff;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+        }
+        .custom-check {
+            border-radius: 7px;
+        }
+        .option-card.selected .custom-radio,
+        .option-card.selected .custom-check {
+            border-color: var(--accent);
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+            animation: popCheck 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes popCheck {
+            0% {
+                transform: scale(0.6);
+            }
+            60% {
+                transform: scale(1.25);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        .option-card.selected .custom-radio::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: #ffffff;
+            border-radius: 50%;
+        }
+        .option-card.selected .custom-check::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 6px;
+            width: 5px;
+            height: 10px;
+            border: solid #ffffff;
+            border-width: 0 2.5px 2.5px 0;
+            transform: rotate(45deg);
+        }
+        .glass-input,
+        .glass-select,
+        .glass-textarea {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            padding: 12px 16px;
+            color: #0f172a;
+            font-family: 'Prompt', sans-serif;
+            font-size: 0.9rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+        .glass-input::placeholder,
+        .glass-textarea::placeholder {
+            color: #94a3b8;
+        }
+        .glass-input:focus,
+        .glass-select:focus,
+        .glass-textarea:focus {
+            border-color: #0284c7;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12);
+            transform: translateY(-1px);
+        }
+        .glass-select option {
+            background: #ffffff;
+            color: #0f172a;
+        }
+        .shimmer-text {
+            background: linear-gradient(90deg,
+                    #0f172a 0%,
+                    #0284c7 25%,
+                    #7c3aed 50%,
+                    #0284c7 75%,
+                    #0f172a 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: textShimmer 7s linear infinite;
+        }
+        @keyframes textShimmer {
+            to {
+                background-position: 200% center;
+            }
+        }
+        .btn-glass {
+            position: relative;
+            background: linear-gradient(135deg, #0284c7, #6366f1);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            color: #ffffff;
+            font-family: 'Prompt', sans-serif;
+            font-weight: 500;
+            border-radius: 18px;
+            padding: 16px 42px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(2, 132, 199, 0.25);
+        }
+        .btn-glass::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.35) 0%, transparent 60%);
+            opacity: 0;
+            transform: scale(0.5);
+            transition: transform 0.6s ease, opacity 0.6s ease;
+        }
+        .btn-glass:hover::before {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .btn-glass:hover {
+            box-shadow: 0 15px 35px rgba(2, 132, 199, 0.35), 0 5px 15px rgba(99, 102, 241, 0.2);
+            transform: translateY(-3px) scale(1.02);
+        }
+        .btn-glass:active {
+            transform: translateY(1px) scale(0.98);
+        }
+        .btn-glass:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .pulse-badge {
+            animation: pulseGlow 3s infinite ease-in-out;
+        }
+        @keyframes pulseGlow {
+            0%,
+            100% {
+                box-shadow: 0 0 8px rgba(2, 132, 199, 0.15);
+            }
+            50% {
+                box-shadow: 0 0 18px rgba(2, 132, 199, 0.35);
+            }
+        }
+        .toast {
+            position: fixed;
+            bottom: 36px;
+            left: 50%;
+            transform: translateX(-50%) translateY(120px) scale(0.9);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 16px 30px;
+            color: #0f172a;
+            font-size: 0.95rem;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+        }
+        .toast.error {
+            border-color: #fecdd3;
+            background: #fff1f2;
+            color: #be123c;
+        }
+        .toast.success {
+            border-color: #a7f3d0;
+            background: #f0fdf4;
+            color: #047857;
+        }
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        @media (max-width: 640px) {
+            .rating-label {
+                font-size: 0.72rem;
+                padding: 8px 2px;
+            }
+        }
+    </style>
+</head>
+<body class="py-6 md:py-12 px-4 selection:bg-sky-500 selection:text-white">
+    
+    <div class="bg-scene" aria-hidden="true">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+        <div class="blob blob-4"></div>
+        <div class="blob blob-5"></div>
+    </div>
+    <div class="relative z-10 max-w-4xl mx-auto">
+        
+        <div class="sticky top-3 z-40 mb-4 px-1">
+            <div
+                class="backdrop-blur-xl bg-white/85 border border-white/90 rounded-2xl p-2.5 md:p-3 shadow-xl flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5 flex-1 min-w-[200px]">
+                    <div class="flex items-center gap-2 pl-1.5 flex-shrink-0">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                        <span class="text-xs md:text-sm font-semibold text-slate-700 hidden sm:inline">ความคืบหน้า</span>
+                    </div>
+                    <div class="flex items-center gap-2.5 flex-1 max-w-xs md:max-w-sm">
+                        <div class="w-full bg-slate-200/80 rounded-full h-2.5 overflow-hidden p-0.5">
+                            <div id="surveyProgressBar" class="progress-glow-bar h-full rounded-full w-0"></div>
+                        </div>
+                        <span id="progressText" class="text-xs font-bold text-sky-600 min-w-[34px] text-right">0%</span>
+                    </div>
+                </div>
+                <div
+                    class="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-xl border border-slate-200/80 ml-auto">
+                    <span class="text-xs font-medium text-slate-500 px-1.5 flex items-center gap-1">
+                        <i data-lucide="type" class="w-3.5 h-3.5 text-slate-400"></i>
+                        <span class="hidden md:inline">ขนาดตัวอักษร:</span>
+                    </span>
+                    <button type="button" class="font-btn active" onclick="setFontSize(16, this)" title="ขนาดปกติ">A</button>
+                    <button type="button" class="font-btn" onclick="setFontSize(18, this)" title="ขนาดใหญ่">A+</button>
+                    <button type="button" class="font-btn" onclick="setFontSize(20, this)" title="ขนาดใหญ่พิเศษ">A++</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="glass-card">
+            <div class="p-6 md:p-10 pb-6 reveal-item">
+                <div
+                    class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-50 border border-sky-200 text-sky-700 font-medium text-xs mb-4 shadow-sm">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-sky-600"></i> สำนักงาน กกพ. (ERC)
+                </div>
+                <h1 class="shimmer-text text-2xl md:text-3xl lg:text-4xl font-bold leading-tight mb-3">
+                    แบบประเมินความพึงพอใจการให้บริการด้านเทคโนโลยีสารสนเทศ (IT Help Desk)
+                </h1>
+                <p class="text-slate-600 text-sm md:text-base font-normal">
+                    ฝ่ายเทคโนโลยีสารสนเทศและศูนย์ข้อมูลพลังงาน สำนักงาน กกพ.
+                </p>
+            </div>
+            <div class="px-6 md:px-10 pb-2 reveal-item">
+                <div
+                    class="p-4 md:p-5 rounded-2xl bg-sky-50/70 border border-sky-100 flex items-start gap-3.5 shadow-sm">
+                    <div class="p-2 rounded-xl bg-sky-500/10 text-sky-600 flex-shrink-0 mt-0.5">
+                        <i data-lucide="info" class="w-5 h-5"></i>
+                    </div>
+                    <p class="text-xs md:text-sm text-slate-700 leading-relaxed">
+                        <strong class="text-sky-800 font-semibold">คำชี้แจง:</strong>
+                        แบบประเมินผลฉบับนี้จัดทำขึ้นเพื่อวัดผลความพึงพอใจในการให้บริการช่วยเหลือด้านเทคโนโลยีสารสนเทศ
+                        (IT Support / Help Desk)
+                        แก่ผู้บริหารและเจ้าหน้าที่ของสำนักงาน กกพ. ทั้งส่วนกลางและส่วนภูมิภาค (สข. 1-13) ประจำปีงบประมาณ
+                        พ.ศ. 2569
+                        ฝ่าย ทศ. ขอขอบพระคุณในความร่วมมือตอบแบบประเมินนี้
+                        เพื่อนำไปยกระดับมาตรฐานการให้บริการอย่างต่อเนื่อง
+                    </p>
+                </div>
+            </div>
+            <form id="evaluationForm" class="p-6 md:p-10 space-y-9">
+                
+                <section class="space-y-6 reveal-item">
+                    <div class="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                    <div class="pt-2">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-3">
+                            <span class="pulse-badge w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center border border-sky-200 text-sky-600">
+                                <i data-lucide="user-check" class="w-5 h-5"></i>
+                            </span>
+                            ส่วนที่ 1: ข้อมูลทั่วไปเกี่ยวกับผู้รับบริการและลักษณะปัญหา
+                        </h2>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">ช่วงอายุ <span class="text-rose-500">*</span></label>
+                            <select name="age_range" required class="glass-select track-input">
+                                <option value="" disabled selected>-- เลือกช่วงอายุ --</option>
+                                <option value="ต่ำกว่า 25 ปี">ต่ำกว่า 25 ปี</option>
+                                <option value="25 - 35 ปี">25 - 35 ปี</option>
+                                <option value="36 - 45 ปี">36 - 45 ปี</option>
+                                <option value="46 - 55 ปี">46 - 55 ปี</option>
+                                <option value="มากกว่า 55 ปีขึ้นไป">มากกว่า 55 ปีขึ้นไป</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">สายงาน / สังกัด <span class="text-rose-500">*</span></label>
+                            <select name="department" required class="glass-select track-input">
+                                <option value="" disabled selected>-- เลือกสายงาน / สังกัด --</option>
+                                <option value="สายกำกับและตรวจสอบกิจการพลังงาน">สายกำกับและตรวจสอบกิจการพลังงาน</option>
+                                <option value="สายบริหารกองทุนพัฒนาไฟฟ้าและภูมิภาค">สายบริหารกองทุนพัฒนาไฟฟ้าและภูมิภาค</option>
+                                <option value="สายกฎหมายและบริหารงานองค์กร">สายกฎหมายและบริหารงานองค์กร</option>
+                                <option value="สายสำนักเลขาธิการ">สายสำนักเลขาธิการ</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-3">ช่องทางที่แจ้งใช้บริการ บ่อยที่สุด <span class="text-rose-500">*</span></label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="channelGroup">
+                            <div class="option-card p-4 flex items-center gap-3"
+                                onclick="selectRadio(this, 'contact_channel', 'แอปพลิเคชัน Line')">
+                                <div class="custom-radio"></div>
+                                <span class="text-sm font-medium text-slate-700">แอปพลิเคชัน Line</span>
+                                <input type="radio" name="contact_channel" value="แอปพลิเคชัน Line" required class="hidden track-input">
+                            </div>
+                            <div class="option-card p-4 flex items-center gap-3"
+                                onclick="selectRadio(this, 'contact_channel', 'โทรศัพท์ภายใน / โทรศัพท์มือถือ')">
+                                <div class="custom-radio"></div>
+                                <span class="text-sm font-medium text-slate-700">โทรศัพท์ภายใน / มือถือ</span>
+                                <input type="radio" name="contact_channel" value="โทรศัพท์ภายใน / โทรศัพท์มือถือ" class="hidden track-input">
+                            </div>
+                            <div class="option-card p-4 flex items-center gap-3"
+                                onclick="selectRadio(this, 'contact_channel', 'แจ้งเจ้าหน้าที่โดยตรง')">
+                                <div class="custom-radio"></div>
+                                <span class="text-sm font-medium text-slate-700">แจ้งเจ้าหน้าที่โดยตรง</span>
+                                <input type="radio" name="contact_channel" value="แจ้งเจ้าหน้าที่โดยตรง" class="hidden track-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">
+                            ลักษณะปัญหาที่แจ้งรับบริการ <span class="text-slate-500 text-xs font-normal">(เลือกได้มากกว่า 1 ข้อ)</span> <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 mt-3" id="issueGroup">
+                            <div class="option-card p-4 flex items-start gap-3.5" onclick="toggleCheck(this)">
+                                <div class="custom-check mt-0.5"></div>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-800">Software & Applications</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">ติดตั้งโปรแกรม, MS Office, ตั้งค่า
+                                        Outlook/Email, PDF, SSO</p>
+                                </div>
+                                <input type="checkbox" name="issue_type" value="Software & Applications" class="hidden track-input">
+                            </div>
+                            <div class="option-card p-4 flex items-start gap-3.5" onclick="toggleCheck(this)">
+                                <div class="custom-check mt-0.5"></div>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-800">Hardware & Devices</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">คอมพิวเตอร์เปิดไม่ติด, อุปกรณ์พกพาเสีย,
+                                        ต่อเครื่องพิมพ์, หูฟังลำโพง</p>
+                                </div>
+                                <input type="checkbox" name="issue_type" value="Hardware & Devices" class="hidden track-input">
+                            </div>
+                            <div class="option-card p-4 flex items-start gap-3.5" onclick="toggleCheck(this)">
+                                <div class="custom-check mt-0.5"></div>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-800">Network & Internet Connection</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">สัญญาณ Wi-Fi มีปัญหา, เชื่อมต่อ VPN ไม่ได้,
+                                        ระบบเน็ตล่ม</p>
+                                </div>
+                                <input type="checkbox" name="issue_type" value="Network & Internet Connection" class="hidden track-input">
+                            </div>
+                            <div class="option-card p-4 flex items-start gap-3.5" onclick="toggleCheck(this)">
+                                <div class="custom-check mt-0.5"></div>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-800">Meeting & Online Conferences</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">ช่วยดูห้องประชุม, เครื่องสำหรับใช้พรีเซนต์,
+                                        ดูแลระบบ Zoom / Teams</p>
+                                </div>
+                                <input type="checkbox" name="issue_type" value="Meeting & Online Conferences" class="hidden track-input">
+                            </div>
+                            <div class="option-card p-4 flex items-start gap-3.5" onclick="toggleCheck(this)">
+                                <div class="custom-check mt-0.5"></div>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-800">Server / Website & Face Scan</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">ระบบ Website ล่ม, สแกนหน้าไม่ขึ้น,
+                                        เช็กเวลา, อัปเดตเว็บ กกพ.</p>
+                                </div>
+                                <input type="checkbox" name="issue_type" value="Server / Website & Face Scan" class="hidden track-input">
+                            </div>
+                            <div class="option-card p-4 flex items-start gap-3.5" onclick="toggleCheck(this)">
+                                <div class="custom-check mt-0.5"></div>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-800">Digital Knowledge & AI Consult</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">ปรึกษาแนะนำการใช้โปรแกรม MS Office,
+                                        Copilot, AI Tools, NotebookLM</p>
+                                </div>
+                                <input type="checkbox" name="issue_type" value="Digital Knowledge & AI Consult" class="hidden track-input">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <section class="space-y-4">
+                    <div class="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                    <div class="pt-2 reveal-item">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-3">
+                            <span class="pulse-badge w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center border border-amber-200 text-amber-600">
+                                <i data-lucide="star" class="w-5 h-5"></i>
+                            </span>
+                            ส่วนที่ 2: การประเมินคะแนนความพึงพอใจการให้บริการ
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-2 ml-12">เกณฑ์คะแนน: 5 = ดีมาก, 4 = ดี, 3 = ปานกลาง, 2 =
+                            พอใช้, 1 = ปรับปรุง</p>
+                    </div>
+                    <div class="space-y-3.5" id="questionsContainer">
+                        
+                    </div>
+                </section>
+                
+                <section class="space-y-4 reveal-item">
+                    <div class="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                    <div class="pt-2">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-3">
+                            <span class="pulse-badge w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center border border-emerald-200 text-emerald-600">
+                                <i data-lucide="message-square" class="w-5 h-5"></i>
+                            </span>
+                            ส่วนที่ 3: ข้อเสนอแนะ หรือข้อคิดเห็นเพิ่มเติม
+                        </h2>
+                    </div>
+                    <textarea name="feedback" rows="4" placeholder="ระบุข้อเสนอแนะเพื่อการพัฒนาระบบและการให้บริการ..." class="glass-textarea"></textarea>
+                </section>
+                <div class="pt-4 text-center reveal-item">
+                    <button type="submit" id="submitBtn" class="btn-glass inline-flex items-center gap-3 group">
+                        <span id="btnIcon"><i data-lucide="send" class="w-5 h-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-0.5"></i></span>
+                        <span id="btnText" class="text-base font-semibold">ส่งแบบประเมินความพึงพอใจ</span>
+                    </button>
+                </div>
+            </form>
+            <div class="px-6 md:px-10 py-6 text-center reveal-item">
+                <div class="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent mb-5"></div>
+                <p class="text-xs text-slate-500">
+                    ฝ่ายงานขอขอบพระคุณทุกความคิดเห็นเพื่อการพัฒนาและยกระดับมาตรฐานการบริการที่ดียิ่งขึ้น</p>
+                <p class="text-xs text-sky-700 font-semibold mt-1">ฝ่ายเทคโนโลยีสารสนเทศและศูนย์ข้อมูลพลังงาน | สำนักงาน
+                    กกพ.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="statusModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div
+            class="glass-card max-w-md w-full p-6 md:p-8 text-center transform scale-95 transition-all duration-300 shadow-2xl border border-white/90 bg-white/95">
+            
+            <div id="modalIconContainer"
+                class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-sky-100 text-sky-600 shadow-inner">
+                <i id="modalIcon" data-lucide="loader-2" class="w-8 h-8 animate-spin text-sky-600"></i>
+            </div>
+            <h3 id="modalTitle" class="text-xl font-bold text-slate-800 mb-2">กำลังบันทึกข้อมูล...</h3>
+            <p id="modalDesc" class="text-xs md:text-sm text-slate-500 mb-6 leading-relaxed">
+                ระบบกำลังเชื่อมต่อและจัดเก็บข้อมูลลงฐานข้อมูล</p>
+            
+            <div class="mb-2">
+                <div class="w-full bg-slate-200/80 rounded-full h-3.5 overflow-hidden p-0.5 shadow-inner">
+                    <div id="modalProgressBar"
+                        class="progress-glow-bar h-full rounded-full w-0 transition-all duration-300"></div>
+                </div>
+            </div>
+            <div class="flex justify-between text-xs font-semibold text-slate-500 mb-6 px-1">
+                <span id="modalStatusText" class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span> กำลังนำส่งข้อมูล...
+                </span>
+                <span id="modalPercentText" class="text-sky-600 font-bold">0%</span>
+            </div>
+            
+            <button type="button" id="modalCloseBtn" class="hidden w-full btn-glass !py-3 text-sm font-semibold justify-center shadow-lg" onclick="closeModal()">
+                ตกลง / ปิดหน้าต่าง
+            </button>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast flex items-center gap-3">
+        <span id="toastIcon"></span>
+        <span id="toastMsg" class="font-medium"></span>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getDatabase, ref, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        
+        
+        
+        const firebaseConfig = {
+        apiKey: "AIzaSyCqhhYn3PX5mY3RXSrD1gSzG2kkSvAWM7I",
+        authDomain: "survey-22d38.firebaseapp.com",
+        databaseURL: "https://survey-22d38-default-rtdb.asia-southeast1.firebasedatabase.app/",
+        projectId: "survey-22d38",
+        storageBucket: "survey-22d38.firebasestorage.app",
+        messagingSenderId: "970824925652",
+        appId: "1:970824925652:web:3c1dbc8c11d73a73fd1641"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        
+        window.setFontSize = function(px, btn) {
+            document.documentElement.style.fontSize = px + 'px';
+            document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            localStorage.setItem('erc_survey_fontsize', px);
+        };
+        (function initFontSize() {
+            const savedSize = localStorage.getItem('erc_survey_fontsize');
+            if (savedSize) {
+                document.documentElement.style.fontSize = savedSize + 'px';
+                const buttons = document.querySelectorAll('.font-btn');
+                buttons.forEach(b => {
+                    if (
+                        (savedSize === '16' && b.innerText.trim() === 'A') ||
+                        (savedSize === '18' && b.innerText.trim() === 'A+') ||
+                        (savedSize === '20' && b.innerText.trim() === 'A++')
+                    ) {
+                        buttons.forEach(x => x.classList.remove('active'));
+                        b.classList.add('active');
+                    }
+                });
+            }
+        })();
+        
+        const questions = [
+            { q: '1. ช่องทางการติดต่อรับแจ้งสะดวกรวดเร็ว เข้าถึงง่ายทั้งส่วนกลางและเขต 13 เขต', desc: 'เช่น แจ้งทาง Line, โทรศัพท์ภายใน/มือถือ, Help Desk Web หรือประสานงานโดยตรง' },
+            { q: '2. ความเร็วในการรับเรื่องประสานงานและการตอบสนองเคสของเจ้าหน้าที่', desc: 'ความกระฉับกระเฉง รวดเร็ว และเอาใจใส่ทันทีที่ได้รับการติดต่อ' },
+            { q: '3. พฤติกรรมและการปฏิบัติตนของเจ้าหน้าที่ผู้ให้บริการ', desc: 'ความสุภาพเป็นกันเอง อัธยาศัยดี มีมนุษยสัมพันธ์ และยินดีช่วยเหลืออย่างเต็มใจ' },
+            { q: '4. ความเชี่ยวชาญ ความรู้ และความรอบรู้ทางเทคนิคของเจ้าหน้าที่', desc: 'สามารถวิเคราะห์และแนะนำวิธีแก้ปัญหาอย่างมีหลักการ ถูกต้อง และแม่นยำ' },
+            { q: '5. ความรวดเร็วและเวลาในการแก้ปัญหาสำเร็จลุล่วง (Response & Resolution Time)', desc: 'การแก้ปัญหาเสร็จสิ้นเร็วตามข้อตกลง SLA หรือตามมาตรฐาน' },
+            { q: '6. ผลสัมฤทธิ์ของระบบ/อุปกรณ์หลังการแก้ไข สามารถใช้งานได้ปกติ เสถียร และปลอดภัย', desc: 'คอมพิวเตอร์ อุปกรณ์ เน็ตเวิร์ก หรือเว็บไซต์ ใช้งานได้อย่างสมบูรณ์ ปลอดภัย' },
+            { q: '7. มีการอธิบาย แนะนำวิธีปฏิบัติ หรือให้ข้อมูลความรู้ เพื่อป้องกันไม่ให้เกิดปัญหาซ้ำ', desc: 'การแบ่งปันความรู้ (Knowledge Sharing) ช่วยให้สามารถช่วยเหลือตนเองเบื้องต้นได้' },
+            { q: '8. ภาพรวมความพึงพอใจต่อระบบงานและคุณภาพบริการไอทีสนับสนุนทั้งหมด', desc: 'ระดับความพึงพอใจโดยรวมต่อทีมสนับสนุนด้านไอที ฝ่ายเทคโนโลยีสารสนเทศฯ' }
+        ];
+        const ratingLabels = [
+            { val: 5, text: '5 (ดีมาก)' },
+            { val: 4, text: '4 (ดี)' },
+            { val: 3, text: '3 (ปานกลาง)' },
+            { val: 2, text: '2 (พอใช้)' },
+            { val: 1, text: '1 (ปรับปรุง)' }
+        ];
+        
+        const container = document.getElementById('questionsContainer');
+        questions.forEach((item, idx) => {
+            const qNum = idx + 1;
+            const card = document.createElement('div');
+            card.className = 'glass-inner p-4 md:p-5 reveal-item';
+            let ratingHTML = '';
+            ratingLabels.forEach(r => {
+                const id = `q${qNum}_${r.val}`;
+                ratingHTML += `
+                    <div>
+                        <input type="radio" id="${id}" name="q${qNum}" value="${r.val}" required class="hidden rating-input track-input" onchange="window.updateProgress()">
+                        <label for="${id}" class="rating-label py-2 text-center text-xs font-medium rounded-xl block cursor-pointer select-none">${r.text}</label>
+                    </div>
+                `;
+            });
+            card.innerHTML = `
+                <div class="mb-3">
+                    <p class="text-sm font-semibold text-slate-800 leading-snug">${item.q} <span class="text-rose-500">*</span></p>
+                    <p class="text-xs text-slate-500 mt-1">${item.desc}</p>
+                </div>
+                <div class="grid grid-cols-5 gap-2 max-w-md">
+                    ${ratingHTML}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+        window.selectRadio = function(card, name, value) {
+            const group = card.parentElement;
+            group.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            const radio = card.querySelector('input[type="radio"]');
+            radio.checked = true;
+            window.updateProgress();
+        };
+        window.toggleCheck = function(card) {
+            const cb = card.querySelector('input[type="checkbox"]');
+            cb.checked = !cb.checked;
+            card.classList.toggle('selected', cb.checked);
+            window.updateProgress();
+        };
+        window.updateProgress = function() {
+            let totalSteps = 11;
+            let completedSteps = 0;
+            if (document.querySelector('select[name="age_range"]').value) completedSteps++;
+            if (document.querySelector('select[name="department"]').value) completedSteps++;
+            if (document.querySelector('input[name="contact_channel"]:checked')) completedSteps++;
+            if (document.querySelectorAll('input[name="issue_type"]:checked').length > 0) completedSteps++;
+            for (let i = 1; i <= 8; i++) {
+                if (document.querySelector(`input[name="q${i}"]:checked`)) {
+                    completedSteps++;
+                }
+            }
+            const percent = Math.min(Math.round((completedSteps / totalSteps) * 100), 100);
+            document.getElementById('surveyProgressBar').style.width = percent + '%';
+            document.getElementById('progressText').innerText = percent + '%';
+        };
+        document.querySelectorAll('.track-input').forEach(el => {
+            el.addEventListener('input', window.updateProgress);
+            el.addEventListener('change', window.updateProgress);
+        });
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => {
+                        entry.target.classList.add('is-visible');
+                    }, 50);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal-item').forEach(el => observer.observe(el));
+        function showToast(message, type = 'error') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+            toastMsg.textContent = message;
+            toast.className = `toast ${type}`;
+            toastIcon.innerHTML = '<i data-lucide="alert-circle" class="w-5 h-5 text-rose-600"></i>';
+            lucide.createIcons();
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+        function triggerConfetti() {
+            const duration = 2.5 * 1000;
+            const end = Date.now() + duration;
+            (function frame() {
+                confetti({
+                    particleCount: 4,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#0284c7', '#8b5cf6', '#10b981', '#f59e0b']
+                });
+                confetti({
+                    particleCount: 4,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#0284c7', '#8b5cf6', '#10b981', '#f59e0b']
+                });
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+        
+        
+        
+        function openStatusModal() {
+            const modal = document.getElementById('statusModal');
+            
+            document.getElementById('modalProgressBar').style.width = '15%';
+            document.getElementById('modalPercentText').innerText = '15%';
+            document.getElementById('modalStatusText').innerHTML = '<span class="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span> กำลังส่งข้อมูล...';
+            document.getElementById('modalTitle').innerText = 'กำลังบันทึกข้อมูล...';
+            document.getElementById('modalDesc').innerText = 'ระบบกำลังเชื่อมต่อและจัดเก็บข้อมูลลงฐานข้อมูล';
+            document.getElementById('modalIconContainer').className = 'w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-sky-100 text-sky-600 shadow-inner';
+            document.getElementById('modalIconContainer').innerHTML = '<i data-lucide="loader-2" class="w-8 h-8 animate-spin text-sky-600"></i>';
+            document.getElementById('modalCloseBtn').classList.add('hidden');
+            document.getElementById('modalCloseBtn').classList.remove('inline-flex');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('.glass-card').classList.remove('scale-95');
+            modal.querySelector('.glass-card').classList.add('scale-100');
+            lucide.createIcons();
+        }
+        function setModalSuccess() {
+            document.getElementById('modalProgressBar').style.width = '100%';
+            document.getElementById('modalPercentText').innerText = '100%';
+            document.getElementById('modalStatusText').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500"></span> บันทึกสำเร็จแล้ว';
+            document.getElementById('modalTitle').innerText = 'บันทึกเรียบร้อยแล้ว!';
+            document.getElementById('modalDesc').innerText = 'ฝ่าย ทศ. ขอขอบพระคุณสำหรับความคิดเห็นเพื่อการพัฒนาบริการครับ';
+            
+            
+            document.getElementById('modalIconContainer').className = 'w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-emerald-100 text-emerald-600 shadow-lg animate-bounce';
+            document.getElementById('modalIconContainer').innerHTML = '<i data-lucide="check-circle" class="w-9 h-9 text-emerald-600"></i>';
+            
+            
+            document.getElementById('modalCloseBtn').classList.remove('hidden');
+            document.getElementById('modalCloseBtn').classList.add('inline-flex');
+            lucide.createIcons();
+            triggerConfetti();
+        }
+        window.closeModal = function() {
+            const modal = document.getElementById('statusModal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.glass-card').classList.remove('scale-100');
+            modal.querySelector('.glass-card').classList.add('scale-95');
+        };
+        
+        
+        
+        const form = document.getElementById('evaluationForm');
+        const submitBtn = document.getElementById('submitBtn');
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const checkedIssues = Array.from(document.querySelectorAll('input[name="issue_type"]:checked')).map(cb => cb.value);
+            if (checkedIssues.length === 0) {
+                showToast('กรุณาเลือกลักษณะปัญหาที่รับบริการอย่างน้อย 1 ข้อ');
+                return;
+            }
+            const ratings = {};
+            let totalScore = 0;
+            for (let i = 1; i <= 8; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                if (!selected) {
+                    showToast(`กรุณาตอบแบบประเมินข้อที่ ${i} ให้ครบถ้วน`);
+                    return;
+                }
+                const score = parseInt(selected.value, 10);
+                ratings[`q${i}`] = score;
+                totalScore += score;
+            }
+            const averageScore = Number((totalScore / 8).toFixed(2));
+            const payload = {
+                age_range: form.age_range.value,
+                department: form.department.value,
+                contact_channel: form.contact_channel.value,
+                issue_types: checkedIssues,
+                ratings: ratings,
+                average_score: averageScore,
+                feedback: form.feedback.value.trim(),
+                createdAt: serverTimestamp(),
+                createdAt_iso: new Date().toISOString()
+            };
+            
+            openStatusModal();
+            submitBtn.disabled = true;
+            try {
+                
+                setTimeout(() => {
+                    document.getElementById('modalProgressBar').style.width = '65%';
+                    document.getElementById('modalPercentText').innerText = '65%';
+                }, 300);
+                
+                const evaluationsRef = ref(db, 'it_helpdesk_evaluations');
+                await push(evaluationsRef, payload);
+                
+                setTimeout(() => {
+                    setModalSuccess();
+                    form.reset();
+                    document.querySelectorAll('.option-card.selected').forEach(c => c.classList.remove('selected'));
+                    window.updateProgress();
+                }, 700);
+            } catch (error) {
+                console.error("Realtime Database Error: ", error);
+                window.closeModal();
+                showToast('เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+        lucide.createIcons();
+        
+        (function createParticles() {
+            const scene = document.querySelector('.bg-scene');
+            const count = 30;
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                const size = Math.random() * 4 + 1.5;
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                const dur = Math.random() * 18 + 12;
+                const delay = Math.random() * -20;
+                const hue = Math.random() > 0.5 ? '2, 132, 199' : '139, 92, 246';
+                p.style.cssText = `
+                    width: ${size}px;
+                    height: ${size}px;
+                    left: ${x}%;
+                    top: ${y}%;
+                    background: radial-gradient(circle, rgba(${hue}, ${Math.random() * 0.4 + 0.2}), transparent 70%);
+                    animation: particleDrift ${dur}s ${delay}s ease-in-out infinite;
+                `;
+                scene.appendChild(p);
+            }
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes particleDrift {
+                    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+                    50% { transform: translate(${Math.random()*60-30}px, ${Math.random()*60-30}px) scale(1.3); opacity: 0.7; }
+                }
+            `;
+            document.head.appendChild(style);
+        })();
+        
+        let mouseX = 0, mouseY = 0;
+        document.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+            mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+            requestAnimationFrame(() => {
+                const blobs = document.querySelectorAll('.blob');
+                blobs.forEach((blob, i) => {
+                    const factor = (i + 1) * 6;
+                    blob.style.transform = `translate(${mouseX * factor}px, ${mouseY * factor}px)`;
+                });
+            });
+        });
+    </script>
+</body>
+</html>
