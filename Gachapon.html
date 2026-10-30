@@ -69,13 +69,8 @@
             align-items: center
         }
         @keyframes bg {
-            0%,
-            100% {
-                background-position: 0 50%
-            }
-            50% {
-                background-position: 100% 50%
-            }
+            0%, 100% { background-position: 0 50% }
+            50% { background-position: 100% 50% }
         }
         .bokeh {
             position: fixed;
@@ -90,12 +85,8 @@
             animation: float linear infinite
         }
         @keyframes float {
-            from {
-                transform: translateY(105vh) scale(.6)
-            }
-            to {
-                transform: translateY(-20vh) scale(1.2)
-            }
+            from { transform: translateY(105vh) scale(.6) }
+            to { transform: translateY(-20vh) scale(1.2) }
         }
         #confetti {
             position: fixed;
@@ -105,7 +96,6 @@
             pointer-events: none;
             z-index: 900
         }
-        
         .badge {
             position: fixed;
             top: calc(16px + env(safe-area-inset-top, 0px));
@@ -132,9 +122,7 @@
             animation: pop .4s
         }
         @keyframes pop {
-            50% {
-                transform: scale(1.5)
-            }
+            50% { transform: scale(1.5) }
         }
         .panel {
             position: fixed;
@@ -177,7 +165,6 @@
             z-index: 5;
             pointer-events: none
         }
-        
         .logw {
             position: fixed;
             left: 0;
@@ -306,7 +293,6 @@
             font-size: 1.2rem;
             margin-left: -1px
         }
-        
         #stage {
             position: relative;
             width: 440px;
@@ -318,22 +304,11 @@
             animation: mshake .55s ease-in-out
         }
         @keyframes mshake {
-            0%,
-            100% {
-                transform: translate(0)
-            }
-            20% {
-                transform: translate(-6px, 3px) rotate(-1deg)
-            }
-            40% {
-                transform: translate(6px, -3px) rotate(1deg)
-            }
-            60% {
-                transform: translate(-5px, -3px) rotate(-1deg)
-            }
-            80% {
-                transform: translate(5px, 3px) rotate(1deg)
-            }
+            0%, 100% { transform: translate(0) }
+            20% { transform: translate(-6px, 3px) rotate(-1deg) }
+            40% { transform: translate(6px, -3px) rotate(1deg) }
+            60% { transform: translate(-5px, -3px) rotate(-1deg) }
+            80% { transform: translate(5px, 3px) rotate(1deg) }
         }
         .glow {
             position: absolute;
@@ -353,9 +328,7 @@
             animation: gl 1s infinite alternate
         }
         @keyframes gl {
-            to {
-                transform: translate(-50%, -50%) scale(1.15)
-            }
+            to { transform: translate(-50%, -50%) scale(1.15) }
         }
         .dome {
             position: absolute;
@@ -472,10 +445,7 @@
             animation-duration: .2s
         }
         @keyframes bl {
-            50% {
-                opacity: .25;
-                box-shadow: none
-            }
+            50% { opacity: .25; box-shadow: none }
         }
         .knoba {
             position: absolute;
@@ -494,12 +464,8 @@
             z-index: 5;
             transition: transform .2s
         }
-        .knoba:hover {
-            transform: scale(1.05)
-        }
-        .knoba:active {
-            transform: scale(.96)
-        }
+        .knoba:hover { transform: scale(1.05) }
+        .knoba:active { transform: scale(.96) }
         .knob {
             width: 90px;
             height: 26px;
@@ -523,9 +489,7 @@
             animation: rk 1s cubic-bezier(.25, 1, .5, 1)
         }
         @keyframes rk {
-            to {
-                transform: rotate(360deg)
-            }
+            to { transform: rotate(360deg) }
         }
         .chute {
             position: absolute;
@@ -554,26 +518,12 @@
             animation: drop .9s cubic-bezier(.4, 0, .6, 1) forwards
         }
         @keyframes drop {
-            0% {
-                top: -110px;
-                opacity: 1
-            }
-            60% {
-                top: 14px;
-                opacity: 1
-            }
-            75% {
-                top: -6px
-            }
-            90% {
-                top: 14px
-            }
-            100% {
-                top: 14px;
-                opacity: 1
-            }
+            0% { top: -110px; opacity: 1 }
+            60% { top: 14px; opacity: 1 }
+            75% { top: -6px }
+            90% { top: 14px }
+            100% { top: 14px; opacity: 1 }
         }
-        
         .modal {
             position: fixed;
             inset: 0;
@@ -603,9 +553,7 @@
             transform: translateY(40px) scale(.95);
             transition: .45s cubic-bezier(.34, 1.56, .64, 1)
         }
-        .modal.on .mc {
-            transform: none
-        }
+        .modal.on .mc { transform: none }
         .mc h2 {
             margin: 0;
             color: var(--red);
@@ -654,10 +602,7 @@
             box-shadow: 0 10px 20px rgba(255, 90, 95, .35);
             transition: .2s
         }
-        .bp:hover {
-            transform: translateY(-3px)
-        }
-        
+        .bp:hover { transform: translateY(-3px) }
         .wo {
             position: fixed;
             inset: 0;
@@ -693,13 +638,9 @@
             animation: rot 24s linear infinite
         }
         @keyframes rot {
-            to {
-                transform: rotate(360deg)
-            }
+            to { transform: rotate(360deg) }
         }
-        .wo.open .rays {
-            opacity: 1
-        }
+        .wo.open .rays { opacity: 1 }
         .flash {
             position: absolute;
             inset: 0;
@@ -707,16 +648,10 @@
             opacity: 0;
             pointer-events: none
         }
-        .wo.open .flash {
-            animation: fl .8s
-        }
+        .wo.open .flash { animation: fl .8s }
         @keyframes fl {
-            0% {
-                opacity: .9
-            }
-            100% {
-                opacity: 0
-            }
+            0% { opacity: .9 }
+            100% { opacity: 0 }
         }
         .cap {
             position: relative;
@@ -726,23 +661,13 @@
             animation: capin .7s cubic-bezier(.34, 1.56, .64, 1)
         }
         @keyframes capin {
-            from {
-                transform: scale(.2) translateY(200px)
-            }
+            from { transform: scale(.2) translateY(200px) }
         }
-        .cap.shake {
-            animation: cs .12s infinite
-        }
+        .cap.shake { animation: cs .12s infinite }
         @keyframes cs {
-            25% {
-                transform: translate(-5px, 3px) rotate(-3deg)
-            }
-            50% {
-                transform: translate(5px, -3px) rotate(3deg)
-            }
-            75% {
-                transform: translate(-3px, -4px) rotate(-2deg)
-            }
+            25% { transform: translate(-5px, 3px) rotate(-3deg) }
+            50% { transform: translate(5px, -3px) rotate(3deg) }
+            75% { transform: translate(-3px, -4px) rotate(-2deg) }
         }
         .half {
             position: absolute;
@@ -780,9 +705,7 @@
             opacity: 0;
             transition: .6s
         }
-        .wo.open .glowc {
-            opacity: 1
-        }
+        .wo.open .glowc { opacity: 1 }
         .wname {
             position: absolute;
             left: 50%;
@@ -838,16 +761,7 @@
             transition-delay: 1s;
             pointer-events: all
         }
-        .cont:hover {
-            transform: scale(1.08) !important
-        }
-        .skip {
-            position: absolute;
-            bottom: calc(22px + env(safe-area-inset-bottom, 0px));
-            color: #fff;
-            opacity: .6;
-            font-size: .85rem
-        }
+        .cont:hover { transform: scale(1.08) !important }
         .toast {
             position: fixed;
             bottom: calc(46px + env(safe-area-inset-bottom, 0px));
@@ -932,174 +846,454 @@
         <button class="cont" onclick="closeWinner()">ดำเนินการต่อ</button>
     </div>
     <div class="toast" id="toast"></div>
+
     <script>
-        const $=id=>document.getElementById(id);
-const stage=$('stage'),namesEl=$('names'),countEl=$('count'),knob=$('knob'),rball=$('rball'),wo=$('wo'),cap=$('cap'),dome=$('dome');
-const COLORS=[['#ff5a5f','#a8202c'],['#34ace0','#1b6f99'],['#ffb142','#c27a10'],['#33d9b2','#13805f'],['#a29bfe','#5b50c9'],['#ff78c4','#b3307f'],['#7bed9f','#2f9e55'],['#feca57','#c9962a']];
-let winners=[],busy=false,muted=false,stir=0;
-let AC=null;
-const ctxA=()=>AC||(AC=new (window.AudioContext||window.webkitAudioContext)());
-try{const s=localStorage.getItem('gacha-names');if(s)namesEl.value=s;}catch(e){}
-function allNames(){return namesEl.value.split('\n').map(n=>n.trim()).filter(Boolean)}
-function remaining(){
-  const a=allNames();
-  if($('noRepeat').checked)winners.forEach(w=>{const i=a.indexOf(w.name);if(i>-1)a.splice(i,1)});
-  return a;
-}
-function updateCount(){
-  const c=remaining().length;
-  if(countEl.textContent!=String(c)){countEl.textContent=c;countEl.classList.remove('pop');void countEl.offsetWidth;countEl.classList.add('pop')}
-}
-function onNames(){updateCount();try{localStorage.setItem('gacha-names',namesEl.value)}catch(e){}}
-function toggleSettings(){$('modal').classList.toggle('on')}
-function toggleLog(){const c=$('logw').classList.toggle('col');$('arr').textContent=c?'▶':'◀'}
-function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),1800)}
-function toggleSound(){muted=!muted;$('soundBtn').textContent=muted?'🔇':'🔊';if(!muted)ctxA().resume()}
-function tone(f,type,d,v,delay=0,slide=0){
-  if(muted)return;const a=ctxA(),t=a.currentTime+delay,o=a.createOscillator(),g=a.createGain();
-  o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
-  g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);
-  o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02);
-}
-const fanfare=()=>[523,659,784,1047].forEach((f,i)=>tone(f,'triangle',.5,.22,i*.1));
-const gc=$('gc'),g=gc.getContext('2d');const S=386;let dpr=Math.min(devicePixelRatio||1,2);
-gc.width=gc.height=S*dpr;g.scale(dpr,dpr);
-const R=S/2,BR=23,balls=[];
-for(let i=0;i<30;i++){const a=Math.random()*6.28,r=Math.random()*(R-BR-20);
-  balls.push({x:R+Math.cos(a)*r*.8,y:R+60+Math.random()*100,vx:0,vy:0,rot:Math.random()*6.28,vr:0,c:COLORS[i%COLORS.length]})}
-function physics(){
-  const gr=.42;
-  for(const b of balls){
-    b.vy+=gr;
-    if(stir>0){b.vx+=(Math.random()-.5)*4*stir;b.vr+=(Math.random()-.5)*.3*stir;
-      if(b.y>R+25)b.vy-=Math.random()*2.2*stir;      
-      if(b.y<R+5)b.vy+=.9;                            
-    }else if(b.y<R+5)b.vy+=.5;                        
-    b.x+=b.vx;b.y+=b.vy;b.rot+=b.vr;b.vx*=.99;b.vr*=.9;
-    if(Math.abs(b.vr)<.004)b.vr=0;
-    const dx=b.x-R,dy=b.y-R,d=Math.hypot(dx,dy),m=R-BR-8;
-    if(d>m){const nx=dx/d,ny=dy/d,dot=b.vx*nx+b.vy*ny;b.x=R+nx*m;b.y=R+ny*m;
-      if(dot>0){const e=dot>1.2?1.5:1.0;b.vx-=e*dot*nx;b.vy-=e*dot*ny}
-      b.vx*=.85;b.vy*=.85;if(stir>0)b.vr+=nx*.04}
-    if(stir<=0&&Math.abs(b.vx)<.12&&Math.abs(b.vy)<.5){b.vx*=.5}
-  }
-  for(let i=0;i<balls.length;i++)for(let j=i+1;j<balls.length;j++){
-    const a=balls[i],b=balls[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||.01,min=BR*2;
-    if(d<min){const nx=dx/d,ny=dy/d,o=(min-d)/2;a.x-=nx*o;a.y-=ny*o;b.x+=nx*o;b.y+=ny*o;
-      const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rv<0){const j2=-rv*(rv<-1.5?.7:.5);a.vx-=j2*nx;a.vy-=j2*ny;b.vx+=j2*nx;b.vy+=j2*ny}}
-  }
-}
-function drawBall(b){
-  g.save();g.translate(b.x,b.y);g.rotate(b.rot);
-  g.shadowColor='rgba(0,0,0,.3)';g.shadowBlur=6;g.shadowOffsetY=3;
-  g.beginPath();g.arc(0,0,BR,0,6.283);g.fillStyle='#fff';g.fill();g.shadowColor='transparent';
-  g.save();g.beginPath();g.arc(0,0,BR,0,6.283);g.clip();
-  const t=g.createLinearGradient(0,-BR,0,0);t.addColorStop(0,b.c[0]);t.addColorStop(1,b.c[1]);
-  g.fillStyle=t;g.fillRect(-BR,-BR,BR*2,BR);
-  g.fillStyle='#e9edf2';g.fillRect(-BR,0,BR*2,BR);
-  g.fillStyle='rgba(0,0,0,.25)';g.fillRect(-BR,-1.5,BR*2,3);g.restore();
-  g.rotate(-b.rot);
-  const s=g.createRadialGradient(-BR*.35,-BR*.4,1,0,0,BR);s.addColorStop(0,'rgba(255,255,255,.75)');s.addColorStop(.35,'rgba(255,255,255,0)');s.addColorStop(1,'rgba(0,0,0,.28)');
-  g.beginPath();g.arc(0,0,BR,0,6.283);g.fillStyle=s;g.fill();g.restore();
-}
-function loop(){
-  physics();physics();g.clearRect(0,0,S,S);balls.forEach(drawBall);
-  if(stir>0)stir=Math.max(0,stir-.012);requestAnimationFrame(loop);
-}
-loop();
-function shakeMachine(){
-  if(busy)return;ctxA().resume();tone(140,'triangle',.2,.25,0,70);
-  stage.classList.remove('shk');void stage.offsetWidth;stage.classList.add('shk');stir=.8;
-}
-dome.addEventListener('click',shakeMachine);
-function spinGacha(e){
-  if(e)e.stopPropagation();ctxA().resume();
-  const list=remaining();
-  if(!list.length){toast(winners.length?'สุ่มครบทุกคนแล้ว กด ↺ เพื่อเริ่มใหม่':'กรุณาเติมรายชื่อก่อนหมุน!');if(!winners.length)toggleSettings();return}
-  if(busy)return;busy=true;document.body.classList.add('busy');
-  knob.classList.add('spin');stir=1.6;
-  for(let i=0;i<6;i++)tone(180+i*30,'square',.12,.08,i*.15);
-  const col=COLORS[Math.floor(Math.random()*COLORS.length)];
-  setTimeout(()=>{
-    knob.classList.remove('spin');
-    rball.style.background=`radial-gradient(circle at 35% 28%,#fff 0,${col[0]} 32%,${col[1]} 100%)`;
-    rball.classList.add('drop');tone(500,'sine',.35,.25,.45,150);tone(350,'sine',.25,.15,.7,120);
-    setTimeout(()=>reveal(col,list),1300);
-  },1400);
-}
-function reveal(col,list){
-  const w=list[Math.floor(Math.random()*list.length)];
-  $('ctop').style.background=`radial-gradient(circle at 35% 25%,#fff 0,${col[0]} 35%,${col[1]} 100%)`;
-  $('wname').textContent=w;
-  $('wname').style.textShadow=`0 8px 28px rgba(0,0,0,.5),0 0 50px ${col[0]}`;
-  wo.classList.remove('open');wo.classList.add('on');cap.classList.add('shake');
-  let t=0;const iv=setInterval(()=>{tone(160+t*25,'square',.08,.09);t++},200);
-  setTimeout(()=>{
-    clearInterval(iv);cap.classList.remove('shake');fanfare();wo.classList.add('open');
-    burst();addLog(w,col[0]);
-  },2200);
-}
-function addLog(name,color){
-  winners.push({name,color});
-  if(winners.length===1)$('logList').innerHTML='';
-  const li=document.createElement('li');li.className='li';
-  li.innerHTML=`<em></em><i></i><span></span>`;
-  li.children[0].textContent=winners.length+'.';li.children[1].style.background=color;li.children[2].textContent=name;
-  $('logList').prepend(li);
-  if(winners.length===1&&$('logw').classList.contains('col'))toggleLog();
-  updateCount();
-}
-function closeWinner(){
-  wo.classList.remove('on','open');rball.classList.remove('drop');
-  busy=false;document.body.classList.remove('busy');
-}
-function resetList(){
-  if(!confirm('เริ่มใหม่ทั้งหมดหรือไม่? (รายชื่อผู้โชคดีจะถูกลบ)'))return;
-  winners=[];$('logList').innerHTML='<li class="empty">ยังไม่มีผู้โชคดี</li>';updateCount();toast('รีเซ็ตเรียบร้อย');
-}
-function copyLog(){
-  if(!winners.length)return toast('ยังไม่มีรายชื่อ');
-  const t=winners.map((w,i)=>`${i+1}. ${w.name}`).join('\n');
-  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('คัดลอกแล้ว ✓')).catch(()=>{
-    const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();
-    try{document.execCommand('copy');toast('คัดลอกแล้ว ✓')}catch(e){toast('คัดลอกไม่สำเร็จ')}ta.remove();
-  });
-}
-document.addEventListener('keydown',e=>{
-  if(e.code==='Space'&&!$('modal').classList.contains('on')){e.preventDefault();
-    if(wo.classList.contains('open'))closeWinner();else if(!wo.classList.contains('on'))spinGacha()}
-  if(e.code==='Escape')$('modal').classList.remove('on');
-});
-const cv=$('confetti'),cx=cv.getContext('2d');let parts=[],run=false;
-function size(){cv.width=innerWidth;cv.height=innerHeight}size();addEventListener('resize',()=>{size();fit()});
-function burst(){
-  const cols=['#ff5a5f','#34ace0','#ffb142','#33d9b2','#a29bfe','#feca57','#ff78c4'];
-  for(let i=0;i<220;i++){
-    const side=i%2?1:-1,x=innerWidth/2,y=innerHeight*.55,a=-Math.PI/2+(Math.random()-.5)*1.7,v=Math.random()*18+8;
-    parts.push({x:x+side*20,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,c:cols[i%cols.length],s:Math.random()*10+5,r:Math.random()*6,vr:(Math.random()-.5)*.4,sh:Math.random()>.5,life:0});
-  }
-  if(!run){run=true;tick()}
-}
-function tick(){
-  cx.clearRect(0,0,cv.width,cv.height);
-  parts=parts.filter(p=>p.y<cv.height+30&&p.life<400);
-  for(const p of parts){
-    p.vy+=.28;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.life++;
-    cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.globalAlpha=Math.min(1,(400-p.life)/60);
-    if(p.sh)cx.fillRect(-p.s/2,-p.s/3,p.s,p.s*.6);else{cx.beginPath();cx.arc(0,0,p.s/2,0,6.283);cx.fill()}
-    cx.restore();
-  }
-  if(parts.length)requestAnimationFrame(tick);else{run=false;cx.clearRect(0,0,cv.width,cv.height)}
-}
-function fit(){
-  const s=Math.min(1,(innerHeight-40)/700,(innerWidth-20)/450);
-  stage.style.transform=`scale(${s})`;stage.style.margin=`${-(690*(1-s))/2}px ${-(440*(1-s))/2}px`;
-}
-fit();
-const bk=$('bokeh');
-for(let i=0;i<14;i++){const e=document.createElement('i'),s=30+Math.random()*90;
-  e.style.cssText=`width:${s}px;height:${s}px;left:${Math.random()*100}%;animation-duration:${14+Math.random()*20}s;animation-delay:${-Math.random()*30}s;opacity:${.25+Math.random()*.4}`;bk.appendChild(e)}
-updateCount();
+        const $ = id => document.getElementById(id);
+        const stage = $('stage'), namesEl = $('names'), countEl = $('count'), knob = $('knob'), rball = $('rball'), wo = $('wo'), cap = $('cap'), dome = $('dome');
+        const COLORS = [['#ff5a5f','#a8202c'],['#34ace0','#1b6f99'],['#ffb142','#c27a10'],['#33d9b2','#13805f'],['#a29bfe','#5b50c9'],['#ff78c4','#b3307f'],['#7bed9f','#2f9e55'],['#feca57','#c9962a']];
+        let winners = [], busy = false, muted = false, stir = 0;
+        let AC = null;
+        const ctxA = () => AC || (AC = new (window.AudioContext || window.webkitAudioContext)());
+
+        // --- ระบบ Web Cache (อายุ 1 วัน = 86,400,000 มิลลิวินาที) ---
+        const CACHE_KEY = 'gacha_app_data_v2';
+        const TTL_MS = 24 * 60 * 60 * 1000;
+
+        function saveCache() {
+            try {
+                const data = {
+                    time: Date.now(),
+                    names: namesEl.value,
+                    winners: winners,
+                    noRepeat: $('noRepeat').checked
+                };
+                localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+            } catch(e) {}
+        }
+
+        function loadCache() {
+            try {
+                const raw = localStorage.getItem(CACHE_KEY);
+                if (!raw) return;
+                const data = JSON.parse(raw);
+                if (Date.now() - data.time > TTL_MS) {
+                    localStorage.removeItem(CACHE_KEY);
+                    return;
+                }
+                if (data.names !== undefined) namesEl.value = data.names;
+                if (data.noRepeat !== undefined) $('noRepeat').checked = data.noRepeat;
+                if (Array.isArray(data.winners)) {
+                    winners = data.winners;
+                    renderWinners();
+                }
+            } catch(e) {}
+        }
+
+        function renderWinners() {
+            const list = $('logList');
+            list.innerHTML = '';
+            if (!winners.length) {
+                list.innerHTML = '<li class="empty">ยังไม่มีผู้โชคดี</li>';
+                return;
+            }
+            winners.forEach((w, idx) => {
+                const li = document.createElement('li');
+                li.className = 'li';
+                li.innerHTML = `<em>${idx + 1}.</em><i style="background:${w.color}"></i><span>${w.name}</span>`;
+                list.prepend(li);
+            });
+        }
+
+        function allNames() {
+            return namesEl.value.split('\n').map(n => n.trim()).filter(Boolean);
+        }
+        function remaining() {
+            const a = allNames();
+            if ($('noRepeat').checked) {
+                winners.forEach(w => {
+                    const i = a.indexOf(w.name);
+                    if (i > -1) a.splice(i, 1);
+                });
+            }
+            return a;
+        }
+        function updateCount() {
+            const c = remaining().length;
+            if (countEl.textContent != String(c)) {
+                countEl.textContent = c;
+                countEl.classList.remove('pop');
+                void countEl.offsetWidth;
+                countEl.classList.add('pop');
+            }
+        }
+        function onNames() {
+            updateCount();
+            saveCache();
+        }
+
+        function toggleSettings() { $('modal').classList.toggle('on'); }
+        function toggleLog() {
+            const c = $('logw').classList.toggle('col');
+            $('arr').textContent = c ? '▶' : '◀';
+        }
+        function toast(t) {
+            const e = $('toast');
+            e.textContent = t;
+            e.classList.add('on');
+            setTimeout(() => e.classList.remove('on'), 1800);
+        }
+        function toggleSound() {
+            muted = !muted;
+            $('soundBtn').textContent = muted ? '🔇' : '🔊';
+            if (!muted) ctxA().resume();
+        }
+        function tone(f, type, d, v, delay = 0, slide = 0) {
+            if (muted) return;
+            const a = ctxA(), t = a.currentTime + delay, o = a.createOscillator(), g = a.createGain();
+            o.type = type;
+            o.frequency.setValueAtTime(f, t);
+            if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + d);
+            g.gain.setValueAtTime(v, t);
+            g.gain.exponentialRampToValueAtTime(.001, t + d);
+            o.connect(g);
+            g.connect(a.destination);
+            o.start(t);
+            o.stop(t + d + .02);
+        }
+        const fanfare = () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 'triangle', .5, .22, i * .1));
+
+        // --- ระบบเรนเดอร์และฟิสิกส์ลูกบอล (ป้องกันการสั่นกระตุก) ---
+        const gc = $('gc'), g = gc.getContext('2d');
+        const S = 386;
+        let dpr = Math.min(devicePixelRatio || 1, 2);
+        gc.width = gc.height = S * dpr;
+        g.scale(dpr, dpr);
+
+        const R = S / 2, BR = 23, balls = [];
+        for (let i = 0; i < 28; i++) {
+            const a = Math.random() * 6.28, r = Math.random() * (R - BR - 30);
+            balls.push({
+                x: R + Math.cos(a) * r * .8,
+                y: R + 60 + Math.random() * 80,
+                vx: 0,
+                vy: 0,
+                rot: Math.random() * 6.28,
+                vr: 0,
+                c: COLORS[i % COLORS.length]
+            });
+        }
+
+        function physics() {
+            const isStir = stir > 0;
+            const gr = isStir ? .42 : .18; // แรงโน้มถ่วงต่ำลงตอนจอดนิ่งเพื่อลดแรงดันชนกัน
+
+            for (const b of balls) {
+                b.vy += gr;
+                if (isStir) {
+                    b.vx += (Math.random() - .5) * 4 * stir;
+                    b.vr += (Math.random() - .5) * .3 * stir;
+                    if (b.y > R + 25) b.vy -= Math.random() * 2.2 * stir;
+                    if (b.y < R + 5) b.vy += .9;
+                    b.vx *= .99;
+                    b.vr *= .9;
+                } else {
+                    // Damping สูงมากตอนไม่ได้หมุน เพื่อให้ลูกบอลสงบนิ่งทันที
+                    b.vx *= .84;
+                    b.vy *= .84;
+                    b.vr *= .8;
+                    if (Math.abs(b.vx) < 0.04) b.vx = 0;
+                    if (Math.abs(b.vy) < 0.04) b.vy = 0;
+                    if (Math.abs(b.vr) < 0.003) b.vr = 0;
+                }
+
+                b.x += b.vx;
+                b.y += b.vy;
+                b.rot += b.vr;
+
+                // ตรวจสอบขอบตู้ทรงกลม
+                const dx = b.x - R, dy = b.y - R, d = Math.hypot(dx, dy), m = R - BR - 8;
+                if (d > m) {
+                    const nx = dx / d, ny = dy / d, dot = b.vx * nx + b.vy * ny;
+                    b.x = R + nx * m;
+                    b.y = R + ny * m;
+                    if (dot > 0) {
+                        const e = isStir ? (dot > 1.2 ? 1.4 : 1.0) : 0.08; // แทบไม่เด้งเลยตอนนิ่ง
+                        b.vx -= e * dot * nx;
+                        b.vy -= e * dot * ny;
+                    }
+                    b.vx *= isStir ? .85 : .6;
+                    b.vy *= isStir ? .85 : .6;
+                    if (isStir) b.vr += nx * .04;
+                }
+            }
+
+            // ชนกันเองระหว่างลูกบอล
+            for (let i = 0; i < balls.length; i++) {
+                for (let j = i + 1; j < balls.length; j++) {
+                    const a = balls[i], b = balls[j];
+                    const dx = b.x - a.x, dy = b.y - a.y;
+                    const d = Math.hypot(dx, dy) || .01;
+                    const min = BR * 2;
+                    if (d < min) {
+                        const nx = dx / d, ny = dy / d;
+                        const o = (min - d) / 2;
+                        a.x -= nx * o;
+                        a.y -= ny * o;
+                        b.x += nx * o;
+                        b.y += ny * o;
+                        const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+                        if (rv < 0) {
+                            const restitution = isStir ? (rv < -1.5 ? .65 : .45) : .05;
+                            const j2 = -rv * restitution;
+                            a.vx -= j2 * nx;
+                            a.vy -= j2 * ny;
+                            b.vx += j2 * nx;
+                            b.vy += j2 * ny;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Settling physics ล่วงหน้าก่อนแสดงผลหน้าจอ จะได้ไม่ขยับสั่นในตอนแรก
+        for (let s = 0; s < 120; s++) physics();
+
+        function drawBall(b) {
+            g.save();
+            g.translate(b.x, b.y);
+            g.rotate(b.rot);
+            g.shadowColor = 'rgba(0,0,0,.25)';
+            g.shadowBlur = 5;
+            g.shadowOffsetY = 2;
+            g.beginPath();
+            g.arc(0, 0, BR, 0, 6.283);
+            g.fillStyle = '#fff';
+            g.fill();
+            g.shadowColor = 'transparent';
+
+            g.save();
+            g.beginPath();
+            g.arc(0, 0, BR, 0, 6.283);
+            g.clip();
+            const t = g.createLinearGradient(0, -BR, 0, 0);
+            t.addColorStop(0, b.c[0]);
+            t.addColorStop(1, b.c[1]);
+            g.fillStyle = t;
+            g.fillRect(-BR, -BR, BR * 2, BR);
+            g.fillStyle = '#e9edf2';
+            g.fillRect(-BR, 0, BR * 2, BR);
+            g.fillStyle = 'rgba(0,0,0,.25)';
+            g.fillRect(-BR, -1.5, BR * 2, 3);
+            g.restore();
+
+            g.rotate(-b.rot);
+            const s = g.createRadialGradient(-BR * .35, -BR * .4, 1, 0, 0, BR);
+            s.addColorStop(0, 'rgba(255,255,255,.75)');
+            s.addColorStop(.35, 'rgba(255,255,255,0)');
+            s.addColorStop(1, 'rgba(0,0,0,.28)');
+            g.beginPath();
+            g.arc(0, 0, BR, 0, 6.283);
+            g.fillStyle = s;
+            g.fill();
+            g.restore();
+        }
+
+        function loop() {
+            physics();
+            physics();
+            g.clearRect(0, 0, S, S);
+            balls.forEach(drawBall);
+            if (stir > 0) stir = Math.max(0, stir - .012);
+            requestAnimationFrame(loop);
+        }
+        loop();
+
+        function shakeMachine() {
+            if (busy) return;
+            ctxA().resume();
+            tone(140, 'triangle', .2, .25, 0, 70);
+            stage.classList.remove('shk');
+            void stage.offsetWidth;
+            stage.classList.add('shk');
+            stir = .85;
+        }
+        dome.addEventListener('click', shakeMachine);
+
+        function spinGacha(e) {
+            if (e) e.stopPropagation();
+            ctxA().resume();
+            const list = remaining();
+            if (!list.length) {
+                toast(winners.length ? 'สุ่มครบทุกคนแล้ว กด ↺ เพื่อเริ่มใหม่' : 'กรุณาเติมรายชื่อก่อนหมุน!');
+                if (!winners.length) toggleSettings();
+                return;
+            }
+            if (busy) return;
+            busy = true;
+            document.body.classList.add('busy');
+            knob.classList.add('spin');
+            stir = 1.6;
+
+            for (let i = 0; i < 6; i++) tone(180 + i * 30, 'square', .12, .08, i * .15);
+            const col = COLORS[Math.floor(Math.random() * COLORS.length)];
+
+            setTimeout(() => {
+                knob.classList.remove('spin');
+                rball.style.background = `radial-gradient(circle at 35% 28%,#fff 0,${col[0]} 32%,${col[1]} 100%)`;
+                rball.classList.add('drop');
+                tone(500, 'sine', .35, .25, .45, 150);
+                tone(350, 'sine', .25, .15, .7, 120);
+                setTimeout(() => reveal(col, list), 1300);
+            }, 1400);
+        }
+
+        function reveal(col, list) {
+            const w = list[Math.floor(Math.random() * list.length)];
+            $('ctop').style.background = `radial-gradient(circle at 35% 25%,#fff 0,${col[0]} 35%,${col[1]} 100%)`;
+            $('wname').textContent = w;
+            $('wname').style.textShadow = `0 8px 28px rgba(0,0,0,.5),0 0 50px ${col[0]}`;
+            wo.classList.remove('open');
+            wo.classList.add('on');
+            cap.classList.add('shake');
+
+            let t = 0;
+            const iv = setInterval(() => {
+                tone(160 + t * 25, 'square', .08, .09);
+                t++;
+            }, 200);
+
+            setTimeout(() => {
+                clearInterval(iv);
+                cap.classList.remove('shake');
+                fanfare();
+                wo.classList.add('open');
+                burst();
+                addLog(w, col[0]);
+            }, 2200);
+        }
+
+        function addLog(name, color) {
+            winners.push({ name, color });
+            saveCache();
+            renderWinners();
+            if (winners.length === 1 && $('logw').classList.contains('col')) toggleLog();
+            updateCount();
+        }
+
+        function closeWinner() {
+            wo.classList.remove('on', 'open');
+            rball.classList.remove('drop');
+            busy = false;
+            document.body.classList.remove('busy');
+        }
+
+        function resetList() {
+            if (!confirm('เริ่มใหม่ทั้งหมดหรือไม่? (รายชื่อผู้โชคดีจะถูกลบ)')) return;
+            winners = [];
+            saveCache();
+            renderWinners();
+            updateCount();
+            toast('รีเซ็ตเรียบร้อย');
+        }
+
+        function copyLog() {
+            if (!winners.length) return toast('ยังไม่มีรายชื่อ');
+            const t = winners.map((w, i) => `${i + 1}. ${w.name}`).join('\n');
+            (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('คัดลอกแล้ว ✓')).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = t;
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                    toast('คัดลอกแล้ว ✓');
+                } catch(e) {
+                    toast('คัดลอกไม่สำเร็จ');
+                }
+                ta.remove();
+            });
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.code === 'Space' && !$('modal').classList.contains('on')) {
+                e.preventDefault();
+                if (wo.classList.contains('open')) closeWinner();
+                else if (!wo.classList.contains('on')) spinGacha();
+            }
+            if (e.code === 'Escape') $('modal').classList.remove('on');
+        });
+
+        // Confetti Effect
+        const cv = $('confetti'), cx = cv.getContext('2d');
+        let parts = [], run = false;
+        function size() { cv.width = innerWidth; cv.height = innerHeight; }
+        size();
+        addEventListener('resize', () => { size(); fit(); });
+
+        function burst() {
+            const cols = ['#ff5a5f','#34ace0','#ffb142','#33d9b2','#a29bfe','#feca57','#ff78c4'];
+            for (let i = 0; i < 220; i++) {
+                const side = i % 2 ? 1 : -1, x = innerWidth / 2, y = innerHeight * .55;
+                const a = -Math.PI / 2 + (Math.random() - .5) * 1.7, v = Math.random() * 18 + 8;
+                parts.push({
+                    x: x + side * 20, y,
+                    vx: Math.cos(a) * v, vy: Math.sin(a) * v,
+                    c: cols[i % cols.length],
+                    s: Math.random() * 10 + 5,
+                    r: Math.random() * 6,
+                    vr: (Math.random() - .5) * .4,
+                    sh: Math.random() > .5,
+                    life: 0
+                });
+            }
+            if (!run) { run = true; tick(); }
+        }
+
+        function tick() {
+            cx.clearRect(0, 0, cv.width, cv.height);
+            parts = parts.filter(p => p.y < cv.height + 30 && p.life < 400);
+            for (const p of parts) {
+                p.vy += .28;
+                p.vx *= .99;
+                p.x += p.vx;
+                p.y += p.vy;
+                p.r += p.vr;
+                p.life++;
+                cx.save();
+                cx.translate(p.x, p.y);
+                cx.rotate(p.r);
+                cx.fillStyle = p.c;
+                cx.globalAlpha = Math.min(1, (400 - p.life) / 60);
+                if (p.sh) cx.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * .6);
+                else {
+                    cx.beginPath();
+                    cx.arc(0, 0, p.s / 2, 0, 6.283);
+                    cx.fill();
+                }
+                cx.restore();
+            }
+            if (parts.length) requestAnimationFrame(tick);
+            else { run = false; cx.clearRect(0, 0, cv.width, cv.height); }
+        }
+
+        function fit() {
+            const s = Math.min(1, (innerHeight - 40) / 700, (innerWidth - 20) / 450);
+            stage.style.transform = `scale(${s})`;
+            stage.style.margin = `${-(690 * (1 - s)) / 2}px ${-(440 * (1 - s)) / 2}px`;
+        }
+        fit();
+
+        // Background Bokeh
+        const bk = $('bokeh');
+        for (let i = 0; i < 14; i++) {
+            const e = document.createElement('i'), s = 30 + Math.random() * 90;
+            e.style.cssText = `width:${s}px;height:${s}px;left:${Math.random() * 100}%;animation-duration:${14 + Math.random() * 20}s;animation-delay:${-Math.random() * 30}s;opacity:${.25 + Math.random() * .4}`;
+            bk.appendChild(e);
+        }
+
+        // เริ่มต้นการโหลดข้อมูลจาก Cache
+        loadCache();
+        updateCount();
     </script>
 </body>
 </html>
