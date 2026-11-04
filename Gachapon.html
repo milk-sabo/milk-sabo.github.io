@@ -1424,19 +1424,27 @@
 
         // ===== JINGLE BELLS melody =====
         function jingleBells() {
-            if (muted) return;
-            // notes: E E E | E E E | E G C D E (in Hz, simplified)
-            const E = 659, G = 784, C = 523, D = 587;
-            const seq = [
-                [E, .25], [E, .25], [E, .5],
-                [E, .25], [E, .25], [E, .5],
-                [E, .25], [G, .25], [C, .3], [D, .3], [E, 1]
-            ];
-            let t = 0;
-            seq.forEach(([f, d]) => {
-                tone(f, 'triangle', d * .95, .18, t);
-                t += d;
-            });
+           if (muted) return;
+
+    // ความถี่ตัวโน้ต (Hz)
+    const G4 = 392.00, C5 = 523.25, E5 = 659.25, G5 = 783.99, C6 = 1046.50;
+
+    // [โน้ต, ความยาว(วินาที)]
+    const seq = [
+        [C5, 0.1], 
+        [E5, 0.1], 
+        [G5, 0.1], 
+        [C6, 0.3], // โน้ตสูงค้างจังหวะ
+        [G5, 0.12], 
+        [C6, 0.6]  // โน้ตจบฉลองชัยชนะ
+    ];
+
+    let t = 0;
+    seq.forEach(([f, d]) => {
+        // ใช้ 'triangle' หรือเปลี่ยนเป็น 'sine' เพื่อความนุ่มนวล
+        tone(f, 'triangle', d * 0.95, 0.25, t);
+        t += d;
+    });
         }
         // Jingle bell ring (shaker-like) when knob turned
         function bellRing() {
