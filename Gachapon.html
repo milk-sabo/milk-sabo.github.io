@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Gachapon Lucky Draw</title>
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/7401/7401101.png">
+    <title>Gachapon Lucky Draw - Christmas Edition</title>
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/847/847969.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500;700;900&display=swap" rel="stylesheet">
@@ -22,10 +23,13 @@
             --red2: #c9283a;
             --blue: #34ace0;
             --gold: #ffc83d;
+            --green: #2ecc71;
+            --green2: #15803d;
             box-sizing: border-box;
             padding-top: env(safe-area-inset-top, 0px);
             padding-bottom: env(safe-area-inset-bottom, 0px);
         }
+
         @media (prefers-color-scheme:dark) {
             :root:not([data-theme="light"]) {
                 --bg1: #2a1530;
@@ -38,6 +42,7 @@
                 --card: rgba(30, 32, 52, .97);
             }
         }
+
         :root[data-theme="dark"] {
             --bg1: #2a1530;
             --bg2: #10213f;
@@ -48,13 +53,16 @@
             --glass-b: rgba(255, 255, 255, .18);
             --card: rgba(30, 32, 52, .97);
         }
+
         html {
             scroll-padding-top: env(safe-area-inset-top, 0px);
             height: 100%
         }
+
         * {
             box-sizing: border-box
         }
+
         body {
             margin: 0;
             height: 100%;
@@ -69,26 +77,71 @@
             justify-content: center;
             align-items: center
         }
+
         @keyframes bg {
-            0%, 100% { background-position: 0 50% }
-            50% { background-position: 100% 50% }
+
+            0%,
+            100% {
+                background-position: 0 50%
+            }
+
+            50% {
+                background-position: 100% 50%
+            }
         }
+
         .bokeh {
             position: fixed;
             inset: 0;
             pointer-events: none;
             overflow: hidden
         }
+
         .bokeh i {
             position: absolute;
             border-radius: 50%;
             background: radial-gradient(circle, rgba(255, 255, 255, .7), rgba(255, 255, 255, 0) 70%);
             animation: float linear infinite
         }
+
         @keyframes float {
-            from { transform: translateY(105vh) scale(.6) }
-            to { transform: translateY(-20vh) scale(1.2) }
+            from {
+                transform: translateY(105vh) scale(.6)
+            }
+
+            to {
+                transform: translateY(-20vh) scale(1.2)
+            }
         }
+
+        /* ===== SNOW CANVAS ===== */
+        #snow {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50
+        }
+
+        /* ===== SNOW GROUND at bottom ===== */
+        .snowground {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 80px;
+            pointer-events: none;
+            z-index: 4;
+            background:
+                radial-gradient(ellipse 60px 30px at 10% 100%, #fff 50%, transparent 51%),
+                radial-gradient(ellipse 80px 36px at 35% 100%, #fff 50%, transparent 51%),
+                radial-gradient(ellipse 70px 32px at 62% 100%, #fff 50%, transparent 51%),
+                radial-gradient(ellipse 90px 40px at 88% 100%, #fff 50%, transparent 51%),
+                linear-gradient(to top, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0));
+            filter: drop-shadow(0 -2px 6px rgba(255, 255, 255, .6));
+        }
+
         #confetti {
             position: fixed;
             inset: 0;
@@ -97,6 +150,7 @@
             pointer-events: none;
             z-index: 900
         }
+
         .badge {
             position: fixed;
             top: calc(16px + env(safe-area-inset-top, 0px));
@@ -112,6 +166,7 @@
             color: var(--mute);
             box-shadow: 0 8px 24px rgba(0, 0, 0, .08)
         }
+
         .badge b {
             color: var(--red);
             font-size: 1.6rem;
@@ -119,12 +174,17 @@
             margin: 0 4px;
             display: inline-block
         }
+
         .badge b.pop {
             animation: pop .4s
         }
+
         @keyframes pop {
-            50% { transform: scale(1.5) }
+            50% {
+                transform: scale(1.5)
+            }
         }
+
         .panel {
             position: fixed;
             top: calc(16px + env(safe-area-inset-top, 0px));
@@ -134,6 +194,7 @@
             gap: 10px;
             z-index: 100
         }
+
         .cbtn {
             width: 54px;
             height: 54px;
@@ -151,21 +212,158 @@
             place-items: center;
             font-family: inherit
         }
+
         .cbtn:hover {
             transform: scale(1.15) translateY(-3px);
             color: var(--red)
         }
+
         .hint {
             position: fixed;
-            bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+            bottom: calc(108px + env(safe-area-inset-bottom, 0px));
             left: 0;
             right: 0;
             text-align: center;
             color: var(--mute);
             font-size: .85rem;
             z-index: 5;
-            pointer-events: none
+            pointer-events: none;
+            text-shadow: 0 1px 3px rgba(255, 255, 255, .8), 0 0 8px rgba(255, 255, 255, .5);
         }
+
+        /* ===== CHRISTMAS BANNER ===== */
+        .xmas-banner {
+            position: fixed;
+            top: calc(14px + env(safe-area-inset-top, 0px));
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 90;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(255, 90, 95, .95), rgba(201, 40, 58, .95));
+            color: #fff;
+            padding: 6px 18px 6px 12px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: .9rem;
+            box-shadow: 0 10px 28px rgba(201, 40, 58, .35), inset 0 2px 4px rgba(255, 255, 255, .4);
+            border: 1.5px solid rgba(255, 255, 255, .5);
+            animation: bannerBob 3s ease-in-out infinite;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+        }
+
+        @keyframes bannerBob {
+
+            0%,
+            100% {
+                transform: translateX(-50%) translateY(0) rotate(-1deg)
+            }
+
+            50% {
+                transform: translateX(-50%) translateY(-3px) rotate(1deg)
+            }
+        }
+
+        .xmas-banner .icn {
+            font-size: 1.3rem;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .3));
+            animation: bellRing 2s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        @keyframes bellRing {
+
+            0%,
+            60%,
+            100% {
+                transform: rotate(0)
+            }
+
+            65% {
+                transform: rotate(15deg)
+            }
+
+            70% {
+                transform: rotate(-12deg)
+            }
+
+            75% {
+                transform: rotate(8deg)
+            }
+
+            80% {
+                transform: rotate(-5deg)
+            }
+        }
+
+        /* ===== STRING LIGHTS top of viewport ===== */
+        .lights-string {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            pointer-events: none;
+            z-index: 60;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            padding: 0 5%;
+        }
+
+        .lights-string i {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            margin-top: 18px;
+            position: relative;
+            box-shadow: 0 0 8px currentColor;
+            animation: blinkStr 1.6s infinite;
+        }
+
+        .lights-string i::before {
+            content: "";
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 8px;
+            background: #6b4f2a;
+            border-radius: 2px 2px 0 0;
+        }
+
+        .lights-string i:nth-child(3n+1) {
+            color: #ff3b3b;
+            background: #ff3b3b;
+            animation-delay: 0s
+        }
+
+        .lights-string i:nth-child(3n+2) {
+            color: #2ecc71;
+            background: #2ecc71;
+            animation-delay: .4s
+        }
+
+        .lights-string i:nth-child(3n) {
+            color: #ffd34d;
+            background: #ffd34d;
+            animation-delay: .8s
+        }
+
+        @keyframes blinkStr {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .25
+            }
+        }
+
         .logw {
             position: fixed;
             left: 0;
@@ -176,9 +374,11 @@
             z-index: 150;
             transition: transform .6s cubic-bezier(.34, 1.56, .64, 1)
         }
+
         .logw.col {
             transform: translateY(-50%) translateX(-270px)
         }
+
         .logc {
             width: 270px;
             max-height: min(520px, 75vh);
@@ -193,6 +393,7 @@
             flex-direction: column;
             box-shadow: 12px 12px 35px rgba(0, 0, 0, .1)
         }
+
         .logc h3 {
             margin: 0 0 12px;
             font-weight: 900;
@@ -204,11 +405,13 @@
             border-bottom: 2px dashed rgba(255, 90, 95, .35);
             padding-bottom: 10px
         }
+
         .logc h3 span {
             margin-left: auto;
             display: flex;
             gap: 4px
         }
+
         .mini {
             border: 0;
             background: rgba(255, 90, 95, .15);
@@ -218,10 +421,12 @@
             cursor: pointer;
             font: 500 .75rem 'Kanit'
         }
+
         .mini:hover {
             background: var(--red);
             color: #fff
         }
+
         #logList {
             list-style: none;
             margin: 0;
@@ -229,13 +434,16 @@
             overflow-y: auto;
             flex: 1
         }
+
         #logList::-webkit-scrollbar {
             width: 5px
         }
+
         #logList::-webkit-scrollbar-thumb {
             background: var(--red);
             border-radius: 9px
         }
+
         .li {
             background: var(--card);
             margin-bottom: 8px;
@@ -246,12 +454,14 @@
             box-shadow: 0 3px 10px rgba(0, 0, 0, .05);
             animation: sl .5s cubic-bezier(.34, 1.56, .64, 1)
         }
+
         @keyframes sl {
             from {
                 opacity: 0;
                 transform: translateX(-30px)
             }
         }
+
         .li em {
             font-style: normal;
             font-weight: 900;
@@ -259,6 +469,7 @@
             min-width: 26px;
             font-size: .85rem
         }
+
         .li i {
             width: 14px;
             height: 14px;
@@ -268,18 +479,21 @@
             border: 2px solid #fff;
             box-shadow: inset -2px -2px 4px rgba(0, 0, 0, .3)
         }
+
         .li span {
             font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis
         }
+
         .empty {
             color: var(--mute);
             text-align: center;
             padding: 20px 0;
             font-size: .9rem
         }
+
         .tog {
             width: 40px;
             height: 100px;
@@ -294,6 +508,7 @@
             font-size: 1.2rem;
             margin-left: -1px
         }
+
         #stage {
             position: relative;
             width: 440px;
@@ -301,16 +516,35 @@
             flex: none;
             transform-origin: center center
         }
+
         .shk {
             animation: mshake .55s ease-in-out
         }
+
         @keyframes mshake {
-            0%, 100% { transform: translate(0) }
-            20% { transform: translate(-6px, 3px) rotate(-1deg) }
-            40% { transform: translate(6px, -3px) rotate(1deg) }
-            60% { transform: translate(-5px, -3px) rotate(-1deg) }
-            80% { transform: translate(5px, 3px) rotate(1deg) }
+
+            0%,
+            100% {
+                transform: translate(0)
+            }
+
+            20% {
+                transform: translate(-6px, 3px) rotate(-1deg)
+            }
+
+            40% {
+                transform: translate(6px, -3px) rotate(1deg)
+            }
+
+            60% {
+                transform: translate(-5px, -3px) rotate(-1deg)
+            }
+
+            80% {
+                transform: translate(5px, 3px) rotate(1deg)
+            }
         }
+
         .glow {
             position: absolute;
             left: 50%;
@@ -324,13 +558,100 @@
             transition: .5s;
             pointer-events: none
         }
+
         .busy .glow {
             opacity: 1;
             animation: gl 1s infinite alternate
         }
+
         @keyframes gl {
-            to { transform: translate(-50%, -50%) scale(1.15) }
+            to {
+                transform: translate(-50%, -50%) scale(1.15)
+            }
         }
+
+        /* ===== SANTA HAT on top of dome ===== */
+        .santa-hat {
+            position: absolute;
+            left: 50%;
+            top: -34px;
+            width: 130px;
+            height: 110px;
+            transform: translateX(-50%) rotate(-12deg);
+            z-index: 6;
+            pointer-events: none;
+            filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .25));
+        }
+
+        .santa-hat .body {
+            position: absolute;
+            left: 50%;
+            bottom: 18px;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 50px solid transparent;
+            border-right: 50px solid transparent;
+            border-bottom: 90px solid #d62839;
+            filter: drop-shadow(inset -6px -6px 12px rgba(0, 0, 0, .2));
+        }
+
+        .santa-hat .band {
+            position: absolute;
+            left: 50%;
+            bottom: 10px;
+            transform: translateX(-50%);
+            width: 116px;
+            height: 22px;
+            background: linear-gradient(#fff, #f1f1f1);
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .15);
+        }
+
+        .santa-hat .pompom {
+            position: absolute;
+            right: 8px;
+            top: 0;
+            width: 26px;
+            height: 26px;
+            background: radial-gradient(circle at 35% 35%, #fff, #e8e8e8);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .2);
+        }
+
+        /* ===== WREATH around plate ===== */
+        .wreath {
+            position: absolute;
+            top: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 70px;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .wreath::before,
+        .wreath::after {
+            content: "🌿🌿🌿";
+            position: absolute;
+            top: 0;
+            font-size: 1rem;
+            color: var(--green2);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+            letter-spacing: 2px;
+        }
+
+        .wreath::before {
+            left: -6px;
+            transform: rotate(-8deg)
+        }
+
+        .wreath::after {
+            right: -6px;
+            transform: rotate(8deg) scale(-1, 1)
+        }
+
         .dome {
             position: absolute;
             left: 20px;
@@ -345,6 +666,7 @@
             box-shadow: inset -22px -22px 60px rgba(0, 0, 0, .12), inset 22px 22px 60px rgba(255, 255, 255, .7), 0 28px 50px rgba(0, 0, 0, .2);
             overflow: hidden
         }
+
         .dome canvas {
             position: absolute;
             inset: 0;
@@ -352,6 +674,7 @@
             height: 100%;
             border-radius: 50%
         }
+
         .dome::after {
             content: "";
             position: absolute;
@@ -364,6 +687,7 @@
             background: linear-gradient(rgba(255, 255, 255, .85), rgba(255, 255, 255, 0));
             pointer-events: none
         }
+
         .dome::before {
             content: "";
             position: absolute;
@@ -377,6 +701,7 @@
             z-index: 2;
             pointer-events: none
         }
+
         .ring {
             position: absolute;
             left: 10px;
@@ -388,6 +713,7 @@
             background: linear-gradient(#ffe08a, #e0a21a 60%, #a8710b);
             box-shadow: 0 6px 12px rgba(0, 0, 0, .35), inset 0 2px 3px rgba(255, 255, 255, .7)
         }
+
         .base {
             position: absolute;
             left: 0;
@@ -400,6 +726,7 @@
             box-shadow: inset 0 10px 20px rgba(255, 255, 255, .25), inset 0 -14px 24px rgba(0, 0, 0, .3), 0 30px 50px rgba(0, 0, 0, .35);
             border: 2px solid rgba(255, 255, 255, .25)
         }
+
         .base::before {
             content: "";
             position: absolute;
@@ -408,6 +735,7 @@
             border-radius: 20px 20px 60px 60px;
             background: linear-gradient(rgba(255, 255, 255, .28), transparent)
         }
+
         .plate {
             position: absolute;
             top: 50px;
@@ -415,14 +743,23 @@
             transform: translateX(-50%);
             background: linear-gradient(#fff, #eceff3);
             color: var(--red2);
-            padding: 6px 34px;
+            padding: 6px 22px;
             border-radius: 10px;
             font-weight: 900;
-            font-size: 1.6rem;
-            letter-spacing: 4px;
+            font-size: 1.4rem;
+            letter-spacing: 2px;
             box-shadow: inset 0 2px 4px #fff, 0 5px 12px rgba(0, 0, 0, .35);
-            border: 1px solid #ddd
+            border: 1px solid #ddd;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
+
+        .plate .px {
+            font-size: 1.1rem;
+        }
+
         .lights {
             position: absolute;
             top: 30px;
@@ -431,6 +768,7 @@
             display: flex;
             gap: 14px
         }
+
         .lights i {
             width: 10px;
             height: 10px;
@@ -439,15 +777,34 @@
             box-shadow: 0 0 8px #ffd34d;
             animation: bl 1.2s infinite
         }
+
+        .lights i:nth-child(odd) {
+            background: #ff3b3b;
+            box-shadow: 0 0 8px #ff3b3b;
+        }
+
         .lights i:nth-child(even) {
+            background: #2ecc71;
+            box-shadow: 0 0 8px #2ecc71;
             animation-delay: .6s
         }
+
+        .lights i:nth-child(3n) {
+            background: #ffd34d;
+            box-shadow: 0 0 8px #ffd34d;
+        }
+
         .busy .lights i {
             animation-duration: .2s
         }
+
         @keyframes bl {
-            50% { opacity: .25; box-shadow: none }
+            50% {
+                opacity: .25;
+                box-shadow: none
+            }
         }
+
         .knoba {
             position: absolute;
             top: 105px;
@@ -465,8 +822,15 @@
             z-index: 5;
             transition: transform .2s
         }
-        .knoba:hover { transform: scale(1.05) }
-        .knoba:active { transform: scale(.96) }
+
+        .knoba:hover {
+            transform: scale(1.05)
+        }
+
+        .knoba:active {
+            transform: scale(.96)
+        }
+
         .knob {
             width: 90px;
             height: 26px;
@@ -475,6 +839,7 @@
             box-shadow: 0 5px 8px rgba(0, 0, 0, .35);
             position: relative
         }
+
         .knob::after {
             content: "";
             position: absolute;
@@ -486,12 +851,17 @@
             background: linear-gradient(90deg, #f1f2f6, #7f8fa6);
             box-shadow: 5px 0 8px rgba(0, 0, 0, .25)
         }
+
         .knob.spin {
             animation: rk 1s cubic-bezier(.25, 1, .5, 1)
         }
+
         @keyframes rk {
-            to { transform: rotate(360deg) }
+            to {
+                transform: rotate(360deg)
+            }
         }
+
         .chute {
             position: absolute;
             bottom: 26px;
@@ -505,6 +875,17 @@
             box-shadow: inset 0 18px 28px #000;
             overflow: hidden
         }
+
+        .chute::after {
+            content: "🎁";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            opacity: .25;
+        }
+
         .rball {
             position: absolute;
             left: 50%;
@@ -513,18 +894,39 @@
             height: 68px;
             margin-left: -34px;
             border-radius: 50%;
-            opacity: 0
+            opacity: 0;
+            z-index: 2;
         }
+
         .rball.drop {
             animation: drop .9s cubic-bezier(.4, 0, .6, 1) forwards
         }
+
         @keyframes drop {
-            0% { top: -110px; opacity: 1 }
-            60% { top: 14px; opacity: 1 }
-            75% { top: -6px }
-            90% { top: 14px }
-            100% { top: 14px; opacity: 1 }
+            0% {
+                top: -110px;
+                opacity: 1
+            }
+
+            60% {
+                top: 14px;
+                opacity: 1
+            }
+
+            75% {
+                top: -6px
+            }
+
+            90% {
+                top: 14px
+            }
+
+            100% {
+                top: 14px;
+                opacity: 1
+            }
         }
+
         .modal {
             position: fixed;
             inset: 0;
@@ -539,10 +941,12 @@
             pointer-events: none;
             transition: .35s
         }
+
         .modal.on {
             opacity: 1;
             pointer-events: all
         }
+
         .mc {
             background: var(--card);
             padding: 28px;
@@ -552,14 +956,20 @@
             text-align: center;
             box-shadow: 0 30px 60px rgba(0, 0, 0, .3);
             transform: translateY(40px) scale(.95);
-            transition: .45s cubic-bezier(.34, 1.56, .64, 1)
+            transition: .45s cubic-bezier(.34, 1.56, .64, 1);
+            border: 2px solid rgba(255, 90, 95, .2);
         }
-        .modal.on .mc { transform: none }
+
+        .modal.on .mc {
+            transform: none
+        }
+
         .mc h2 {
             margin: 0;
             color: var(--red);
             font-weight: 900
         }
+
         textarea {
             width: 100%;
             height: 210px;
@@ -574,10 +984,12 @@
             resize: none;
             user-select: text
         }
+
         textarea:focus {
             border-color: var(--blue);
             box-shadow: 0 0 0 4px rgba(52, 172, 224, .2)
         }
+
         .opt {
             display: flex;
             align-items: center;
@@ -587,11 +999,13 @@
             color: var(--mute);
             cursor: pointer
         }
+
         .opt input {
             width: 20px;
             height: 20px;
             accent-color: var(--red)
         }
+
         .bp {
             background: linear-gradient(135deg, var(--red), var(--red2));
             color: #fff;
@@ -603,7 +1017,11 @@
             box-shadow: 0 10px 20px rgba(255, 90, 95, .35);
             transition: .2s
         }
-        .bp:hover { transform: translateY(-3px) }
+
+        .bp:hover {
+            transform: translateY(-3px)
+        }
+
         .wo {
             position: fixed;
             inset: 0;
@@ -620,10 +1038,12 @@
             transition: opacity .4s;
             overflow: hidden
         }
+
         .wo.on {
             opacity: 1;
             pointer-events: all
         }
+
         .rays {
             position: absolute;
             width: 160vmax;
@@ -638,10 +1058,17 @@
             mask: radial-gradient(circle, #000 0, transparent 55%);
             animation: rot 24s linear infinite
         }
+
         @keyframes rot {
-            to { transform: rotate(360deg) }
+            to {
+                transform: rotate(360deg)
+            }
         }
-        .wo.open .rays { opacity: 1 }
+
+        .wo.open .rays {
+            opacity: 1
+        }
+
         .flash {
             position: absolute;
             inset: 0;
@@ -649,11 +1076,21 @@
             opacity: 0;
             pointer-events: none
         }
-        .wo.open .flash { animation: fl .8s }
-        @keyframes fl {
-            0% { opacity: .9 }
-            100% { opacity: 0 }
+
+        .wo.open .flash {
+            animation: fl .8s
         }
+
+        @keyframes fl {
+            0% {
+                opacity: .9
+            }
+
+            100% {
+                opacity: 0
+            }
+        }
+
         .cap {
             position: relative;
             width: min(340px, 80vw);
@@ -661,15 +1098,31 @@
             margin-bottom: 40px;
             animation: capin .7s cubic-bezier(.34, 1.56, .64, 1)
         }
+
         @keyframes capin {
-            from { transform: scale(.2) translateY(200px) }
+            from {
+                transform: scale(.2) translateY(200px)
+            }
         }
-        .cap.shake { animation: cs .12s infinite }
+
+        .cap.shake {
+            animation: cs .12s infinite
+        }
+
         @keyframes cs {
-            25% { transform: translate(-5px, 3px) rotate(-3deg) }
-            50% { transform: translate(5px, -3px) rotate(3deg) }
-            75% { transform: translate(-3px, -4px) rotate(-2deg) }
+            25% {
+                transform: translate(-5px, 3px) rotate(-3deg)
+            }
+
+            50% {
+                transform: translate(5px, -3px) rotate(3deg)
+            }
+
+            75% {
+                transform: translate(-3px, -4px) rotate(-2deg)
+            }
         }
+
         .half {
             position: absolute;
             left: 0;
@@ -677,12 +1130,14 @@
             height: 50%;
             transition: 1.1s cubic-bezier(.34, 1.56, .64, 1)
         }
+
         .top {
             top: 0;
             border-radius: 999px 999px 0 0;
             z-index: 3;
             box-shadow: inset -12px -8px 24px rgba(0, 0, 0, .3), inset 12px 10px 24px rgba(255, 255, 255, .55)
         }
+
         .bot {
             bottom: 0;
             border-radius: 0 0 999px 999px;
@@ -690,14 +1145,17 @@
             background: radial-gradient(circle at 40% 15%, #fff, #e4e7ec 60%, #a5adb8);
             box-shadow: inset -12px -12px 24px rgba(0, 0, 0, .25), inset 12px 8px 24px #fff
         }
+
         .wo.open .top {
             transform: translateY(-190px) rotate(-24deg);
             opacity: 0
         }
+
         .wo.open .bot {
             transform: translateY(190px) rotate(16deg);
             opacity: 0
         }
+
         .glowc {
             position: absolute;
             inset: -30%;
@@ -706,7 +1164,11 @@
             opacity: 0;
             transition: .6s
         }
-        .wo.open .glowc { opacity: 1 }
+
+        .wo.open .glowc {
+            opacity: 1
+        }
+
         .wname {
             position: absolute;
             left: 50%;
@@ -724,10 +1186,12 @@
             transition: .8s cubic-bezier(.34, 1.56, .64, 1) .25s;
             word-break: break-word
         }
+
         .wo.open .wname {
             opacity: 1;
             transform: translate(-50%, -50%) scale(1)
         }
+
         .crown {
             position: absolute;
             top: -14%;
@@ -737,14 +1201,38 @@
             z-index: 6;
             transition: .7s cubic-bezier(.34, 1.56, .64, 1) .6s
         }
+
         .wo.open .crown {
             transform: translate(-50%, 0) scale(1)
         }
+
+        /* Christmas greeting under winner name */
+        .xmas-greet {
+            position: absolute;
+            left: 50%;
+            top: calc(50% + clamp(40px, 9vw, 80px));
+            transform: translate(-50%, 20px);
+            color: #ffd34d;
+            font-weight: 700;
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, .6);
+            opacity: 0;
+            z-index: 6;
+            transition: .6s cubic-bezier(.34, 1.56, .64, 1) .9s;
+            white-space: nowrap;
+            letter-spacing: 1px;
+        }
+
+        .wo.open .xmas-greet {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
         .cont {
             position: relative;
             z-index: 10;
-            background: rgba(255, 255, 255, .95);
-            color: var(--red2);
+            background: linear-gradient(135deg, var(--red), var(--red2));
+            color: #fff;
             border: 0;
             padding: 14px 56px;
             border-radius: 50px;
@@ -756,13 +1244,18 @@
             pointer-events: none;
             transition: .4s
         }
+
         .wo.open .cont {
             opacity: 1;
             transform: none;
             transition-delay: 1s;
             pointer-events: all
         }
-        .cont:hover { transform: scale(1.08) !important }
+
+        .cont:hover {
+            transform: scale(1.08) !important
+        }
+
         .toast {
             position: fixed;
             bottom: calc(46px + env(safe-area-inset-bottom, 0px));
@@ -777,18 +1270,28 @@
             z-index: 1000;
             pointer-events: none
         }
+
         .toast.on {
             opacity: 1;
             transform: translate(-50%, 0)
         }
     </style>
 </head>
+
 <body>
     <div class="bokeh" id="bokeh"></div>
+    <canvas id="snow"></canvas>
+    <div class="lights-string" id="lightsString"></div>
+    <div class="snowground"></div>
+    <div class="xmas-banner">
+        <span class="icn">🔔</span>
+        <span>ERC</span>
+        <span>🎄</span>
+    </div>
     <canvas id="confetti"></canvas>
     <div class="logw col" id="logw">
         <div class="logc">
-            <h3>🏆 ผู้โชคดี <span><button class="mini" onclick="copyLog()">คัดลอก</button></span></h3>
+            <h3>ลำดับ - ผู้โชคดี <span><button class="mini" onclick="copyLog()">คัดลอก</button></span></h3>
             <ul id="logList">
                 <li class="empty">ยังไม่มีผู้โชคดี</li>
             </ul>
@@ -803,11 +1306,16 @@
     </div>
     <div id="stage">
         <div class="glow"></div>
+        <div class="santa-hat">
+            <div class="body"></div>
+            <div class="band"></div>
+            <div class="pompom"></div>
+        </div>
         <div class="dome" id="dome"><canvas id="gc"></canvas></div>
         <div class="ring"></div>
         <div class="base">
             <div class="lights"><i></i><i></i><i></i><i></i><i></i></div>
-            <div class="plate">GACHAPON</div>
+            <div class="plate">GACHAPON<span class="px"></span></div>
             <div class="knoba" onclick="spinGacha(event)">
                 <div class="knob" id="knob"></div>
             </div>
@@ -816,7 +1324,6 @@
             </div>
         </div>
     </div>
-    <div class="hint">คลิกตู้เพื่อเขย่า · หมุนปุ่มหรือกด Space เพื่อสุ่ม</div>
     <div class="modal" id="modal">
         <div class="mc">
             <h2>📝 รายชื่อผู้โชคดี</h2>
@@ -840,7 +1347,8 @@
         <div class="cap" id="cap">
             <div class="glowc"></div>
             <div class="wname" id="wname"></div>
-            <div class="crown"> </div>
+            <div class="xmas-greet" id="xmasGreet">🎁 ขอแสดงความยินดี 🎁</div>
+            <div class="crown"></div>
             <div class="half top" id="ctop"></div>
             <div class="half bot"></div>
         </div>
@@ -963,6 +1471,39 @@
         }
         const fanfare = () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 'triangle', .5, .22, i * .1));
 
+        // ===== JINGLE BELLS melody =====
+        function jingleBells() {
+            if (muted) return;
+            // notes: E E E | E E E | E G C D E (in Hz, simplified)
+            const E = 659, G = 784, C = 523, D = 587;
+            const seq = [
+                [E, .25], [E, .25], [E, .5],
+                [E, .25], [E, .25], [E, .5],
+                [E, .25], [G, .25], [C, .3], [D, .3], [E, 1]
+            ];
+            let t = 0;
+            seq.forEach(([f, d]) => {
+                tone(f, 'triangle', d * .95, .18, t);
+                t += d;
+            });
+        }
+        // Jingle bell ring (shaker-like) when knob turned
+        function bellRing() {
+            if (muted) return;
+            const a = ctxA();
+            for (let i = 0; i < 6; i++) {
+                const o = a.createOscillator(), g = a.createGain();
+                const f = 2000 + Math.random() * 4000;
+                o.type = 'triangle';
+                o.frequency.value = f;
+                const t = a.currentTime + i * .06;
+                g.gain.setValueAtTime(.06, t);
+                g.gain.exponentialRampToValueAtTime(.001, t + .15);
+                o.connect(g); g.connect(a.destination);
+                o.start(t); o.stop(t + .18);
+            }
+        }
+
         // --- ระบบเรนเดอร์และฟิสิกส์ลูกบอล (ป้องกันการสั่นกระตุก) ---
         const gc = $('gc'), g = gc.getContext('2d');
         const S = 386;
@@ -986,8 +1527,7 @@
 
         function physics() {
             const isStir = stir > 0;
-            const gr = isStir ? .42 : .18; // แรงโน้มถ่วงต่ำลงตอนจอดนิ่งเพื่อลดแรงดันชนกัน
-
+            const gr = isStir ? .42 : .18;
             for (const b of balls) {
                 b.vy += gr;
                 if (isStir) {
@@ -998,7 +1538,6 @@
                     b.vx *= .99;
                     b.vr *= .9;
                 } else {
-                    // Damping สูงมากตอนไม่ได้หมุน เพื่อให้ลูกบอลสงบนิ่งทันที
                     b.vx *= .84;
                     b.vy *= .84;
                     b.vr *= .8;
@@ -1006,19 +1545,16 @@
                     if (Math.abs(b.vy) < 0.04) b.vy = 0;
                     if (Math.abs(b.vr) < 0.003) b.vr = 0;
                 }
-
                 b.x += b.vx;
                 b.y += b.vy;
                 b.rot += b.vr;
-
-                // ตรวจสอบขอบตู้ทรงกลม
                 const dx = b.x - R, dy = b.y - R, d = Math.hypot(dx, dy), m = R - BR - 8;
                 if (d > m) {
                     const nx = dx / d, ny = dy / d, dot = b.vx * nx + b.vy * ny;
                     b.x = R + nx * m;
                     b.y = R + ny * m;
                     if (dot > 0) {
-                        const e = isStir ? (dot > 1.2 ? 1.4 : 1.0) : 0.08; // แทบไม่เด้งเลยตอนนิ่ง
+                        const e = isStir ? (dot > 1.2 ? 1.4 : 1.0) : 0.08;
                         b.vx -= e * dot * nx;
                         b.vy -= e * dot * ny;
                     }
@@ -1027,8 +1563,6 @@
                     if (isStir) b.vr += nx * .04;
                 }
             }
-
-            // ชนกันเองระหว่างลูกบอล
             for (let i = 0; i < balls.length; i++) {
                 for (let j = i + 1; j < balls.length; j++) {
                     const a = balls[i], b = balls[j];
@@ -1056,7 +1590,6 @@
             }
         }
 
-        // Settling physics ล่วงหน้าก่อนแสดงผลหน้าจอ จะได้ไม่ขยับสั่นในตอนแรก
         for (let s = 0; s < 120; s++) physics();
 
         function drawBall(b) {
@@ -1113,6 +1646,7 @@
             if (busy) return;
             ctxA().resume();
             tone(140, 'triangle', .2, .25, 0, 70);
+            bellRing();
             stage.classList.remove('shk');
             void stage.offsetWidth;
             stage.classList.add('shk');
@@ -1135,6 +1669,7 @@
             knob.classList.add('spin');
             stir = 1.6;
 
+            bellRing();
             for (let i = 0; i < 6; i++) tone(180 + i * 30, 'square', .12, .08, i * .15);
             const col = COLORS[Math.floor(Math.random() * COLORS.length)];
 
@@ -1166,6 +1701,7 @@
             setTimeout(() => {
                 clearInterval(iv);
                 cap.classList.remove('shake');
+                jingleBells();
                 fanfare();
                 wo.classList.add('open');
                 burst();
@@ -1224,30 +1760,133 @@
             if (e.code === 'Escape') $('modal').classList.remove('on');
         });
 
-        // Confetti Effect
+        // ===== SNOWFALL (continuous gentle snow) =====
+        const snowCv = $('snow'), sx = snowCv.getContext('2d');
+        let flakes = [];
+        function sizeSnow() {
+            snowCv.width = innerWidth;
+            snowCv.height = innerHeight;
+        }
+        sizeSnow();
+        function makeFlake(initial) {
+            return {
+                x: Math.random() * innerWidth,
+                y: initial ? Math.random() * innerHeight : -10,
+                r: Math.random() * 2.4 + 0.8,
+                vy: Math.random() * 0.6 + 0.4,
+                vx: (Math.random() - 0.5) * 0.4,
+                sway: Math.random() * 0.02,
+                phase: Math.random() * 6.28,
+                op: Math.random() * 0.6 + 0.4
+            };
+        }
+        function initSnow() {
+            flakes = [];
+            const n = Math.min(140, Math.floor(innerWidth / 10));
+            for (let i = 0; i < n; i++) flakes.push(makeFlake(true));
+        }
+        initSnow();
+        function snowTick() {
+            sx.clearRect(0, 0, snowCv.width, snowCv.height);
+            for (const f of flakes) {
+                f.phase += f.sway;
+                f.x += f.vx + Math.sin(f.phase) * 0.3;
+                f.y += f.vy;
+                if (f.y > innerHeight + 5) {
+                    f.y = -5;
+                    f.x = Math.random() * innerWidth;
+                }
+                if (f.x < -5) f.x = innerWidth + 5;
+                if (f.x > innerWidth + 5) f.x = -5;
+                sx.beginPath();
+                sx.arc(f.x, f.y, f.r, 0, 6.283);
+                sx.fillStyle = `rgba(255,255,255,${f.op})`;
+                sx.shadowColor = 'rgba(255,255,255,.7)';
+                sx.shadowBlur = 4;
+                sx.fill();
+            }
+            sx.shadowBlur = 0;
+            requestAnimationFrame(snowTick);
+        }
+        snowTick();
+
+        // ===== Confetti Effect (with Christmas shapes) =====
         const cv = $('confetti'), cx = cv.getContext('2d');
         let parts = [], run = false;
         function size() { cv.width = innerWidth; cv.height = innerHeight; }
         size();
-        addEventListener('resize', () => { size(); fit(); });
+        addEventListener('resize', () => { size(); sizeSnow(); initSnow(); fit(); });
+
+        const XMAS_COL = ['#ff3b3b','#2ecc71','#ffd34d','#fff','#34ace0','#ff78c4','#c9283a','#15803d'];
 
         function burst() {
-            const cols = ['#ff5a5f','#34ace0','#ffb142','#33d9b2','#a29bfe','#feca57','#ff78c4'];
-            for (let i = 0; i < 220; i++) {
+            for (let i = 0; i < 260; i++) {
                 const side = i % 2 ? 1 : -1, x = innerWidth / 2, y = innerHeight * .55;
                 const a = -Math.PI / 2 + (Math.random() - .5) * 1.7, v = Math.random() * 18 + 8;
                 parts.push({
                     x: x + side * 20, y,
                     vx: Math.cos(a) * v, vy: Math.sin(a) * v,
-                    c: cols[i % cols.length],
+                    c: XMAS_COL[i % XMAS_COL.length],
                     s: Math.random() * 10 + 5,
                     r: Math.random() * 6,
                     vr: (Math.random() - .5) * .4,
-                    sh: Math.random() > .5,
+                    // shape: 0 = rect, 1 = circle, 2 = snowflake, 3 = star, 4 = tree
+                    shape: Math.floor(Math.random() * 5),
                     life: 0
                 });
             }
             if (!run) { run = true; tick(); }
+        }
+
+        function drawSnowflake(ctx, s) {
+            ctx.strokeStyle = ctx.fillStyle;
+            ctx.lineWidth = Math.max(1, s / 14);
+            ctx.lineCap = 'round';
+            for (let i = 0; i < 6; i++) {
+                ctx.save();
+                ctx.rotate(i * Math.PI / 3);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, -s / 2);
+                ctx.moveTo(0, -s * .3);
+                ctx.lineTo(-s * .12, -s * .42);
+                ctx.moveTo(0, -s * .3);
+                ctx.lineTo(s * .12, -s * .42);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+        function drawStar(ctx, s) {
+            ctx.fillStyle = ctx.fillStyle;
+            const sp = 5, oR = s / 2, iR = oR * .45;
+            ctx.beginPath();
+            for (let i = 0; i < sp * 2; i++) {
+                const r = i % 2 ? iR : oR;
+                const a = (i * Math.PI) / sp - Math.PI / 2;
+                const px = Math.cos(a) * r, py = Math.sin(a) * r;
+                i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+        function drawTree(ctx, s) {
+            const h = s * .7;
+            ctx.fillStyle = ctx.fillStyle;
+            // three triangles stacked
+            ctx.beginPath();
+            ctx.moveTo(0, -h / 2);
+            ctx.lineTo(-s / 3, 0);
+            ctx.lineTo(s / 3, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(0, -h / 2 + h * .3);
+            ctx.lineTo(-s / 2.4, h * .15);
+            ctx.lineTo(s / 2.4, h * .15);
+            ctx.closePath();
+            ctx.fill();
+            // trunk
+            ctx.fillRect(-s / 10, h * .15, s / 5, h * .2);
         }
 
         function tick() {
@@ -1265,12 +1904,14 @@
                 cx.rotate(p.r);
                 cx.fillStyle = p.c;
                 cx.globalAlpha = Math.min(1, (400 - p.life) / 60);
-                if (p.sh) cx.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * .6);
-                else {
+                if (p.shape === 0) cx.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * .6);
+                else if (p.shape === 1) {
                     cx.beginPath();
                     cx.arc(0, 0, p.s / 2, 0, 6.283);
                     cx.fill();
-                }
+                } else if (p.shape === 2) drawSnowflake(cx, p.s);
+                else if (p.shape === 3) drawStar(cx, p.s);
+                else if (p.shape === 4) drawTree(cx, p.s);
                 cx.restore();
             }
             if (parts.length) requestAnimationFrame(tick);
@@ -1284,17 +1925,26 @@
         }
         fit();
 
-        // Background Bokeh
+        // Build string lights
+        (function buildLights() {
+            const ls = $('lightsString');
+            const n = Math.max(12, Math.floor(innerWidth / 50));
+            let html = '';
+            for (let i = 0; i < n; i++) html += '<i></i>';
+            ls.innerHTML = html;
+        })();
+
+        // Background Bokeh (kept subtle, since snow now does the heavy lifting)
         const bk = $('bokeh');
-        for (let i = 0; i < 14; i++) {
+        for (let i = 0; i < 8; i++) {
             const e = document.createElement('i'), s = 30 + Math.random() * 90;
-            e.style.cssText = `width:${s}px;height:${s}px;left:${Math.random() * 100}%;animation-duration:${14 + Math.random() * 20}s;animation-delay:${-Math.random() * 30}s;opacity:${.25 + Math.random() * .4}`;
+            e.style.cssText = `width:${s}px;height:${s}px;left:${Math.random() * 100}%;animation-duration:${14 + Math.random() * 20}s;animation-delay:${-Math.random() * 30}s;opacity:${.2 + Math.random() * .3}`;
             bk.appendChild(e);
         }
 
-        // เริ่มต้นการโหลดข้อมูลจาก Cache
         loadCache();
         updateCount();
     </script>
 </body>
+
 </html>
