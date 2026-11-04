@@ -570,54 +570,7 @@
             }
         }
 
-        /* ===== SANTA HAT on top of dome ===== */
-        .santa-hat {
-            position: absolute;
-            left: 50%;
-            top: -34px;
-            width: 130px;
-            height: 110px;
-            transform: translateX(-50%) rotate(-12deg);
-            z-index: 6;
-            pointer-events: none;
-            filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .25));
-        }
-
-        .santa-hat .body {
-            position: absolute;
-            left: 50%;
-            bottom: 18px;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 50px solid transparent;
-            border-right: 50px solid transparent;
-            border-bottom: 90px solid #d62839;
-            filter: drop-shadow(inset -6px -6px 12px rgba(0, 0, 0, .2));
-        }
-
-        .santa-hat .band {
-            position: absolute;
-            left: 50%;
-            bottom: 10px;
-            transform: translateX(-50%);
-            width: 116px;
-            height: 22px;
-            background: linear-gradient(#fff, #f1f1f1);
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, .15);
-        }
-
-        .santa-hat .pompom {
-            position: absolute;
-            right: 8px;
-            top: 0;
-            width: 26px;
-            height: 26px;
-            background: radial-gradient(circle at 35% 35%, #fff, #e8e8e8);
-            border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, .2);
-        }
+  
 
         /* ===== WREATH around plate ===== */
         .wreath {
@@ -1285,8 +1238,8 @@
     <div class="snowground"></div>
     <div class="xmas-banner">
         <span class="icn">🔔</span>
-        <span>ERC</span>
-        <span>🎄</span>
+        <span> </span>
+        <span class="icn">🔔</span>
     </div>
     <canvas id="confetti"></canvas>
     <div class="logw col" id="logw">
@@ -1306,11 +1259,7 @@
     </div>
     <div id="stage">
         <div class="glow"></div>
-        <div class="santa-hat">
-            <div class="body"></div>
-            <div class="band"></div>
-            <div class="pompom"></div>
-        </div>
+        
         <div class="dome" id="dome"><canvas id="gc"></canvas></div>
         <div class="ring"></div>
         <div class="base">
