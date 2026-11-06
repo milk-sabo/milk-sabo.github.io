@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HOTEL MURDER - ปริศนาโรงแรมมรณะ</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#08090c;--panel:rgba(16,18,25,.94);--gold:#d4af37;--gold2:#f3d97a;--glow:rgba(212,175,55,.35);--red:#e63946;--text:#f1faee;--sub:#9aa3bc;--line:#2d3345;--ok:#00e676;--warn:#ffb703}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{min-height:100%}
+body{font-family:'Sarabun',sans-serif;color:var(--text);background:radial-gradient(circle at 50% 0,#2a1838 0,#0a0b10 60%,#050608 100%) fixed;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);transition:background .8s}
+body.night{background:radial-gradient(circle at 50% 0,#0d1a33 0,#05070d 65%,#020306 100%) fixed}
+.rain{position:fixed;inset:0;pointer-events:none;opacity:.22;z-index:0;background-image:linear-gradient(105deg,transparent 48%,rgba(160,180,255,.55) 50%,transparent 52%);background-size:26px 90px;animation:rain .55s linear infinite}
+@keyframes rain{to{background-position:-26px 90px}}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9999;transition:opacity .08s}
+header,.container{position:relative;z-index:1}
+header{text-align:center;padding:16px 10px 4px}
+h1{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(1.6rem,6vw,2.3rem);letter-spacing:4px;background:linear-gradient(180deg,var(--gold2),var(--gold) 55%,#8a6d1a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px var(--glow))}
+.subtitle{font-size:.8rem;color:var(--sub);letter-spacing:1px;margin-top:2px}
+.container{width:96%;max-width:860px;margin:10px auto 30px;background:var(--panel);border:1px solid rgba(212,175,55,.35);border-radius:16px;box-shadow:0 14px 40px rgba(0,0,0,.85),inset 0 0 0 1px rgba(255,255,255,.03);padding:16px;backdrop-filter:blur(6px);animation:rise .6s ease}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+.btn{background:linear-gradient(135deg,#2b3040,#141722);color:var(--gold);border:1px solid var(--gold);padding:9px 16px;font:600 .9rem 'Sarabun',sans-serif;border-radius:8px;cursor:pointer;transition:.18s;box-shadow:0 4px 10px rgba(0,0,0,.4);margin:4px}
+.btn:hover:not(:disabled){background:var(--gold);color:#000;box-shadow:0 0 14px var(--glow);transform:translateY(-1px)}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn:disabled{opacity:.4;cursor:not-allowed;border-color:#555;color:#777}
+.btn-danger{border-color:var(--red);color:var(--red)}
+.btn-danger:hover:not(:disabled){background:var(--red);color:#fff;box-shadow:0 0 14px rgba(230,57,70,.5)}
+.btn-lg{padding:12px 26px;font-size:1rem}
+select,input{font-family:'Sarabun',sans-serif}
+.input-group{margin:8px 0;text-align:left}
+.input-group label{display:block;font-size:.8rem;color:var(--sub);margin-bottom:3px}
+.input-group select,.input-group input{width:100%;padding:9px 10px;background:#0a0c10;border:1px solid #3c445c;border-radius:8px;color:#fff;font-size:.9rem;user-select:text;outline:0;transition:.15s}
+.input-group select:focus,.input-group input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--glow)}
+select.btn{background:#0a0c10;padding:9px 12px;min-width:60%}
+.sec-title{color:var(--gold);text-align:center;font-size:1.15rem;margin-bottom:12px}
+.note{background:rgba(0,0,0,.3);padding:10px 12px;border-radius:8px;border-left:3px solid var(--gold);font-size:.8rem;color:#a3adc4;line-height:1.6}
+.players-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}
+/* status */
+.status-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(0,0,0,.45);padding:9px 12px;border-radius:10px;margin-bottom:10px;border-left:4px solid var(--gold)}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:.78rem;background:#1b2030;border:1px solid #38405a}
+.chip.day{color:var(--warn);border-color:rgba(255,183,3,.5)}
+.chip.night{color:#8fb2ff;border-color:rgba(143,178,255,.5)}
+.dots{display:flex;gap:5px}.dots i{width:9px;height:9px;border-radius:50%;background:#2a3043}.dots i.on{background:var(--gold);box-shadow:0 0 8px var(--glow)}.dots i.cur{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+/* hotel */
+.hotel-board{margin:10px 0;background:linear-gradient(180deg,#10131b,#0a0c12);padding:10px;border-radius:12px;border:1px solid #232838;position:relative}
+.hotel-board:before{content:"";position:absolute;top:-1px;left:12%;right:12%;height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.grid-header,.floor-row{display:grid;grid-template-columns:64px repeat(3,1fr);gap:6px;align-items:center}
+.grid-header{text-align:center;font-size:.72rem;color:var(--gold);font-weight:700;padding-bottom:6px;border-bottom:1px solid #222}
+#floors-container{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.floor-label{font-weight:700;color:var(--gold);font-size:.78rem;text-align:center;background:linear-gradient(135deg,#1a1e2b,#121520);padding:10px 2px;border-radius:6px;border:1px solid #282f42}
+.room-card{background:linear-gradient(180deg,#232938,#171b26);border:1.5px solid var(--line);border-radius:8px 8px 5px 5px;padding:7px 2px 6px;text-align:center;cursor:pointer;transition:.15s;position:relative;min-height:50px}
+.room-card:after{content:"";position:absolute;right:7px;top:50%;width:5px;height:5px;border-radius:50%;background:var(--gold);opacity:.55}
+.room-card:hover:not(.closed){border-color:var(--gold);transform:translateY(-2px);box-shadow:0 5px 12px rgba(0,0,0,.5)}
+.room-card.selected{border-color:var(--ok)!important;background:linear-gradient(180deg,#14442c,#0c2a1b)!important;box-shadow:0 0 14px var(--ok);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 5px var(--ok)}}
+.room-card.closed{background:repeating-linear-gradient(45deg,#101116,#101116 6px,#15171e 6px,#15171e 12px)!important;border-color:#20222a!important;opacity:.45;cursor:not-allowed}
+.room-card.closed:after,.room-card.body:after,.room-card.dead:after{display:none}
+.room-card.body{background:linear-gradient(180deg,#5a1a22,#3a0f15)!important;border-color:#7a1d26!important}
+.room-card.dead{background:linear-gradient(180deg,#3a0f14,#1f080b)!important;border-color:var(--red)!important}
+.room-card.locked{border-color:var(--warn)!important;box-shadow:0 0 10px var(--warn)}
+.room-card.locked:before{content:"🔒";position:absolute;top:1px;left:3px;font-size:.6rem}
+.room-num{font-weight:700;font-size:.95rem;color:#fff}
+.room-status{font-size:.62rem;margin-top:2px;color:var(--sub);min-height:.8em}
+.legend{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;font-size:.7rem;color:var(--sub);margin-top:8px}
+.legend span:before{content:"";display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle;background:var(--c)}
+/* controls */
+.day-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;font-size:.8rem;color:var(--sub)}
+.timer-badge{background:#1f2433;padding:4px 12px;border-radius:99px;border:1px solid #3c4560;font-size:.8rem;color:var(--warn);font-variant-numeric:tabular-nums}
+.timer-badge.low{color:var(--red);border-color:var(--red);animation:pulse2 1s infinite}
+@keyframes pulse2{50%{opacity:.5}}
+.log-box{background:#090a0e;border:1px solid #1c202c;border-radius:10px;padding:10px;height:130px;overflow-y:auto;font-size:.82rem;color:#a6afc5;margin-top:10px;line-height:1.5;user-select:text}
+.log-box p{padding:4px 8px;margin-bottom:4px;border-left:2px solid var(--gold);background:rgba(255,255,255,.02);border-radius:0 6px 6px 0;animation:slide .35s ease}
+@keyframes slide{from{opacity:0;transform:translateX(-10px)}}
+/* modals */
+.modal{position:fixed;inset:0;background:rgba(4,5,8,.94);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(6px);animation:fade .3s}
+@keyframes fade{from{opacity:0}}
+.modal-content{background:linear-gradient(180deg,#1a1e2a,#12151d);border:2px solid var(--gold);border-radius:16px;padding:20px;width:94%;max-width:520px;text-align:center;box-shadow:0 0 30px var(--glow);max-height:94vh;overflow-y:auto;animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{opacity:0;transform:scale(.88)}}
+.modal-title{color:var(--gold);font-family:'Cinzel','Sarabun',serif;font-size:1.25rem;margin-bottom:6px}
+.badge-role{display:inline-block;background:linear-gradient(135deg,#8b0000,#5c0000);color:#fff;padding:4px 12px;border-radius:99px;font-size:.78rem;margin-bottom:8px}
+.big-emoji{font-size:3.4rem;display:block;margin:4px 0;filter:drop-shadow(0 0 12px var(--glow))}
+.keycard{margin:10px auto;padding:12px;border:1px dashed var(--gold);border-radius:12px;background:rgba(0,0,0,.35);line-height:1.8;font-size:.92rem;text-align:left}
+.keycard .rn{display:block;text-align:center;font-size:2rem;font-weight:700;color:var(--ok);text-shadow:0 0 12px rgba(0,230,118,.5)}
+.clue-display{font-size:3rem;display:block;margin:6px 0}
+#night-map-drawer{margin:10px 0;background:#0b0d13;border:1px dashed var(--gold);border-radius:8px;padding:8px;max-height:250px;overflow-y:auto}
+#night-result{margin:10px 0;background:#000;padding:12px;border-radius:10px;border:1px dashed var(--gold);line-height:1.6}
+.hidden{display:none!important}
+@media(max-width:520px){.container{padding:12px}.grid-header,.floor-row{grid-template-columns:50px repeat(3,1fr);gap:4px}.floor-label{font-size:.68rem}.room-num{font-size:.85rem}.room-status{font-size:.55rem}}
+</style>
+</head>
+<body>
+<div class="rain"></div><div id="flash"></div>
+<header><h1>HOTEL MURDER</h1><div class="subtitle">ปริศนาโรงแรมมรณะ • โรงแรม 9 ชั้น 27 ห้องพัก</div></header>
+<div class="container">
+  <div id="view-setup">
+    <h2 class="sec-title">🏨 เตรียมการเข้าพัก</h2>
+    <div class="input-group"><label>จำนวนผู้เล่น (ไม่รวมผู้ดำเนินเกม):</label>
+      <select id="player-count" onchange="generateInputs()">
+        <option value="6">6 คน (นักสืบ, ช่างกุญแจ, แม่บ้าน, พยาน, ฆาตกร, ผู้ช่วย)</option>
+        <option value="7" selected>7 คน (+ ช่างเช็ดกระจก | ปิดชั้น 8-9 และอีก 3 ห้อง)</option>
+        <option value="8">8 คน (+ ช่างเช็ดกระจก, คนเมา)</option>
+        <option value="9">9 คน (+ ช่างเช็ดกระจก, คนเมา, นักท่องเที่ยว)</option>
+      </select></div>
+    <div id="player-inputs" class="players-grid"></div>
+    <div class="note">📌 <b>ความเป็นส่วนตัว:</b> เมื่อเริ่มเกม ผู้เล่นจะเปิดดูคีย์การ์ดห้องและบทบาทเป็นความลับทีละคน ผังโรงแรมจะไม่บอกว่าห้องไหนมีใครพัก</div>
+    <div style="text-align:center;margin-top:16px"><button class="btn btn-lg" onclick="setupGame()">🏨 รับคีย์การ์ด &amp; เริ่มเกม</button></div>
+  </div>
+
+  <div id="view-game" class="hidden">
+    <div class="status-bar">
+      <span class="chip" id="phase-chip">☀️ กลางวัน</span>
+      <span class="dots" id="day-dots"></span>
+      <span class="chip">👥 รอดชีวิต <b id="alive-count" style="color:var(--ok)">7</b></span>
+      <button class="btn" style="padding:3px 10px;font-size:.75rem;margin:0" onclick="toggleModCheat()">🔑 ดูห้องตนเอง</button>
+    </div>
+    <div class="hotel-board">
+      <div class="grid-header"><div>ชั้น</div><div>x01</div><div>x02</div><div>x03</div></div>
+      <div id="floors-container"></div>
+      <div class="legend"><span style="--c:#232938">ห้องปกติ</span><span style="--c:#5a1a22">ศพ</span><span style="--c:#15171e">ปิดปรับปรุง</span><span style="--c:#ffb703">ล็อกอยู่</span><span style="--c:#00e676">ที่เลือก</span></div>
+    </div>
+    <div id="day-controls" style="text-align:center;margin:8px 0">
+      <div class="day-bar"><span>แตะห้องเพื่อเลือกโหวตประชาทัณฑ์</span><span class="timer-badge" id="timer-text">⏱️ 3:00</span></div>
+      <button class="btn btn-danger" id="btn-lynch" onclick="executeLynch()" disabled>⚖️ โหวตประหารห้องที่เลือก</button>
+      <button class="btn" onclick="startNightPhase()">🌙 จบกลางวัน ➔ กลางคืน</button>
+    </div>
+    <div class="log-box" id="game-logs"><p>⚡ พายุฝนปิดตายโรงแรมทั้ง 9 ชั้น... ร่วมกันสืบหาห้องของฆาตกร!</p></div>
+  </div>
+</div>
+
+<div id="pass-modal" class="modal hidden"><div class="modal-content">
+  <div class="badge-role">🔒 ความลับเฉพาะบุคคล</div>
+  <span class="big-emoji">🛎️</span>
+  <h3 class="modal-title" id="pass-target-name">ผู้เล่น</h3>
+  <p style="margin:14px 0;color:#a4b0c6;font-size:.9rem;line-height:1.6" id="pass-instruction"></p>
+  <button class="btn btn-lg" onclick="onPassModalOpen()">👁️ ข้าพเจ้าคือคนนี้ (แตะเพื่อเปิดดู)</button>
+</div></div>
+
+<div id="action-modal" class="modal hidden"><div class="modal-content">
+  <div class="badge-role" id="night-badge">บทบาท</div>
+  <span class="big-emoji" id="night-emoji"></span>
+  <h3 class="modal-title" id="night-title">หัวข้อ</h3>
+  <p id="night-desc" style="margin:8px 0;color:#ced4da;font-size:.9rem;line-height:1.6"></p>
+  <button type="button" class="btn" style="font-size:.8rem" onclick="toggleNightMiniMap()">🗺️ ดูผังโรงแรม (ย่อ/ขยาย)</button>
+  <div id="night-map-drawer" class="hidden"></div>
+  <div id="night-controls" style="margin:10px 0"></div>
+  <div id="night-result" class="hidden"></div>
+  <button class="btn btn-lg" id="night-btn-submit">ยืนยัน</button>
+</div></div>
+
+<div id="win-modal" class="modal hidden"><div class="modal-content">
+  <span class="big-emoji" id="win-emoji">🏆</span>
+  <h2 class="modal-title" id="win-title" style="font-size:1.5rem">ผลแพ้ชนะ</h2>
+  <p id="win-desc" style="margin:14px 0;line-height:1.7"></p>
+  <div id="win-reveal" class="keycard hidden"></div>
+  <button class="btn btn-lg" onclick="location.reload()">🔄 เล่นรอบใหม่</button>
+</div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const ALL_ROOMS=[];for(let f=9;f>=1;f--)for(let c=1;c<=3;c++)ALL_ROOMS.push(`${f}0${c}`);
+let players=[],roomStatus={},currentDay=1,currentPhase='SETUP',selectedRoom=null,lastLockedRoom=null,tonightLockedRoom=null,tonightKillRoom=null,nightQueue=[],nightQueueIdx=0,setupRevealIdx=0,discussionTimer=180,timerHandle=null;
+const shuffle=a=>a.slice().sort(()=>Math.random()-.5);
+const EMOJI={MURDERER:'🔪',ASSISTANT:'🤝',DETECTIVE:'🔍',KEYMASTER:'🔑',HOUSEKEEPER:'🧹',GLASSCLEANER:'🪟',WITNESS:'👁️',TOURIST:'🧳',DRUNK:'🍾'};
+
+let audioCtx=null;
+function playSfx(freq,type='sine',dur=.25){try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.01,audioCtx.currentTime+dur);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur)}catch(e){}}
+function flashLightning(){playSfx(60,'sawtooth',.6);const f=$('flash');f.style.opacity='.7';setTimeout(()=>f.style.opacity='0',70);setTimeout(()=>f.style.opacity='.35',130);setTimeout(()=>f.style.opacity='0',200)}
+
+function generateInputs(){const n=+$('player-count').value;$('player-inputs').innerHTML=Array.from({length:n},(_,i)=>`<div class="input-group"><label>ผู้เล่นที่ ${i+1}</label><input type="text" id="p-name-${i+1}" value="ผู้เล่น ${i+1}" maxlength="12"></div>`).join('')}
+generateInputs();
+function addLog(m){const p=document.createElement('p');p.innerHTML=m;$('game-logs').prepend(p)}
+
+function setupGame(){
+  const count=+$('player-count').value;
+  roomStatus={};ALL_ROOMS.forEach(r=>roomStatus[r]={state:'OPEN',occupant:null,locked:false,murdered:false});
+  let roles=['MURDERER','ASSISTANT','DETECTIVE','KEYMASTER','HOUSEKEEPER','WITNESS'];
+  if(count>=7)roles.push('GLASSCLEANER');if(count>=8)roles.push('DRUNK');if(count>=9)roles.push('TOURIST');
+  roles=shuffle(roles);
+  if(count===7){['801','802','803','901','902','903'].forEach(r=>roomStatus[r].state='CLOSED');
+    shuffle(ALL_ROOMS.filter(r=>roomStatus[r].state==='OPEN')).slice(0,3).forEach(r=>roomStatus[r].state='CLOSED')}
+  const bodies=shuffle(ALL_ROOMS.filter(r=>roomStatus[r].state==='OPEN')).slice(0,3);
+  bodies.forEach(r=>roomStatus[r].state='BODY');
+  const open=shuffle(ALL_ROOMS.filter(r=>roomStatus[r].state==='OPEN'));
+  players=[];
+  for(let i=1;i<=count;i++){const name=$(`p-name-${i}`).value.trim()||`ผู้เล่น ${i}`;players.push({id:i,name,role:roles[i-1],room:open[i-1],alive:true});roomStatus[open[i-1]].occupant=i}
+  $('view-setup').classList.add('hidden');$('view-game').classList.remove('hidden');
+  renderHotelGrid();updateStatus();flashLightning();
+  addLog(`🚨 พบ <b>ศพเริ่มต้น 3 ศพ</b> ที่ห้อง: ${bodies.join(', ')}`);
+  if(count===7)addLog('🚧 ชั้น 8 และ 9 ถูกปิดปรับปรุงเนื่องจากพายุ');
+  currentPhase='SECRET_HANDOVER';setupRevealIdx=0;promptSecretHandover();
+}
+
+function promptSecretHandover(){
+  if(setupRevealIdx>=players.length){$('pass-modal').classList.add('hidden');$('action-modal').classList.add('hidden');currentPhase='DAY';updateStatus();startDiscussionTimer();addLog('☀️ เช็คอินเสร็จสิ้น เริ่มสืบสวนวันที่ 1 ร่วมกันหาตัวฆาตกร!');return}
+  const p=players[setupRevealIdx];
+  $('pass-target-name').innerText=`ส่งเครื่องให้: ${p.name}`;
+  $('pass-instruction').innerHTML=`ส่งเครื่องให้ <b>${p.name}</b> เพื่อรับคีย์การ์ดและบทบาทลับ<br>(ห้ามผู้เล่นอื่นแอบดู) • คนที่ ${setupRevealIdx+1}/${players.length}`;
+  $('pass-modal').classList.remove('hidden');$('action-modal').classList.add('hidden');
+}
+function onPassModalOpen(){currentPhase==='SECRET_HANDOVER'?showIndividualCard():revealNightAction()}
+
+function showIndividualCard(){
+  $('pass-modal').classList.add('hidden');$('action-modal').classList.remove('hidden');
+  const p=players[setupRevealIdx];
+  $('night-badge').innerText=translateRole(p.role);$('night-emoji').innerText=EMOJI[p.role];
+  $('night-title').innerText=`คุณคือ ${p.name}`;
+  let extra='';
+  if(p.role==='MURDERER'){const a=players.find(x=>x.role==='ASSISTANT');if(a)extra=`<br>🤝 ผู้ช่วยของคุณ: <b>${a.name}</b> (ห้อง ${a.room})`}
+  else if(p.role==='ASSISTANT'){const m=players.find(x=>x.role==='MURDERER');if(m)extra=`<br>🔪 ฆาตกรที่ต้องช่วย: <b>${m.name}</b> (ห้อง ${m.room})`}
+  $('night-desc').innerHTML=`<div class="keycard">🗝️ คีย์การ์ดห้องพัก<span class="rn">ห้อง ${p.room}</span>ชั้นที่พัก: <b>ชั้น ${p.room[0]}</b><br>บทบาท: <b>${translateRole(p.role)}</b>${extra}</div>`;
+  $('night-controls').innerHTML='';$('night-result').classList.add('hidden');$('night-map-drawer').classList.add('hidden');
+  const b=$('night-btn-submit');b.classList.remove('hidden');b.innerText='จำข้อมูลแล้ว ➔ ส่งต่อคนถัดไป';
+  b.onclick=()=>{setupRevealIdx++;promptSecretHandover()};
+}
+
+function renderHotelGrid(){
+  const c=$('floors-container');c.innerHTML='';
+  for(let f=9;f>=1;f--){
+    const row=document.createElement('div');row.className='floor-row';row.innerHTML=`<div class="floor-label">ชั้น ${f}</div>`;
+    for(let k=1;k<=3;k++){
+      const n=`${f}0${k}`,d=roomStatus[n],card=document.createElement('div');card.className='room-card';let sub='';
+      if(d.state==='CLOSED'){card.classList.add('closed');sub='🚧 ปิด'}
+      else if(d.state==='BODY'){card.classList.add('body');sub='☠️ ศพ'}
+      else if(d.murdered){card.classList.add('dead');sub='☠️ พบศพ'}
+      else if(d.evicted){card.classList.add('dead');sub='🚪 ถูกเปิด'}
+      if(d.locked)card.classList.add('locked');
+      if(selectedRoom===n)card.classList.add('selected');
+      card.innerHTML=`<div class="room-num">${n}</div><div class="room-status">${sub}</div>`;
+      card.onclick=()=>onSelectRoom(n);row.appendChild(card);
+    }
+    c.appendChild(row);
+  }
+}
+
+function toggleNightMiniMap(){
+  const d=$('night-map-drawer');if(!d.classList.contains('hidden')){d.classList.add('hidden');return}
+  d.classList.remove('hidden');
+  let h='';
+  for(let f=9;f>=1;f--){h+=`<div style="display:grid;grid-template-columns:48px repeat(3,1fr);gap:4px;margin-bottom:3px;font-size:.75rem"><div style="color:var(--gold);font-weight:700;background:#141822;padding:3px;border-radius:3px">ชั้น ${f}</div>`;
+    for(let k=1;k<=3;k++){const n=`${f}0${k}`,r=roomStatus[n];let bg='#1d2230',l=n;
+      if(r.state==='CLOSED'){bg='#111';l+=' (ปิด)'}else if(r.state==='BODY'){bg='#4a151b';l+=' (ศพ)'}else if(r.murdered){bg='#501117';l+=' (ตาย)'}
+      h+=`<div style="background:${bg};padding:3px;border-radius:3px;border:1px solid #333;text-align:center">${l}</div>`}
+    h+='</div>'}
+  d.innerHTML=h;
+}
+
+function onSelectRoom(n){
+  if(currentPhase!=='DAY'||roomStatus[n].state==='CLOSED')return;
+  selectedRoom=n;renderHotelGrid();const b=$('btn-lynch');b.disabled=false;b.innerText=`⚖️ ประชาทัณฑ์ห้อง ${n}`;
+}
+
+function updateStatus(){
+  $('alive-count').innerText=players.filter(p=>p.alive).length;
+  const night=currentPhase==='NIGHT';document.body.classList.toggle('night',night);
+  const ch=$('phase-chip');ch.className='chip '+(night?'night':'day');ch.innerText=night?'🌙 กลางคืน':'☀️ กลางวัน';
+  $('day-dots').innerHTML=[1,2,3,4].map(i=>`<i class="${i<currentDay?'on':i===currentDay?'cur':''}"></i>`).join('')+`<span style="font-size:.78rem;margin-left:6px;color:var(--gold)">วันที่ ${Math.min(currentDay,4)}/4</span>`;
+}
+
+function startDiscussionTimer(){clearInterval(timerHandle);discussionTimer=180;updateTimerText();
+  timerHandle=setInterval(()=>{if(discussionTimer>0){discussionTimer--;updateTimerText()}else{clearInterval(timerHandle);playSfx(440,'triangle',.5)}},1000)}
+function updateTimerText(){const m=Math.floor(discussionTimer/60),s=discussionTimer%60,t=$('timer-text');t.innerText=`⏱️ ${m}:${s<10?'0':''}${s}`;t.classList.toggle('low',discussionTimer<=30)}
+
+function executeLynch(){
+  if(!selectedRoom)return;clearInterval(timerHandle);
+  const target=players.find(p=>p.id===roomStatus[selectedRoom].occupant&&p.alive);
+  if(!target){addLog(`⚖️ โหวตเปิดห้อง <b>${selectedRoom}</b>: เป็นห้องว่าง ไม่มีใครถูกขับไล่`);startNightPhase();return}
+  if(target.role==='DRUNK'){endGame('DRUNK',`🍾 <b>${target.name}</b> คือคนเมา! ถูกประชาทัณฑ์ตามเป้าหมาย จึงชนะเดี่ยว!`);return}
+  if(target.role==='MURDERER'){target.alive=false;addLog(`⚖️ ห้อง <b>${selectedRoom}</b>: พบตัวฆาตกรแล้ว!`);endGame('INNOCENT',`🎉 ฝ่ายผู้บริสุทธิ์ชนะ! <b>${target.name}</b> คือฆาตกรในห้อง ${selectedRoom}!`);return}
+  target.alive=false;roomStatus[selectedRoom].occupant=null;roomStatus[selectedRoom].evicted=true;
+  addLog(`⚖️ ห้อง <b>${selectedRoom}</b>: ผู้เข้าพักถูกขับไล่ออกจากโรงแรม (ไม่เปิดเผยบทบาท)`);
+  checkGameOver();if(currentPhase!=='OVER')startNightPhase();
+}
+
+function startNightPhase(){
+  currentPhase='NIGHT';selectedRoom=null;tonightLockedRoom=null;tonightKillRoom=null;
+  ALL_ROOMS.forEach(r=>roomStatus[r].locked=false);
+  updateStatus();renderHotelGrid();$('day-controls').classList.add('hidden');flashLightning();
+  addLog(`🌙 ค่ำคืนที่ ${currentDay}: ทุกคนหลับตาลง...`);
+  nightQueue=[];
+  ['DRUNK','KEYMASTER','HOUSEKEEPER','GLASSCLEANER','DETECTIVE','ASSISTANT','MURDERER','WITNESS'].forEach(k=>{const p=players.find(x=>x.role===k&&x.alive);if(p)nightQueue.push({role:k,player:p})});
+  nightQueueIdx=0;promptNightPass();
+}
+function promptNightPass(){
+  if(nightQueueIdx>=nightQueue.length){$('pass-modal').classList.add('hidden');$('action-modal').classList.add('hidden');resolveDawn();return}
+  const s=nightQueue[nightQueueIdx];
+  $('pass-target-name').innerText=`ส่งเครื่องให้: ${s.player.name}`;
+  $('pass-instruction').innerHTML=`ส่งเครื่องให้ผู้เล่นคนนี้เพื่อใช้ความสามารถตอนกลางคืน<br>(${nightQueueIdx+1}/${nightQueue.length})`;
+  $('pass-modal').classList.remove('hidden');$('action-modal').classList.add('hidden');
+}
+
+function opts(arr,id,fmt){return `<select id="${id}" class="btn">${arr.map(a=>`<option value="${a[0]}">${a[1]}</option>`).join('')}</select>`}
+function revealNightAction(){
+  $('pass-modal').classList.add('hidden');$('action-modal').classList.remove('hidden');
+  const s=nightQueue[nightQueueIdx],desc=$('night-desc'),ctrl=$('night-controls'),res=$('night-result'),btn=$('night-btn-submit');
+  $('night-map-drawer').classList.add('hidden');res.classList.add('hidden');res.innerHTML='';
+  btn.classList.remove('hidden');btn.innerText='ยืนยันคำสั่ง';btn.onclick=submitNightAction;
+  $('night-badge').innerText=translateRole(s.role);$('night-emoji').innerText=EMOJI[s.role];
+  $('night-title').innerText=`${s.player.name} (ห้อง ${s.player.room})`;
+  const others=players.filter(p=>p.alive&&p.id!==s.player.id).map(p=>[p.id,p.name]);
+  const floors=[9,8,7,6,5,4,3,2,1];
+  switch(s.role){
+    case 'DRUNK':desc.innerText=`คุณพักห้อง ${s.player.room} ต้องการสุ่มย้ายห้องหรือไม่?`;
+      ctrl.innerHTML=`<button class="btn" onclick="drunkAction(true)">👍 สุ่มย้ายห้อง</button><button class="btn" onclick="drunkAction(false)">👎 อยู่ห้องเดิม</button>`;btn.classList.add('hidden');break;
+    case 'KEYMASTER':desc.innerText=`เลือกล็อก 1 ห้องเพื่อป้องกันการลอบสังหาร (ห้ามซ้ำห้องเดิม: ${lastLockedRoom||'ไม่มี'})`;
+      ctrl.innerHTML=opts(ALL_ROOMS.filter(r=>roomStatus[r].state==='OPEN'&&r!==lastLockedRoom).map(r=>[r,`ห้อง ${r}`]),'km-target');break;
+    case 'HOUSEKEEPER':desc.innerText='เลือกตรวจ 1 ชั้น เพื่อทราบจำนวนผู้รอดชีวิต';ctrl.innerHTML=opts(floors.map(f=>[f,`ชั้น ${f}`]),'hk-target');break;
+    case 'GLASSCLEANER':desc.innerText='เลือกตรวจ 1 แถวแนวตั้ง เพื่อทราบจำนวนผู้รอดชีวิต';ctrl.innerHTML=opts([[1,'แถว 1 (x01)'],[2,'แถว 2 (x02)'],[3,'แถว 3 (x03)']],'gc-target');break;
+    case 'DETECTIVE':desc.innerText='เลือกผู้เล่น 1 คน เพื่อสืบว่าพักอยู่ "ชั้นไหน"';ctrl.innerHTML=opts(others,'det-target');break;
+    case 'ASSISTANT':{const m=players.find(p=>p.role==='MURDERER');
+      desc.innerHTML=(currentDay===1?`🤝 ฆาตกรตัวจริงคือ <b>${m.name}</b> (ห้อง ${m.room})<br><br>`:'')+'เลือกตรวจผู้เล่น 1 คนว่าพักชั้นไหน';ctrl.innerHTML=opts(others,'ast-target');break}
+    case 'MURDERER':{const a=players.find(p=>p.role==='ASSISTANT');
+      desc.innerHTML=`เลือก 1 ห้องเพื่อลอบสังหาร${a?`<br><small style="color:var(--gold)">ผู้ช่วย: ${a.name} (ห้อง ${a.room})</small>`:''}`;
+      ctrl.innerHTML=opts(ALL_ROOMS.filter(r=>roomStatus[r].state==='OPEN').map(r=>[r,`ห้อง ${r}`]),'kill-target');break}
+    case 'WITNESS':desc.innerText='เลือกเฝ้าสังเกต 1 ชั้น เพื่อรับคำใบ้ห้องของฆาตกร';ctrl.innerHTML=opts(floors.map(f=>[f,`เฝ้าชั้น ${f}`]),'wit-target');break;
+  }
+}
+
+function drunkAction(swap){
+  const s=nightQueue[nightQueueIdx],res=$('night-result');res.classList.remove('hidden');
+  if(swap){const v=ALL_ROOMS.filter(r=>roomStatus[r].state==='OPEN'&&roomStatus[r].occupant===null&&r!==s.player.room);
+    if(v.length){const n=v[Math.floor(Math.random()*v.length)];roomStatus[s.player.room].occupant=null;s.player.room=n;roomStatus[n].occupant=s.player.id;res.innerHTML=`🎲 ย้ายห้องสำเร็จ! คีย์การ์ดใหม่: <b>ห้อง ${n}</b>`}
+    else res.innerHTML=`ไม่มีห้องว่าง คุณอยู่ห้อง ${s.player.room} ต่อ`}
+  else res.innerHTML=`คุณนอนพักที่ <b>ห้องเดิม (${s.player.room})</b>`;
+  const b=$('night-btn-submit');b.classList.remove('hidden');b.innerText='เสร็จสิ้น ➔ ส่งต่อคนถัดไป';b.onclick=()=>{nightQueueIdx++;promptNightPass()};
+}
+
+function submitNightAction(){
+  const s=nightQueue[nightQueueIdx],res=$('night-result'),btn=$('night-btn-submit');
+  if(!res.classList.contains('hidden')&&res.innerHTML.trim()!==''){nightQueueIdx++;promptNightPass();return}
+  res.classList.remove('hidden');btn.innerText='เสร็จสิ้น ➔ ส่งต่อคนถัดไป';
+  switch(s.role){
+    case 'KEYMASTER':tonightLockedRoom=$('km-target').value;lastLockedRoom=tonightLockedRoom;roomStatus[tonightLockedRoom].locked=true;res.innerHTML=`🔑 ล็อก <b>ห้อง ${tonightLockedRoom}</b> แล้ว คืนนี้ปลอดภัย`;break;
+    case 'HOUSEKEEPER':{const f=$('hk-target').value;res.innerHTML=`🧹 ชั้น ${f}: มีผู้รอดชีวิต <b>${players.filter(p=>p.alive&&p.room.startsWith(f)).length} คน</b>`;break}
+    case 'GLASSCLEANER':{const c=$('gc-target').value;res.innerHTML=`🪟 แถว ${c} (x0${c}): มีผู้รอดชีวิต <b>${players.filter(p=>p.alive&&p.room.endsWith('0'+c)).length} คน</b>`;break}
+    case 'DETECTIVE':case 'ASSISTANT':{const t=players.find(p=>p.id===+$(s.role==='DETECTIVE'?'det-target':'ast-target').value);res.innerHTML=`🔍 <b>${t.name}</b> พักอยู่ที่ <b>ชั้น ${t.room[0]}</b>`;break}
+    case 'MURDERER':tonightKillRoom=$('kill-target').value;res.innerHTML=`🔪 เป้าหมายคืนนี้: <b>ห้อง ${tonightKillRoom}</b>`;break;
+    case 'WITNESS':{const w=+$('wit-target').value,m=players.find(p=>p.role==='MURDERER'),v=players.find(p=>p.room===tonightKillRoom&&p.alive);
+      let icon='❌',text='ชูกากบาท: เลือกผิดชั้น หรือคืนนี้ไม่มีการสังหาร';
+      if(v&&tonightKillRoom!==tonightLockedRoom&&tonightKillRoom.startsWith(w)){const mf=+m.room[0];
+        if(mf>w){icon='👆';text='ห้องฆาตกรอยู่ชั้น <b>สูงกว่า</b> ชั้นที่เลือก'}else if(mf<w){icon='👇';text='ห้องฆาตกรอยู่ชั้น <b>ต่ำกว่า</b> ชั้นที่เลือก'}else{icon='✊';text='ห้องฆาตกรอยู่ <b>ชั้นเดียวกัน</b> กับที่เลือก'}}
+      res.innerHTML=`<div class="clue-display">${icon}</div><div>คำใบ้: ${text}</div>`;break}
+  }
+}
+
+function resolveDawn(){
+  flashLightning();
+  if(tonightKillRoom){
+    if(tonightKillRoom===tonightLockedRoom)addLog(`🛡️ มีเสียงพยายามพังประตูห้อง <b>${tonightKillRoom}</b> แต่ถูกล็อกไว้ ไม่มีใครเสียชีวิต`);
+    else{const v=players.find(p=>p.room===tonightKillRoom&&p.alive);
+      if(v){v.alive=false;roomStatus[tonightKillRoom].murdered=true;addLog(`☠️ ยามเช้าพบศพในห้อง <b>${tonightKillRoom}</b> (${v.name})`)}
+      else addLog(`🚪 ฆาตกรบุกห้อง <b>${tonightKillRoom}</b> แต่เป็นห้องว่าง ไม่มีใครเสียชีวิต`)}
+  }
+  currentDay++;currentPhase='DAY';renderHotelGrid();updateStatus();
+  $('day-controls').classList.remove('hidden');const b=$('btn-lynch');b.disabled=true;b.innerText='⚖️ โหวตประหารห้องที่เลือก';
+  startDiscussionTimer();checkGameOver();
+}
+
+function checkGameOver(){
+  const evil=players.filter(p=>(p.role==='MURDERER'||p.role==='ASSISTANT')&&p.alive).length;
+  const good=players.filter(p=>!['MURDERER','ASSISTANT','DRUNK'].includes(p.role)&&p.alive).length;
+  if(!players.find(p=>p.role==='MURDERER').alive)return endGame('INNOCENT','🎉 ฝ่ายผู้บริสุทธิ์ชนะ! ฆาตกรถูกกำจัดแล้ว');
+  if(evil>=good)return endGame('MURDERER','🩸 ฝ่ายฆาตกรชนะ! ฆาตกรและผู้ช่วยมีจำนวนเท่ากับหรือมากกว่าฝ่ายผู้บริสุทธิ์');
+  if(currentDay>4)return endGame('MURDERER','⏳ ครบ 4 วัน 4 คืน! ฆาตกรหลบหนีสำเร็จ ฝ่ายฆาตกรชนะ!');
+}
+
+function endGame(w,msg){
+  currentPhase='OVER';clearInterval(timerHandle);
+  const t=$('win-title');
+  if(w==='INNOCENT'){t.innerText='ชัยชนะของฝ่ายผู้บริสุทธิ์';t.style.color='var(--ok)';$('win-emoji').innerText='🏆'}
+  else if(w==='DRUNK'){t.innerText='คนเมาชนะเดี่ยว!';t.style.color='var(--warn)';$('win-emoji').innerText='🍾'}
+  else{t.innerText='ฝ่ายฆาตกรชนะ';t.style.color='var(--red)';$('win-emoji').innerText='🩸'}
+  $('win-desc').innerHTML=msg;
+  const r=$('win-reveal');r.classList.remove('hidden');
+  r.innerHTML='<b style="color:var(--gold)">เฉลยบทบาททั้งหมด</b><br>'+players.map(p=>`${p.alive?'🟢':'⚫'} ${p.name} — ${translateRole(p.role)} (ห้อง ${p.room})`).join('<br>');
+  $('win-modal').classList.remove('hidden');
+}
+
+function toggleModCheat(){
+  const n=prompt('กรอกชื่อของคุณเพื่อตรวจสอบห้องและบทบาทของตนเอง:');if(!n)return;
+  const me=players.find(p=>p.name.trim().toLowerCase()===n.trim().toLowerCase());
+  alert(me?`[ข้อมูลลับเฉพาะคุณ]\nชื่อ: ${me.name}\nห้องพัก: ${me.room} (ชั้น ${me.room[0]})\nบทบาท: ${translateRole(me.role)}`:'ไม่พบชื่อผู้เล่นนี้ในระบบ');
+}
+function translateRole(r){return({MURDERER:'ฆาตกร 🔪 (คนร้าย)',ASSISTANT:'ผู้ช่วยฆาตกร 🤝 (คนร้าย)',DETECTIVE:'นักสืบ 🔍 (คนดี)',KEYMASTER:'ช่างกุญแจ 🔑 (คนดี)',HOUSEKEEPER:'แม่บ้าน 🧹 (คนดี)',GLASSCLEANER:'ช่างเช็ดกระจก 🪟 (คนดี)',WITNESS:'พยาน 👁️ (คนดี)',TOURIST:'นักท่องเที่ยว 🧳 (คนดี)',DRUNK:'คนเมา 🍾 (จอมป่วน)'})[r]||r}
+</script>
+</body>
+</html>
