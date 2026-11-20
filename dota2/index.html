@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Invoker Trainer</title>
+<title>invoker Battle</title>
 <style>
 :root{color-scheme:dark;--bg:#070910;--panel:rgba(18,22,36,.78);--line:rgba(255,255,255,.09);--tx:#eaf0fb;--mu:#8793ab;--Q:#38bdf8;--W:#c084fc;--E:#fb923c;--R:#facc15;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}
@@ -18,7 +18,7 @@ header p{margin:0;font-size:.8rem;color:var(--mu)}
 .btn:hover:not(:disabled){background:rgba(255,255,255,.1)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn.on{border-color:var(--R);color:#fde68a;box-shadow:0 0 14px rgba(250,204,21,.25)}
-.btn:focus-visible,.key:focus-visible{outline:2px solid var(--R);outline-offset:2px}
+.btn:focus-visible,.key:focus-visible,.code:focus-visible{outline:2px solid var(--R);outline-offset:2px}
 .wrap{display:grid;grid-template-columns:1fr 330px;gap:12px;align-items:start}
 @media(max-width:900px){.wrap{grid-template-columns:1fr}}
 .stage{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:12px}
@@ -58,7 +58,9 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
 input{user-select:text}
 .frm{display:flex;gap:8px;flex-wrap:wrap}.frm input,.frm select,.chin input{font:inherit;font-size:.85rem;color:var(--tx);background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:10px;padding:7px 10px;min-width:0;flex:1}.frm select option{color:#000}
 .rmtop{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:6px;border-bottom:1px solid var(--line);font-size:.85rem}
-.code{display:inline-block;padding:2px 8px;border-radius:6px;background:rgba(56,189,248,.14);border:1px solid rgba(56,189,248,.35);color:var(--Q);font-weight:700;letter-spacing:.08em}
+.code{font:inherit;display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;background:rgba(56,189,248,.14);border:1px solid rgba(56,189,248,.35);color:var(--Q);font-weight:700;letter-spacing:.08em;cursor:pointer;transition:.15s;user-select:text}
+.code:hover{background:rgba(56,189,248,.25);border-color:var(--Q)}
+.code.ok{background:rgba(74,222,128,.18);border-color:#4ade80;color:#4ade80}
 .ps{display:flex;gap:8px;flex-wrap:wrap}.pc{flex:1;min-width:120px;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--line);font-size:.8rem}.pc.me{border-color:var(--Q)}.pc div{color:var(--mu)}.hp{height:6px;border-radius:4px;background:#0006;margin-top:5px;overflow:hidden}.hp i{display:block;height:100%;background:linear-gradient(90deg,#ef4444,#4ade80);transition:width .4s}
 .cm{font-size:.82rem;padding:3px 0;word-break:break-word}.cm b{color:var(--Q)}.cm.sys{color:var(--mu)}.chin{display:flex;gap:6px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -105,7 +107,10 @@ input{user-select:text}
     </div>
     <div class="bar hidden" id="rm" style="flex-direction:column;align-items:stretch;gap:10px">
       <div class="rmtop">
-        <div><b id="rmTitle">ห้องออนไลน์</b> · รหัสห้อง <span class="code" id="rmCode">-</span></div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <b id="rmTitle">ห้องออนไลน์</b> · รหัสห้อง:
+          <button type="button" class="code" id="rmCode" title="คลิกเพื่อคัดลอกรหัสห้อง"><span id="rmCodeIco">📋</span><span id="rmCodeVal">-</span></button>
+        </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn" id="bCopyCode">คัดลอกรหัส</button>
           <button class="btn" id="bCopyLink">คัดลอกลิงก์เชิญ</button>
@@ -360,7 +365,7 @@ function enterRoomUI(){
   show('lob',false);show('rm',true);show('book',false);show('chatp',true);
   $('chlog').innerHTML='';
   $('rmTitle').textContent=RM.t;
-  $('rmCode').textContent=RM.c;
+  $('rmCodeVal').textContent=RM.c;
 }
 
 /* ----- Host ----- */
@@ -382,7 +387,7 @@ function createRoom(retry=0){
     peersList=[{id:meId,name:myName,ready:false,isHost:true}];
     setBusy(false);
     enterRoomUI();
-    sys('รหัสห้อง: <b>'+esc(c)+'</b> ส่งรหัสหรือลิงก์เชิญให้เพื่อนเข้าห้องได้เลย');
+    sys('รหัสห้อง: <button type="button" class="code" data-copy="'+esc(c)+'" title="คลิกเพื่อคัดลอก">📋 '+esc(c)+'</button> กดที่รหัสเพื่อคัดลอกส่งให้เพื่อนได้เลย');
     draw();
   });
 
@@ -529,7 +534,7 @@ function joinByCode(raw){
       RM={c,t:'ห้อง '+c,m:4};
       enterRoomUI();
       sendTo(conn,{t:'hello',name:myName});
-      sys('เชื่อมต่อห้อง <b>'+esc(c)+'</b> แล้ว กดพร้อมเมื่อพร้อมเล่น');
+      sys('เชื่อมต่อห้อง <button type="button" class="code" data-copy="'+esc(c)+'" title="คลิกเพื่อคัดลอก">📋 '+esc(c)+'</button> แล้ว กดพร้อมเมื่อพร้อมเล่น');
     });
     conn.on('data',d=>{
       if(!d||typeof d!=='object')return;
@@ -558,7 +563,7 @@ $('rcode').onkeydown=e=>{if(e.key==='Enter')joinByCode($('rcode').value)};
 
 /* ----- Sync & Visual Volley ----- */
 function applySync(msg){
-  if(msg.rm){RM=msg.rm;$('rmTitle').textContent=RM.t;$('rmCode').textContent=RM.c}
+  if(msg.rm){RM=msg.rm;$('rmTitle').textContent=RM.t;$('rmCodeVal').textContent=RM.c}
   if(Array.isArray(msg.peers))peersList=msg.peers;
   if(msg.g)G=msg.g;
   draw();
@@ -654,12 +659,63 @@ function sendChat(){
 }
 $('chsend').onclick=sendChat;$('chin').onkeydown=e=>{if(e.key==='Enter')sendChat()};
 
-async function copyText(txt,ok){
-  try{await navigator.clipboard.writeText(txt);toast(ok,'#4ade80')}
-  catch(e){toast('คัดลอก: '+txt,'#38bdf8')}
+/* ----- Copy Code & Invite Link (พร้อม fallback) ----- */
+async function copyText(txt,ok,btnEl){
+  if(!txt||txt==='-')return;
+  let copied=false;
+  try{
+    if(navigator.clipboard&&window.isSecureContext){
+      await navigator.clipboard.writeText(txt);
+      copied=true;
+    }
+  }catch(e){}
+  if(!copied){
+    try{
+      const ta=document.createElement('textarea');
+      ta.value=txt;
+      ta.setAttribute('readonly','');
+      ta.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';
+      document.body.appendChild(ta);
+      ta.focus();ta.select();ta.setSelectionRange(0,txt.length);
+      copied=document.execCommand('copy');
+      ta.remove();
+    }catch(e){}
+  }
+  if(copied){
+    toast(ok,'#4ade80');
+    if(btnEl){
+      if(!btnEl.dataset.orig)btnEl.dataset.orig=btnEl.textContent;
+      btnEl.textContent='✅ คัดลอกแล้ว';
+      clearTimeout(btnEl._ct);
+      btnEl._ct=setTimeout(()=>{btnEl.textContent=btnEl.dataset.orig},1200);
+    }
+  }else{
+    toast('คัดลอกไม่ได้ รหัสคือ: '+txt,'#facc15');
+  }
 }
-$('bCopyCode').onclick=()=>copyText(RM.c,'คัดลอกรหัสห้อง '+RM.c+' แล้ว');
-$('bCopyLink').onclick=()=>{const u=new URL(location.href);u.searchParams.set('room',RM.c);copyText(u.toString(),'คัดลอกลิงก์เชิญแล้ว')};
+
+let codeTick=null;
+function copyRoomCode(){
+  if(!RM.c)return;
+  copyText(RM.c,'คัดลอกรหัสห้อง '+RM.c+' แล้ว',$('bCopyCode'));
+  const badge=$('rmCode');
+  badge.classList.add('ok');
+  $('rmCodeIco').textContent='✅';
+  clearTimeout(codeTick);
+  codeTick=setTimeout(()=>{badge.classList.remove('ok');$('rmCodeIco').textContent='📋'},1200);
+}
+$('rmCode').onclick=copyRoomCode;
+$('bCopyCode').onclick=copyRoomCode;
+$('bCopyLink').onclick=()=>{
+  if(!RM.c)return;
+  const u=new URL(location.href);
+  u.searchParams.set('room',RM.c);
+  copyText(u.toString(),'คัดลอกลิงก์เชิญแล้ว',$('bCopyLink'));
+};
+$('chlog').onclick=e=>{
+  const b=e.target.closest('[data-copy]');
+  if(b)copyRoomCode();
+};
 
 ['bFree','bChal'].forEach(i=>$(i).addEventListener('click',()=>$('bOn').classList.remove('on')));
 window.addEventListener('beforeunload',()=>{if(peer){try{peer.destroy()}catch(e){}}});
