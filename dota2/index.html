@@ -15,7 +15,8 @@ h1{margin:0;font-size:1.4rem;font-weight:700;letter-spacing:.04em;background:lin
 header p{margin:0;font-size:.8rem;color:var(--mu)}
 .tools{display:flex;gap:8px;flex-wrap:wrap}
 .btn{font:inherit;font-size:.85rem;font-weight:500;color:var(--tx);background:rgba(255,255,255,.05);border:1px solid var(--line);padding:7px 13px;border-radius:10px;cursor:pointer;transition:.15s}
-.btn:hover{background:rgba(255,255,255,.1)}
+.btn:hover:not(:disabled){background:rgba(255,255,255,.1)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
 .btn.on{border-color:var(--R);color:#fde68a;box-shadow:0 0 14px rgba(250,204,21,.25)}
 .btn:focus-visible,.key:focus-visible{outline:2px solid var(--R);outline-offset:2px}
 .wrap{display:grid;grid-template-columns:1fr 330px;gap:12px;align-items:start}
@@ -56,11 +57,13 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
 .row .d{display:flex;gap:3px}.row .d i{font-style:normal;width:19px;height:19px;border-radius:50%;display:grid;place-items:center;font-size:.65rem;font-weight:700;color:#0a0a12}
 input{user-select:text}
 .frm{display:flex;gap:8px;flex-wrap:wrap}.frm input,.frm select,.chin input{font:inherit;font-size:.85rem;color:var(--tx);background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:10px;padding:7px 10px;min-width:0;flex:1}.frm select option{color:#000}
-.rw{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:rgba(0,0,0,.25);margin-top:6px;font-size:.85rem}
+.rmtop{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:6px;border-bottom:1px solid var(--line);font-size:.85rem}
+.code{display:inline-block;padding:2px 8px;border-radius:6px;background:rgba(56,189,248,.14);border:1px solid rgba(56,189,248,.35);color:var(--Q);font-weight:700;letter-spacing:.08em}
 .ps{display:flex;gap:8px;flex-wrap:wrap}.pc{flex:1;min-width:120px;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--line);font-size:.8rem}.pc.me{border-color:var(--Q)}.pc div{color:var(--mu)}.hp{height:6px;border-radius:4px;background:#0006;margin-top:5px;overflow:hidden}.hp i{display:block;height:100%;background:linear-gradient(90deg,#ef4444,#4ade80);transition:width .4s}
 .cm{font-size:.82rem;padding:3px 0;word-break:break-word}.cm b{color:var(--Q)}.cm.sys{color:var(--mu)}.chin{display:flex;gap:6px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 </head>
 <body>
 <header>
@@ -68,7 +71,7 @@ input{user-select:text}
   <div class="tools">
     <button class="btn on" id="bFree">โหมดฝึกอิสระ</button>
     <button class="btn" id="bChal">โหมดจับเวลา 60 วิ</button>
-    <button class="btn" id="bOn">เล่นออนไลน์</button>
+    <button class="btn" id="bOn">เล่นออนไลน์ (WebRTC)</button>
     <button class="btn" id="bBook">ซ่อนคู่มือ</button>
     <button class="btn" id="bSnd">เสียง: เปิด</button>
   </div>
@@ -88,10 +91,26 @@ input{user-select:text}
       <button class="btn" id="bRe">เริ่มใหม่</button>
     </div>
     <div class="bar hidden" id="lob" style="flex-direction:column;align-items:stretch;gap:8px">
-      <div class="frm"><input id="nick" placeholder="ชื่อเล่นของคุณ" maxlength="14"><input id="rtitle" placeholder="ตั้งชื่อห้อง" maxlength="30"><select id="rmax"><option value="2">2 คน</option><option value="3">3 คน</option><option value="4" selected>4 คน</option></select><button class="btn on" id="bMk">สร้างห้อง</button></div>
-      <div id="rooms"></div>
+      <div class="frm">
+        <input id="nick" placeholder="ชื่อเล่นของคุณ" maxlength="14">
+        <input id="rtitle" placeholder="ตั้งชื่อห้อง" maxlength="30">
+        <select id="rmax"><option value="2">2 คน</option><option value="3">3 คน</option><option value="4" selected>4 คน</option></select>
+        <button class="btn on" id="bMk">สร้างห้อง</button>
+      </div>
+      <div class="frm">
+        <input id="rcode" placeholder="ใส่รหัสห้องเพื่อเข้าร่วม (เช่น A7K9P2)" maxlength="16" style="text-transform:uppercase">
+        <button class="btn on" id="bJoin" style="flex:0 0 auto">เข้าร่วมห้อง</button>
+      </div>
+      <div id="lobStatus" style="color:var(--mu);font-size:.82rem">เชื่อมต่อตรงแบบ P2P WebRTC (PeerJS) — สร้างห้องแล้วส่งรหัสหรือลิงก์ให้เพื่อนได้เลย</div>
     </div>
     <div class="bar hidden" id="rm" style="flex-direction:column;align-items:stretch;gap:10px">
+      <div class="rmtop">
+        <div><b id="rmTitle">ห้องออนไลน์</b> · รหัสห้อง <span class="code" id="rmCode">-</span></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn" id="bCopyCode">คัดลอกรหัส</button>
+          <button class="btn" id="bCopyLink">คัดลอกลิงก์เชิญ</button>
+        </div>
+      </div>
       <div class="ps" id="ps"></div>
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <div class="tgt" style="justify-content:flex-start"><div class="ic" id="oIc">⚔️</div><div><h2 id="oNm">-</h2><small id="oHt"></small></div></div>
@@ -171,7 +190,7 @@ deafening_blast(){const{x,y}=AV();for(let i=0;i<5;i++)later(()=>{rings.push({x:x
 function drawBeam(b,dt){
   b.life-=dt/(b.k==='tor'?1.5:b.k==='spirit'?2.4:b.k==='bolt'?.6:b.k==='ice'?1.8:1);
   if(b.t!=null)b.t+=dt;
-  if(b.k==='ice'){const g=Math.min(1,(1-b.life)*6),f=b.life<.25?b.life*4:1;cx.save();cx.globalAlpha=f;cx.translate(b.x,b.y);cx.fillStyle=cx.createLinearGradient(0,0,0,-b.h);cx.fillStyle='rgba(186,230,253,.92)';cx.shadowColor='#38bdf8';cx.shadowBlur=14;cx.beginPath();cx.moveTo(-b.w,0);cx.lineTo(0,-b.h*g);cx.lineTo(b.w,0);cx.closePath();cx.fill();cx.restore()}
+  if(b.k==='ice'){const g=Math.min(1,(1-b.life)*6),f=b.life<.25?b.life*4:1;cx.save();cx.globalAlpha=f;cx.translate(b.x,b.y);cx.fillStyle='rgba(186,230,253,.92)';cx.shadowColor='#38bdf8';cx.shadowBlur=14;cx.beginPath();cx.moveTo(-b.w,0);cx.lineTo(0,-b.h*g);cx.lineTo(b.w,0);cx.closePath();cx.fill();cx.restore()}
   else if(b.k==='sun'){const t=b.t,a=t<.18?t/.18:Math.max(0,1-(t-.18)/.6),w=14+Math.min(t*140,60);const g=cx.createLinearGradient(b.x-w,0,b.x+w,0);g.addColorStop(0,'transparent');g.addColorStop(.5,'rgba(255,250,200,'+a+')');g.addColorStop(1,'transparent');cx.save();cx.globalCompositeOperation='lighter';cx.fillStyle=g;cx.fillRect(b.x-w,0,w*2,b.y);cx.shadowColor='#facc15';cx.shadowBlur=30;cx.fillStyle='rgba(250,204,21,'+a*.5+')';cx.fillRect(b.x-w/3,0,w*.66,b.y);cx.restore();if(t>.8)b.life=0}
   else if(b.k==='met'){const t=Math.min(1,b.t/.7),x=b.x+(b.tx-b.x)*t*t,y=b.y+(b.ty-b.y)*t*t;for(let i=0;i<4;i++)P({x:x+(Math.random()-.5)*14,y:y+(Math.random()-.5)*14,vx:-2-Math.random()*2,vy:-1+Math.random()*2,c:Math.random()<.5?'#fb923c':'#fde047',s:Math.random()*6+3,life:.5});cx.save();cx.globalCompositeOperation='lighter';const g=cx.createRadialGradient(x,y,2,x,y,30);g.addColorStop(0,'#fff');g.addColorStop(.4,'#f97316');g.addColorStop(1,'transparent');cx.fillStyle=g;cx.beginPath();cx.arc(x,y,30,0,7);cx.fill();cx.restore();if(b.t>=.7&&!b.hit){b.hit=1;ring(b.tx,b.ty,'#f97316',170,6,.55);ring(b.tx,b.ty,'#fde047',100,3);burst(b.tx,b.ty,'#fb923c',90,10,5,1,.15);flash=.6;shake=16;b.life=0}}
   else if(b.k==='bolt'){cx.save();cx.globalCompositeOperation='lighter';cx.strokeStyle='#f5d0fe';cx.shadowColor='#d946ef';cx.shadowBlur=16;cx.lineWidth=2.5;cx.beginPath();let x=b.x,y=b.y;cx.moveTo(x,y);for(let i=0;i<6;i++){x+=(Math.random()-.5)*26;y+=18;cx.lineTo(x,y)}cx.stroke();cx.restore()}
@@ -202,42 +221,25 @@ function avatar(x,y){
   cx.fillStyle='#fde68a';cx.beginPath();cx.arc(2,-52,3,0,7);cx.fill();
   cx.restore();
 }
-function avatarOld(x,y){
-  cx.save();cx.globalAlpha=ghost>0?.28+.1*Math.sin(T*8):1;
-  const bob=Math.sin(T*2)*3;cx.translate(x,y+bob);
-  let g=cx.createLinearGradient(0,-40,0,50);g.addColorStop(0,'#4c1d95');g.addColorStop(1,'#1e1b4b');
-  cx.fillStyle=g;cx.strokeStyle='#c4b5fd';cx.lineWidth=1.5;cx.shadowColor='#8b5cf6';cx.shadowBlur=22;
-  cx.beginPath();cx.moveTo(0,-44);cx.quadraticCurveTo(26,-30,30,0);cx.lineTo(42,52);cx.quadraticCurveTo(0,60,-42,52);cx.lineTo(-30,0);cx.quadraticCurveTo(-26,-30,0,-44);cx.fill();cx.stroke();
-  cx.shadowBlur=0;cx.fillStyle='#0b0620';cx.beginPath();cx.ellipse(0,-16,15,17,0,0,7);cx.fill();
-  cx.fillStyle='#fde68a';cx.shadowColor='#facc15';cx.shadowBlur=10;cx.beginPath();cx.arc(-5.5,-17,2.2,0,7);cx.arc(5.5,-17,2.2,0,7);cx.fill();
-  cx.shadowBlur=0;cx.strokeStyle='#facc15';cx.lineWidth=2;cx.beginPath();cx.moveTo(-22,-34);cx.lineTo(-10,-48);cx.lineTo(0,-38);cx.lineTo(10,-48);cx.lineTo(22,-34);cx.stroke();
-  cx.restore();
-}
 
 let last=performance.now();
 function loop(now){
   const dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;
   cx.save();cx.clearRect(0,0,W,H);
   if(shake>0){cx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);shake*=.88;if(shake<.4)shake=0}
-  // sky
   let g=cx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0a0d1c');g.addColorStop(.6,'#14102a');g.addColorStop(1,'#1d1536');cx.fillStyle=g;cx.fillRect(-20,-20,W+40,H+40);
   stars.forEach(s=>{cx.fillStyle='rgba(255,255,255,'+(.4+.4*Math.sin(T*1.5+s.p))+')';cx.fillRect(s.x*W,s.y*H,s.r,s.r)});
-  // floor
   const fy=H*.66;g=cx.createLinearGradient(0,fy,0,H);g.addColorStop(0,'#2a1f4a');g.addColorStop(1,'#0c0816');cx.fillStyle=g;cx.fillRect(-20,fy,W+40,H);
   cx.strokeStyle='rgba(167,139,250,.16)';cx.lineWidth=1;
   for(let i=-10;i<=10;i++){cx.beginPath();cx.moveTo(W/2+i*18,fy);cx.lineTo(W/2+i*85,H);cx.stroke()}
   for(let i=1;i<6;i++){const y=fy+(H-fy)*Math.pow(i/6,1.7);cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke()}
   const {x,y}=AV();
-  // rune circle
   cx.save();cx.translate(x,y+52);cx.scale(1,.28);cx.rotate(T*.3);cx.strokeStyle='rgba(250,204,21,.45)';cx.lineWidth=2;cx.beginPath();cx.arc(0,0,92,0,7);cx.stroke();cx.setLineDash([6,10]);cx.beginPath();cx.arc(0,0,72,0,7);cx.stroke();cx.restore();
-  // aura
   if(aura>0){aura-=dt;cx.save();cx.globalCompositeOperation='lighter';const gg=cx.createRadialGradient(x,y,10,x,y,110);gg.addColorStop(0,auraC+'66');gg.addColorStop(1,'transparent');cx.fillStyle=gg;cx.beginPath();cx.arc(x,y,110,0,7);cx.fill();cx.restore()}
   if(ghost>0)ghost-=dt;
   avatar(x,y);
-  // orbiting orbs
   for(let i=0;i<3;i++){const l=orbs[i];const a=T*2.4+i*2.094;const ox=x+Math.cos(a)*62,oy=y-8+Math.sin(a)*26;
     if(l){orb(ox,oy,l,10)}else{cx.strokeStyle='rgba(148,163,184,.4)';cx.setLineDash([3,4]);cx.beginPath();cx.arc(ox,oy,10,0,7);cx.stroke();cx.setLineDash([])}}
-  // fx
   beams=beams.filter(b=>{drawBeam(b,dt);return b.life>0});
   rings=rings.filter(r=>{r.life-=dt*r.sp*1.2;r.r+=(r.max-r.r)*dt*3.2*r.sp;cx.save();cx.globalCompositeOperation='lighter';cx.globalAlpha=Math.max(0,r.life);cx.strokeStyle=r.c;cx.lineWidth=r.w*Math.max(.2,r.life);cx.shadowColor=r.c;cx.shadowBlur=18;cx.beginPath();if(r.cone)cx.arc(r.x,r.y,r.r,-.7,.7);else cx.ellipse(r.x,r.y,r.r,r.r*.6,0,0,7);cx.stroke();cx.restore();return r.life>0});
   cx.globalCompositeOperation='lighter';
@@ -245,7 +247,6 @@ function loop(now){
   cx.globalAlpha=1;cx.globalCompositeOperation='source-over';
   if(flash>0){cx.fillStyle='rgba(255,255,255,'+flash*.5+')';cx.fillRect(-20,-20,W+40,H+40);flash-=dt*2}
   cx.restore();
-  // vignette
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
@@ -253,7 +254,7 @@ requestAnimationFrame(loop);
 /* ---------- game logic ---------- */
 function press(l){flash_(l);tone(l==='Q'?520:l==='W'?660:390,l==='E'?'sawtooth':l==='W'?'triangle':'sine',.08,.06);if(orbs.length>=3)orbs.shift();orbs.push(l);burst(AV().x,AV().y-8,COL[l],8,2.5,2.5,.5);renderOrbs()}
 function comboSpell(){return orbs.length<3?null:MAP[[...orbs].sort().join('')]||null}
-function invoke(){flash_('R');const s=comboSpell();if(!s){toast('ต้องมีลูกแก้วครบ 3 ลูกก่อน',' #ef4444');tone(180,'sawtooth',.14);return}
+function invoke(){flash_('R');const s=comboSpell();if(!s){toast('ต้องมีลูกแก้วครบ 3 ลูกก่อน','#ef4444');tone(180,'sawtooth',.14);return}
   tone(440,'triangle',.1,.08);later(()=>tone(660,'triangle',.14,.09),40);
   if(slots.D&&slots.D.id===s.id)toast(s.name+' อยู่ในช่อง D แล้ว',s.color);
   else if(slots.F&&slots.F.id===s.id){[slots.D,slots.F]=[slots.F,slots.D];toast('Invoke: '+s.icon+' '+s.name,s.color)}
@@ -268,7 +269,7 @@ function showStreak(){$('streak').innerHTML=streak>1?'<small>ต่อเนื�
 function renderOrbs(){$('orbTxt').innerHTML=orbs.length?orbs.map(o=>'<span class="pill o'+o+'">'+o+'</span>').join(''):'ยังไม่มี';
   const p=comboSpell(),e=$('prev');if(p){e.textContent=p.icon+' '+p.name;e.style.color=p.color}else{e.textContent=orbs.length<3?'ต้องการอีก '+(3-orbs.length)+' ลูก':'-';e.style.color='#64748b'}}
 function renderSlots(){['D','F'].forEach(k=>{const b=$('s'+k),s=slots[k];b.querySelector('.i').textContent=s?s.icon:'❔';b.querySelector('.n').textContent=s?s.name:'ว่าง';b.classList.toggle('empty',!s);b.style.borderColor=s?s.color:''})}
-let tt;function toast(m,c){const t=$('toast');t.textContent=m;t.style.color=c.trim();t.style.borderColor=c.trim()+'88';t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),1400)}
+let tt;function toast(m,c){const t=$('toast');t.textContent=m;t.style.color=c.trim();t.style.borderColor=c.trim()+'88';t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),1800)}
 function flash_(k){const b=document.querySelector('.key[data-k="'+k+'"]');if(!b)return;b.classList.add('p');setTimeout(()=>b.classList.remove('p'),110)}
 
 /* book */
@@ -283,71 +284,375 @@ function endChal(){clearInterval(timer);active=false;hl(null);$('tIc').textConte
 function toFree(){offOnline();clearInterval(timer);active=false;mode='free';streak=0;showStreak();hl(null);$('chal').classList.add('hidden');$('free').classList.remove('hidden')}
 
 $('bFree').onclick=()=>{$('bFree').classList.add('on');$('bChal').classList.remove('on');toFree()};
-$('bChal').onclick=()=>{$('bChal').classList.add('on');$('bFree').classList.remove('on');startChal()};
+$('bChal').onclick=()=>{$('bChal').classList.on||$('bChal').classList.add('on');$('bFree').classList.remove('on');startChal()};
 $('bRe').onclick=startChal;
 $('bBook').onclick=e=>{const h=$('book').classList.toggle('hidden');e.target.textContent=h?'แสดงคู่มือ':'ซ่อนคู่มือ';document.querySelector('.wrap').style.gridTemplateColumns=h?'1fr':'';setTimeout(resize,30)};
 $('bSnd').onclick=e=>{snd=!snd;e.target.textContent='เสียง: '+(snd?'เปิด':'ปิด')};
 document.querySelectorAll('.key').forEach(b=>{const k=b.dataset.k;b.onclick=()=>k==='R'?invoke():(k==='D'||k==='F')?cast(k):press(k)});
 addEventListener('keydown',e=>{if(e.repeat||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;({KeyQ:()=>press('Q'),KeyW:()=>press('W'),KeyE:()=>press('E'),KeyR:invoke,KeyD:()=>cast('D'),KeyF:()=>cast('F')})[e.code]?.()});
-/* ---------- online (room capability) ---------- */
-let LB=null,room=null,RM=null,G={ph:'lobby',r:0,w:{}},unsub=[],hT=null,doneRound=-1,fxRound=-1;
+
+/* ---------- online (WebRTC via PeerJS) ---------- */
+const PEER_PREFIX='invoker-trainer-room-';
+const ICE_CFG={iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
-try{window.claude.use('room').then(r=>{LB=r;if(r)r.onPeers(drawRooms)}).catch(()=>{})}catch(e){}
-const peersOf=()=>room?room.peers().filter(p=>p.kind==='viewer'):[];
-const meP=()=>room&&room.peers().find(p=>p.isMe&&p.sameTab);
-const meId=()=>{const p=meP();return p?p.peer:''};
-const hostId=()=>peersOf().map(p=>p.peer).sort()[0];
-const isHost=()=>!!room&&hostId()===meId();
-const pName=id=>{const p=peersOf().find(x=>x.peer===id);return p&&p.presence.name?String(p.presence.name):'ผู้เล่น'};
-const nick=()=>($('nick').value.trim()||'จอมเวท'+(10+Math.floor(Math.random()*90))).slice(0,14);
-function offOnline(){if(room)leaveRoom();['lob','rm','chatp'].forEach(i=>$(i).classList.add('hidden'));$('book').classList.remove('hidden');$('bOn').classList.remove('on')}
-$('bOn').onclick=()=>{if(!LB){toast('ออนไลน์ใช้ได้เมื่อเปิดผ่านลิงก์ artifact และล็อกอินแล้ว','#ef4444');return}
-  clearInterval(timer);active=false;mode='online';hl(null);['bFree','bChal'].forEach(i=>$(i).classList.remove('on'));$('bOn').classList.add('on');$('free').classList.add('hidden');$('chal').classList.add('hidden');if(!room)$('lob').classList.remove('hidden');drawRooms()};
-function drawRooms(){if(!LB)return;const rs=LB.peers().filter(p=>p.presence.rm&&p.presence.rm.c);
-  $('rooms').innerHTML=rs.length?rs.map(p=>{const r=p.presence.rm,n=+r.n||0,m=+r.m||4,full=n>=m||r.p!=='lobby';return '<div class="rw"><span><b>'+esc(r.t)+'</b> · '+n+'/'+m+' คน'+(r.p==='lobby'?'':' (กำลังเล่น)')+'</span><button class="btn" data-c="'+esc(r.c)+'" data-t="'+esc(r.t)+'" data-m="'+m+'"'+(full?' disabled':'')+'>เข้าร่วม</button></div>'}).join(''):'<div style="color:var(--mu);font-size:.85rem">ยังไม่มีห้อง ลองสร้างห้องใหม่ได้เลย</div>'}
-$('rooms').onclick=e=>{const d=e.target.dataset;if(d&&d.c)joinRoom(d.c,d.t,+d.m||4)};
-$('bMk').onclick=()=>joinRoom('inv-'+Math.random().toString(36).slice(2,8),$('rtitle').value.trim()||'ห้องของ '+nick(),+$('rmax').value);
-async function joinRoom(c,t,m){if(room||!LB)return;let r;try{r=await LB.join(c)}catch(e){toast('เข้าห้องไม่ได้ ลองใหม่อีกครั้ง','#ef4444');return}
-  room=r;RM={c,t,m};G={ph:'lobby',r:0,w:{}};doneRound=-1;fxRound=-1;
-  room.presence({name:nick(),ready:false});
-  unsub=[room.on('chat',onChat),room.on('claim',onClaim),room.on('st',onSt),room.onPeers(onPeers)];
-  $('lob').classList.add('hidden');$('rm').classList.remove('hidden');$('book').classList.add('hidden');$('chatp').classList.remove('hidden');$('chlog').innerHTML='';sys('เข้าห้อง “'+esc(t)+'” แล้ว กดพร้อมเมื่อพร้อมเล่น');drawRoom()}
-async function leaveRoom(){clearTimeout(hT);hT=null;unsub.forEach(f=>f());unsub=[];const r=room;room=null;if(LB)LB.presence({rm:null});$('rm').classList.add('hidden');$('chatp').classList.add('hidden');$('book').classList.remove('hidden');if(mode==='online')$('lob').classList.remove('hidden');try{await r.leave()}catch(e){}}
-$('bLv').onclick=leaveRoom;
-$('bRdy').onclick=()=>{const p=meP();if(room)room.presence({ready:!(p&&p.presence.ready)})};
-function pubRoom(){if(!LB)return;LB.presence({rm:room&&isHost()?{c:RM.c,t:RM.t,n:peersOf().length,m:RM.m,p:(G.ph==='play'||G.ph==='cd')?'play':'lobby'}:null})}
-function onPeers(ch){if(!room)return;const ps=peersOf();
-  if(ps.length>RM.m&&ps.map(p=>p.peer).sort().indexOf(meId())>=RM.m){toast('ห้องเต็ม','#ef4444');leaveRoom();return}
-  ch.joined.forEach(p=>{if(!p.isMe)sys('มีผู้เล่นเข้าห้อง')});ch.left.forEach(()=>sys('ผู้เล่นออกจากห้อง'));
-  if(isHost()){if(ch.joined.length)room.emit('st',G);
-    if(G.ph==='lobby'||G.ph==='over'){if(ps.length>=2&&ps.every(p=>p.presence.ready))startGame()}
-    else if(ps.length<2){clearTimeout(hT);hT=null;G.ph='over';room.emit('st',G)}
-    else if(G.ph==='cd'&&!hT)hT=setTimeout(nextRound,3000)}
-  pubRoom();drawRoom()}
-function startGame(){clearTimeout(hT);G={ph:'cd',r:0,t:null,w:{}};peersOf().forEach(p=>G.w[p.peer]=0);room.emit('st',G);hT=setTimeout(nextRound,3000)}
-function nextRound(){hT=null;if(!room||!isHost())return;if(G.r>=6){G.ph='over';G.t=null}else{G.r++;G.ph='play';G.t=S[Math.floor(Math.random()*S.length)].id}room.emit('st',G)}
-function onClaim(m){if(!isHost()||G.ph!=='play'||!m.data||m.data.n!==G.r)return;G.ph='cd';G.w[m.peer]=(G.w[m.peer]||0)+1;G.l={n:G.r,p:m.peer};room.emit('st',G);hT=setTimeout(nextRound,3000)}
-function onSt(m){const d=m.data;if(!room||!d||!d.ph)return;
-  if(d.ph!=='lobby'&&d.ph!=='over'&&!((meId()) in (d.w||{}))){toast('เกมเริ่มไปแล้ว เข้าห้องนี้ไม่ได้','#ef4444');leaveRoom();return}
-  const prev=G.ph;G=d;if(d.ph==='over'&&prev!=='over')room.presence({ready:false});
-  const sp=S.find(s=>s.id===d.t);if(d.l&&d.l.n!==fxRound){fxRound=d.l.n;winFx(d.l.p,S.find(s=>s.id===d.lt)||sp)}
-  drawRoom();pubRoom()}
-function winFx(p,sp){const mine=p===meId();if(mine){toast('คุณเร็วที่สุด! โจมตีสำเร็จ','#4ade80');return}if(sp)FX[sp.id]();shake=Math.max(shake,12);flash=.35;toast(pName(p)+' โจมตีคุณ!','#ef4444')}
-function onlineCast(s){if(!room||G.ph!=='play')return;if(s.id!==G.t){tone(180,'sawtooth',.14);toast('ผิดสกิล เป้าหมายคือ '+(S.find(x=>x.id===G.t)||{}).name,'#ef4444');return}
-  if(doneRound===G.r)return;doneRound=G.r;G.lt=G.t;room.emit('claim',{n:G.r});tone(587,'sine',.1,.09);later(()=>tone(880,'sine',.16,.09),50)}
-function drawRoom(){if(!room)return;const ps=peersOf(),tot=Object.values(G.w||{}).reduce((a,b)=>a+b,0),host=hostId(),idle=G.ph==='lobby'||G.ph==='over';
-  $('ps').innerHTML=ps.map(p=>{const w=(G.w||{})[p.peer]||0,hp=Math.max(0,100-20*(tot-w)),me=p.isMe&&p.sameTab;return '<div class="pc'+(me?' me':'')+'"><b>'+(p.peer===host?'👑 ':'')+esc(p.presence.name||'ผู้เล่น')+'</b>'+(me?' (คุณ)':'')+'<div>ชนะ '+w+' รอบ'+(idle?(p.presence.ready?' · ✅ พร้อม':' · ยังไม่พร้อม'):'')+'</div><div class="hp"><i style="width:'+hp+'%"></i></div></div>'}).join('');
-  const sp=S.find(s=>s.id===G.t);let ic='⚔️',nm='รอผู้เล่นกดพร้อม',col='#e2e8f0',ht='ต้องมี 2 คนขึ้นไป และทุกคนกดพร้อม';
+let peer=null,hostConn=null,conns=new Map(),peersList=[],isHostFlag=false,meId='',myNick='';
+let RM={code:'',title:'',max:4},G={ph:'lobby',r:0,t:null,w:{}},hT=null,connT=null,doneRound=-1,fxRound=-1,busy=false,intentionalLeave=false;
+
+const genCode=()=>{const ch='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<6;i++)s+=ch[Math.floor(Math.random()*ch.length)];return s};
+const pickNick=()=>($('nick').value.trim()||'จอมเวท'+(10+Math.floor(Math.random()*90))).slice(0,14);
+const pName=id=>{const p=peersList.find(x=>x.id===id);return p?p.name:'ผู้เล่น'};
+function setBusy(v,msg){busy=v;$('bMk').disabled=v;$('bJoin').disabled=v;if(msg)$('lobStatus').textContent=msg}
+
+function offOnline(){
+  leaveRoom(true);
+  ['lob','rm','chatp'].forEach(i=>$(i).classList.add('hidden'));
+  $('book').classList.remove('hidden');
+  $('bOn').classList.remove('on');
+}
+
+function openOnlineUI(){
+  if(typeof Peer==='undefined'){toast('โหลดไลบรารี PeerJS ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต','#ef4444');return}
+  clearInterval(timer);active=false;mode='online';hl(null);
+  ['bFree','bChal'].forEach(i=>$(i).classList.remove('on'));
+  $('bOn').classList.add('on');
+  $('free').classList.add('hidden');
+  $('chal').classList.add('hidden');
+  if(!peer)$('lob').classList.remove('hidden');
+}
+$('bOn').onclick=openOnlineUI;
+
+function enterRoomUI(){
+  $('lob').classList.add('hidden');
+  $('rm').classList.remove('hidden');
+  $('book').classList.add('hidden');
+  $('chatp').classList.remove('hidden');
+  $('chlog').innerHTML='';
+  $('rmTitle').textContent=RM.title;
+  $('rmCode').textContent=RM.code;
+}
+
+function leaveRoom(silent){
+  intentionalLeave=true;
+  clearTimeout(hT);hT=null;
+  clearTimeout(connT);connT=null;
+  conns.forEach(c=>{try{c.close()}catch(e){}});
+  conns.clear();
+  if(hostConn){try{hostConn.close()}catch(e){}hostConn=null}
+  if(peer){try{peer.destroy()}catch(e){}peer=null}
+  peersList=[];isHostFlag=false;meId='';doneRound=-1;fxRound=-1;
+  setBusy(false,'เชื่อมต่อตรงแบบ P2P WebRTC (PeerJS) — สร้างห้องแล้วส่งรหัสหรือลิงก์ให้เพื่อนได้เลย');
+  $('rm').classList.add('hidden');
+  $('chatp').classList.add('hidden');
+  $('book').classList.remove('hidden');
+  if(mode==='online'&&!silent)$('lob').classList.remove('hidden');
+  setTimeout(()=>{intentionalLeave=false},100);
+}
+$('bLv').onclick=()=>leaveRoom(false);
+
+/* --- Host: Create Room --- */
+function createRoom(retry=0){
+  if(busy||peer)return;
+  myNick=pickNick();
+  const code=genCode();
+  const title=$('rtitle').value.trim()||'ห้องของ '+myNick;
+  const max=+$('rmax').value||4;
+  setBusy(true,'กำลังสร้างห้อง WebRTC...');
+  let p;
+  try{p=new Peer(PEER_PREFIX+code.toLowerCase(),{config:ICE_CFG})}
+  catch(e){setBusy(false,'สร้างห้องไม่สำเร็จ');toast('สร้าง Peer ไม่สำเร็จ','#ef4444');return}
+  peer=p;isHostFlag=true;
+  p.on('open',id=>{
+    meId=id;RM={code,title,max};
+    G={ph:'lobby',r:0,t:null,w:{}};
+    peersList=[{id:meId,name:myNick,ready:false,isHost:true}];
+    setBusy(false);
+    enterRoomUI();
+    sys('สร้างห้อง “'+esc(title)+'” แล้ว แชร์รหัส '+code+' ให้เพื่อนได้เลย');
+    drawRoom();
+  });
+  p.on('connection',conn=>{
+    conn.on('open',()=>{
+      if(peersList.length>=RM.max){sendTo(conn,{t:'reject',msg:'ห้องเต็มแล้ว'});setTimeout(()=>{try{conn.close()}catch(e){}},200);return}
+      if(G.ph!=='lobby'&&G.ph!=='over'){sendTo(conn,{t:'reject',msg:'เกมเริ่มไปแล้ว เข้าห้องนี้ไม่ได้'});setTimeout(()=>{try{conn.close()}catch(e){}},200);return}
+      conns.set(conn.peer,conn);
+    });
+    conn.on('data',msg=>hostOnData(conn,msg));
+    conn.on('close',()=>hostOnDrop(conn.peer));
+    conn.on('error',()=>hostOnDrop(conn.peer));
+  });
+  p.on('error',err=>{
+    if(err.type==='unavailable-id'&&retry<3){
+      try{p.destroy()}catch(e){}peer=null;busy=false;createRoom(retry+1);return;
+    }
+    toast('เกิดข้อผิดพลาด WebRTC: '+(err.message||err.type),'#ef4444');
+    leaveRoom(false);
+  });
+}
+$('bMk').onclick=()=>createRoom(0);
+
+function sendTo(conn,obj){try{if(conn&&conn.open)conn.send(obj)}catch(e){}}
+function hostBroadcast(obj){conns.forEach(c=>sendTo(c,obj))}
+function hostSync(){
+  const payload={t:'sync',rm:RM,peers:peersList,g:G};
+  hostBroadcast(payload);
+  applySync(payload);
+}
+
+function hostOnData(conn,msg){
+  if(!msg||typeof msg!=='object')return;
+  if(msg.t==='hello'){
+    const name=String(msg.name||'ผู้เล่น').trim().slice(0,14)||'ผู้เล่น';
+    if(!peersList.some(x=>x.id===conn.peer)){
+      peersList.push({id:conn.peer,name,ready:false,isHost:false});
+      const txt=esc(name)+' เข้าห้องแล้ว';
+      sys(txt);hostBroadcast({t:'sys',txt});
+    }
+    hostSync();
+  }else if(msg.t==='ready'){
+    const pl=peersList.find(x=>x.id===conn.peer);
+    if(!pl)return;
+    pl.ready=!!msg.v;
+    hostSync();
+    checkAutoStart();
+  }else if(msg.t==='chat'){
+    const text=String(msg.text||'').trim().slice(0,120);
+    if(!text)return;
+    const m={t:'chat',peer:conn.peer,name:pName(conn.peer),text};
+    hostBroadcast(m);
+    addChat(m.name,m.text);
+  }else if(msg.t==='claim'){
+    hostHandleClaim(conn.peer,msg.n);
+  }
+}
+
+function hostOnDrop(peerId){
+  if(!isHostFlag||!peer)return;
+  conns.delete(peerId);
+  const idx=peersList.findIndex(x=>x.id===peerId);
+  if(idx===-1)return;
+  const leftName=peersList[idx].name;
+  peersList.splice(idx,1);
+  const txt=esc(leftName)+' ออกจากห้อง';
+  sys(txt);hostBroadcast({t:'sys',txt});
+  if(G.ph==='play'||G.ph==='cd'){
+    if(peersList.length<2){
+      clearTimeout(hT);hT=null;
+      G.ph='over';G.t=null;
+      peersList.forEach(p=>p.ready=false);
+    }
+  }else if(G.ph==='lobby'||G.ph==='over'){
+    checkAutoStart();
+  }
+  hostSync();
+}
+
+function checkAutoStart(){
+  if(!isHostFlag)return;
+  if((G.ph==='lobby'||G.ph==='over')&&peersList.length>=2&&peersList.every(p=>p.ready)){
+    startGame();
+  }
+}
+
+function startGame(){
+  clearTimeout(hT);
+  G={ph:'cd',r:0,t:null,w:{}};
+  peersList.forEach(p=>{G.w[p.id]=0});
+  hostSync();
+  hT=setTimeout(nextRound,3000);
+}
+
+function nextRound(){
+  hT=null;
+  if(!peer||!isHostFlag)return;
+  if(G.r>=6){
+    G.ph='over';G.t=null;
+    peersList.forEach(p=>p.ready=false);
+  }else{
+    G.r++;G.ph='play';
+    G.t=S[Math.floor(Math.random()*S.length)].id;
+  }
+  hostSync();
+}
+
+function hostHandleClaim(pid,roundNum){
+  if(!isHostFlag||G.ph!=='play'||roundNum!==G.r)return;
+  G.ph='cd';
+  G.w[pid]=(G.w[pid]||0)+1;
+  G.l={n:G.r,p:pid};
+  G.lt=G.t;
+  hostSync();
+  hT=setTimeout(nextRound,3000);
+}
+
+/* --- Guest: Join Room --- */
+function joinByCode(rawCode){
+  if(busy||peer)return;
+  let code=String(rawCode||'').trim().toUpperCase().replace(/^INVOKER-TRAINER-ROOM-/,'');
+  if(!code){toast('กรุณาใส่รหัสห้อง','#ef4444');return}
+  myNick=pickNick();
+  setBusy(true,'กำลังเชื่อมต่อ WebRTC ไปยังห้อง '+code+' ...');
+  let p;
+  try{p=new Peer(undefined,{config:ICE_CFG})}
+  catch(e){setBusy(false,'เชื่อมต่อไม่สำเร็จ');toast('สร้าง Peer ไม่สำเร็จ','#ef4444');return}
+  peer=p;isHostFlag=false;
+
+  connT=setTimeout(()=>{
+    if(!hostConn||!hostConn.open){
+      toast('เชื่อมต่อห้องไม่ได้ (หมดเวลาหรือโฮสต์ปิดห้องแล้ว)','#ef4444');
+      leaveRoom(false);
+    }
+  },12000);
+
+  p.on('open',id=>{
+    meId=id;
+    const conn=p.connect(PEER_PREFIX+code.toLowerCase(),{reliable:true});
+    hostConn=conn;
+    conn.on('open',()=>{
+      clearTimeout(connT);connT=null;
+      setBusy(false);
+      RM={code,title:'ห้อง '+code,max:4};
+      enterRoomUI();
+      sendTo(conn,{t:'hello',name:myNick});
+      sys('เชื่อมต่อห้อง '+esc(code)+' แล้ว กดพร้อมเมื่อพร้อมเล่น');
+    });
+    conn.on('data',msg=>{
+      if(!msg||typeof msg!=='object')return;
+      if(msg.t==='reject'){toast(msg.msg||'เข้าห้องไม่ได้','#ef4444');leaveRoom(false);return}
+      if(msg.t==='sync'){applySync(msg);return}
+      if(msg.t==='chat'){addChat(msg.name||'ผู้เล่น',msg.text||'');return}
+      if(msg.t==='sys'){sys(msg.txt||'');return}
+    });
+    conn.on('close',()=>{
+      if(!intentionalLeave){
+        toast('การเชื่อมต่อกับโฮสต์ขาดหาย','#ef4444');
+        leaveRoom(false);
+      }
+    });
+    conn.on('error',()=>{
+      if(!intentionalLeave){
+        toast('เชื่อมต่อโฮสต์ล้มเหลว','#ef4444');
+        leaveRoom(false);
+      }
+    });
+  });
+
+  p.on('error',err=>{
+    clearTimeout(connT);connT=null;
+    const msg=err.type==='peer-unavailable'?'ไม่พบห้องรหัส '+code:'เกิดข้อผิดพลาด WebRTC: '+(err.message||err.type);
+    toast(msg,'#ef4444');
+    leaveRoom(false);
+  });
+}
+$('bJoin').onclick=()=>joinByCode($('rcode').value);
+$('rcode').onkeydown=e=>{if(e.key==='Enter')joinByCode($('rcode').value)};
+
+/* --- Shared Room State & UI --- */
+function applySync(msg){
+  if(msg.rm){RM=msg.rm;$('rmTitle').textContent=RM.title;$('rmCode').textContent=RM.code}
+  if(Array.isArray(msg.peers))peersList=msg.peers;
+  if(msg.g){
+    G=msg.g;
+    if(G.l&&G.l.n!==fxRound){
+      fxRound=G.l.n;
+      const sp=S.find(s=>s.id===G.lt)||S.find(s=>s.id===G.t);
+      winFx(G.l.p,sp);
+    }
+  }
+  drawRoom();
+}
+
+$('bRdy').onclick=()=>{
+  if(!peer)return;
+  const me=peersList.find(x=>x.id===meId);
+  const nextReady=!(me&&me.ready);
+  if(isHostFlag){
+    if(me)me.ready=nextReady;
+    hostSync();
+    checkAutoStart();
+  }else if(hostConn&&hostConn.open){
+    sendTo(hostConn,{t:'ready',v:nextReady});
+  }
+};
+
+function winFx(p,sp){
+  if(p===meId){toast('คุณเร็วที่สุด! โจมตีสำเร็จ','#4ade80');return}
+  if(sp)FX[sp.id]();
+  shake=Math.max(shake,12);flash=.35;
+  toast(pName(p)+' โจมตีคุณ!','#ef4444');
+}
+
+function onlineCast(s){
+  if(!peer||G.ph!=='play')return;
+  if(s.id!==G.t){
+    tone(180,'sawtooth',.14);
+    toast('ผิดสกิล เป้าหมายคือ '+(S.find(x=>x.id===G.t)||{}).name,'#ef4444');
+    return;
+  }
+  if(doneRound===G.r)return;
+  doneRound=G.r;
+  tone(587,'sine',.1,.09);later(()=>tone(880,'sine',.16,.09),50);
+  if(isHostFlag)hostHandleClaim(meId,G.r);
+  else if(hostConn&&hostConn.open)sendTo(hostConn,{t:'claim',n:G.r});
+}
+
+function drawRoom(){
+  if(!peer)return;
+  const tot=Object.values(G.w||{}).reduce((a,b)=>a+b,0);
+  const idle=G.ph==='lobby'||G.ph==='over';
+  $('ps').innerHTML=peersList.map(p=>{
+    const w=(G.w||{})[p.id]||0;
+    const hp=Math.max(0,100-20*(tot-w));
+    const me=p.id===meId;
+    return '<div class="pc'+(me?' me':'')+'"><b>'+(p.isHost?'👑 ':'')+esc(p.name)+'</b>'+(me?' (คุณ)':'')+'<div>ชนะ '+w+' รอบ'+(idle?(p.ready?' · ✅ พร้อม':' · ยังไม่พร้อม'):'')+'</div><div class="hp"><i style="width:'+hp+'%"></i></div></div>';
+  }).join('');
+  const sp=S.find(s=>s.id===G.t);
+  let ic='⚔️',nm='รอผู้เล่นกดพร้อม',col='#e2e8f0',ht='ต้องมี 2 คนขึ้นไป และทุกคนกดพร้อม';
   if(G.ph==='play'&&sp){ic=sp.icon;nm=sp.name;col=sp.color;ht='Invoke แล้วกด D หรือ F ให้เร็วที่สุด!'}
   else if(G.ph==='cd'){ic='⏳';nm=G.l&&G.r?pName(G.l.p)+' ชนะรอบที่ '+G.r:'กำลังเริ่มเกม…';col='#fde047';ht='รอบถัดไปเริ่มใน 3 วินาที'}
-  else if(G.ph==='over'){const mx=Math.max(0,...Object.values(G.w||{}));ic='🏆';nm=mx?'จบเกม! ผู้ชนะ: '+Object.keys(G.w).filter(k=>G.w[k]===mx).map(pName).join(', '):'จบเกม! เสมอ';col='#fde047';ht='กดพร้อมเพื่อเล่นรอบใหม่'}
+  else if(G.ph==='over'){
+    const mx=Math.max(0,...Object.values(G.w||{}));
+    const winners=Object.keys(G.w||{}).filter(k=>G.w[k]===mx).map(pName);
+    ic='🏆';nm=mx?'จบเกม! ผู้ชนะ: '+winners.join(', '):'จบเกม! เสมอ';col='#fde047';ht='กดพร้อมเพื่อเล่นรอบใหม่';
+  }
   $('oIc').textContent=ic;$('oNm').textContent=nm;$('oNm').style.color=col;$('oHt').textContent=ht;$('oRd').textContent=Math.min(G.r||0,6)+'/6';
-  const b=$('bRdy'),p=meP();b.style.display=idle?'':'none';b.textContent=p&&p.presence.ready?'ยกเลิกพร้อม':'พร้อม'}
+  const b=$('bRdy'),me=peersList.find(x=>x.id===meId);
+  b.style.display=idle?'':'none';
+  b.textContent=me&&me.ready?'ยกเลิกพร้อม':'พร้อม';
+}
+
 function sys(t){const l=$('chlog');l.insertAdjacentHTML('beforeend','<div class="cm sys">'+t+'</div>');l.scrollTop=l.scrollHeight}
-function onChat(m){if(!m.data||typeof m.data.t!=='string')return;const l=$('chlog');l.insertAdjacentHTML('beforeend','<div class="cm"><b>'+esc(pName(m.peer))+':</b> '+esc(m.data.t.slice(0,120))+'</div>');l.scrollTop=l.scrollHeight}
-function sendChat(){const i=$('chin'),t=i.value.trim();if(!t||!room)return;i.value='';room.emit('chat',{t:t.slice(0,120)})}
+function addChat(name,text){const l=$('chlog');l.insertAdjacentHTML('beforeend','<div class="cm"><b>'+esc(name)+':</b> '+esc(text)+'</div>');l.scrollTop=l.scrollHeight}
+function sendChat(){
+  const i=$('chin'),text=i.value.trim().slice(0,120);
+  if(!text||!peer)return;
+  i.value='';
+  if(isHostFlag){
+    const m={t:'chat',peer:meId,name:myNick,text};
+    hostBroadcast(m);addChat(myNick,text);
+  }else if(hostConn&&hostConn.open){
+    sendTo(hostConn,{t:'chat',text});
+  }
+}
 $('chsend').onclick=sendChat;$('chin').onkeydown=e=>{if(e.key==='Enter')sendChat()};
+
+async function copyText(txt,okMsg){
+  try{await navigator.clipboard.writeText(txt);toast(okMsg,'#4ade80')}
+  catch(e){toast('คัดลอก: '+txt,'#38bdf8')}
+}
+$('bCopyCode').onclick=()=>copyText(RM.code,'คัดลอกรหัสห้อง '+RM.code+' แล้ว');
+$('bCopyLink').onclick=()=>{const u=new URL(location.href);u.searchParams.set('room',RM.code);copyText(u.toString(),'คัดลอกลิงก์เชิญแล้ว')};
+
 ['bFree','bChal'].forEach(i=>$(i).addEventListener('click',()=>$('bOn').classList.remove('on')));
+window.addEventListener('beforeunload',()=>{if(peer){try{peer.destroy()}catch(e){}}});
+
+/* ตรวจสอบพารามิเตอร์ ?room= จากลิงก์เชิญ */
+const urlRoom=new URLSearchParams(location.search).get('room');
+if(urlRoom){
+  $('rcode').value=urlRoom.trim().toUpperCase();
+  openOnlineUI();
+  toast('พร้อมเข้าห้อง '+$('rcode').value+' กดปุ่ม "เข้าร่วมห้อง" ได้เลย','#38bdf8');
+}
+
 renderOrbs();renderSlots();
 </script>
 </body>
