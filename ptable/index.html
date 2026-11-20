@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ตารางธาตุ & ห้องทดลองผสมธาตุ (สูงสุด 5 ตัว)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0b1020;
+            --bg-panel: #131a31;
+            --bg-card: #1a2342;
+            --border-color: #2b3868;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.35);
+
+            /* Element Categories */
+            --cat-nonmetal: #22c55e;
+            --cat-noble-gas: #a855f7;
+            --cat-alkali-metal: #ef4444;
+            --cat-alkaline-earth: #f97316;
+            --cat-metalloid: #14b8a6;
+            --cat-halogen: #eab308;
+            --cat-transition-metal: #3b82f6;
+            --cat-post-transition: #06b6d4;
+            --cat-lanthanide: #ec4899;
+            --cat-actinide: #f43f5e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Prompt', system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at top, #162040 0%, var(--bg-main) 65%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: clamp(1.5rem, 3vw, 2.2rem);
+            font-weight: 700;
+            background: linear-gradient(90deg, #38bdf8, #818cf8, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Top Workspace: Mixer & Info */
+        .workspace {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 960px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .panel-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge-count {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            font-size: 0.8rem;
+            padding: 2px 10px;
+            border-radius: 999px;
+        }
+
+        /* Mixer Slots */
+        .slots-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .slot {
+            aspect-ratio: 1 / 1;
+            max-height: 92px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 2px dashed #334155;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.2s ease;
+            cursor: default;
+            user-select: none;
+        }
+
+        .slot.filled {
+            border-style: solid;
+            cursor: pointer;
+            background: var(--bg-card);
+            animation: popIn 0.2s ease-out;
+        }
+
+        .slot.filled:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+            border-color: #ef4444 !important;
+        }
+
+        .slot.filled:hover::after {
+            content: "×";
+            position: absolute;
+            top: 4px;
+            right: 7px;
+            font-size: 0.9rem;
+            color: #ef4444;
+            font-weight: 700;
+        }
+
+        .slot-empty-text {
+            color: #475569;
+            font-size: 0.75rem;
+            text-align: center;
+        }
+
+        .slot-symbol {
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .slot-name {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            max-width: 90%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .slot-num {
+            position: absolute;
+            top: 4px;
+            left: 7px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-6px);
+            }
+
+            75% {
+                transform: translateX(6px);
+            }
+        }
+
+        .shake {
+            animation: shake 0.3s ease-in-out;
+        }
+
+        /* Mixer Controls & Presets */
+        .mixer-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-mix {
+            flex: 1;
+            min-width: 140px;
+            padding: 10px 18px;
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+        }
+
+        .btn-mix:hover:not(:disabled) {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .btn-mix:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .btn-clear {
+            padding: 10px 16px;
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid #334155;
+            font-size: 0.9rem;
+        }
+
+        .btn-clear:hover {
+            background: #334155;
+            color: white;
+        }
+
+        .presets {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .preset-chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: #cbd5e1;
+            padding: 3px 9px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+        }
+
+        .preset-chip:hover {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        /* Result Box */
+        .result-box {
+            margin-top: 14px;
+            background: rgba(11, 16, 32, 0.75);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            min-height: 112px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .result-empty {
+            color: var(--text-muted);
+            text-align: center;
+            font-size: 0.88rem;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+        }
+
+        .result-formula {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #38bdf8;
+        }
+
+        .result-type {
+            font-size: 0.75rem;
+            padding: 2px 10px;
+            border-radius: 999px;
+            background: rgba(168, 85, 247, 0.2);
+            color: #d8b4fe;
+            border: 1px solid rgba(168, 85, 247, 0.4);
+        }
+
+        .result-name {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .result-desc {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+        }
+
+        /* Element Inspector Panel */
+        .inspector-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            justify-content: space-between;
+        }
+
+        .inspector-main {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .inspector-badge {
+            width: 96px;
+            height: 96px;
+            border-radius: 14px;
+            border: 2px solid var(--accent);
+            background: var(--bg-card);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .inspector-badge .num {
+            position: absolute;
+            top: 6px;
+            left: 8px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .inspector-badge .sym {
+            font-size: 2.2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .inspector-badge .mass {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .inspector-details h3 {
+            font-size: 1.25rem;
+            margin-bottom: 2px;
+        }
+
+        .inspector-details .en-name {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .inspector-cat {
+            display: inline-block;
+            font-size: 0.75rem;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .inspector-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            background: rgba(11, 16, 32, 0.55);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 0.82rem;
+        }
+
+        .inspector-grid div span {
+            color: var(--text-muted);
+            display: block;
+            font-size: 0.72rem;
+        }
+
+        .toast {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #fbbf24;
+            min-height: 20px;
+        }
+
+        /* Legend & Filter */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.76rem;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            padding: 4px 10px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .legend-item:hover,
+        .legend-item.active {
+            border-color: white;
+            background: var(--bg-card);
+            transform: translateY(-1px);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        /* Periodic Table Grid */
+        .table-wrapper {
+            overflow-x: auto;
+            padding-bottom: 12px;
+        }
+
+        .periodic-table {
+            display: grid;
+            grid-template-columns: repeat(18, minmax(54px, 1fr));
+            grid-auto-rows: 62px;
+            gap: 4px;
+            min-width: 1020px;
+        }
+
+        .element-cell {
+            background: var(--bg-card);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 3px solid var(--el-color, #64748b);
+            padding: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+            position: relative;
+            user-select: none;
+        }
+
+        .element-cell:hover {
+            transform: scale(1.12);
+            z-index: 10;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6), 0 0 12px var(--el-color);
+            border-color: var(--el-color);
+        }
+
+        .element-cell.dimmed {
+            opacity: 0.22;
+        }
+
+        .element-cell.in-mixer {
+            box-shadow: inset 0 0 0 2px #38bdf8;
+        }
+
+        .el-num {
+            font-size: 0.62rem;
+            color: var(--text-muted);
+            line-height: 1;
+        }
+
+        .el-sym {
+            font-size: 1.05rem;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        .el-name {
+            font-size: 0.56rem;
+            text-align: center;
+            color: #cbd5e1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .series-placeholder {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px dashed rgba(255, 255, 255, 0.18);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .series-label {
+            grid-column: 1 / 4;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .spacer-row {
+            grid-column: 1 / -1;
+            height: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>ตารางธาตุ & ห้องทดลองผสมธาตุ</h1>
+            <p>คลิกเลือกธาตุจากตารางด้านล่างเพื่อนำไปผสมได้สูงสุด <strong>5 ตัว</strong> (สามารถเลือกธาตุซ้ำกันได้)</p>
+        </header>
+
+        <!-- Workspace: Mixer + Inspector -->
+        <section class="workspace">
+            <!-- Mixer Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        ⚗️ ช่องผสมธาตุ (Mixer)
+                        <span class="badge-count" id="slotCounter">0 / 5 ตัว</span>
+                    </div>
+                </div>
+
+                <div class="slots-container" id="slotsContainer"></div>
+
+                <div class="mixer-actions">
+                    <button class="btn-mix" id="mixBtn" disabled>✨ ผสมธาตุที่เลือก</button>
+                    <button class="btn-clear" id="clearBtn">ล้างทั้งหมด</button>
+                </div>
+
+                <div class="presets">
+                    <span>สูตรแนะนำ:</span>
+                    <button class="preset-chip" data-recipe="H,H,O">น้ำ (H₂O)</button>
+                    <button class="preset-chip" data-recipe="C,O,O">คาร์บอนไดออกไซด์ (CO₂)</button>
+                    <button class="preset-chip" data-recipe="Na,Cl">เกลือแกง (NaCl)</button>
+                    <button class="preset-chip" data-recipe="C,H,H,H,H">มีเทน (CH₄)</button>
+                    <button class="preset-chip" data-recipe="Fe,Cr,Ni">สแตนเลส</button>
+                    <button class="preset-chip" data-recipe="H,N,O,O,O">กรดไนตริก (HNO₃)</button>
+                </div>
+
+                <div class="result-box" id="resultBox">
+                    <div class="result-empty">
+                        เลือกธาตุอย่างน้อย 2 ตัวขึ้นไป แล้วกดปุ่ม <strong>"ผสมธาตุที่เลือก"</strong> เพื่อดูผลลัพธ์
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inspector Panel -->
+            <div class="panel inspector-card">
+                <div>
+                    <div class="panel-header">
+                        <div class="panel-title">🔍 ข้อมูลธาตุ</div>
+                    </div>
+                    <div class="inspector-main">
+                        <div class="inspector-badge" id="inspBadge">
+                            <span class="num" id="inspNum">1</span>
+                            <span class="sym" id="inspSym">H</span>
+                            <span class="mass" id="inspMass">1.008</span>
+                        </div>
+                        <div class="inspector-details">
+                            <h3 id="inspNameTh">ไฮโดรเจน</h3>
+                            <div class="en-name" id="inspNameEn">Hydrogen</div>
+                            <span class="inspector-cat" id="inspCat">อโลหะ</span>
+                        </div>
+                    </div>
+                    <div class="inspector-grid">
+                        <div><span>เลขอะตอม (Atomic No.)</span><strong id="inspAtomic">1</strong></div>
+                        <div><span>มวลอะตอม (Atomic Mass)</span><strong id="inspMassFull">1.008 u</strong></div>
+                        <div><span>หมู่ / คาบ (Group / Period)</span><strong id="inspGP">หมู่ 1 / คาบ 1</strong></div>
+                        <div><span>สถานะการเลือก</span><strong id="inspStatus">คลิกที่ธาตุเพื่อเพิ่มลงช่องผสม</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="toast" id="toastMsg"></div>
+            </div>
+        </section>
+
+        <!-- Category Legend -->
+        <div class="legend" id="legend"></div>
+
+        <!-- Periodic Table -->
+        <div class="table-wrapper">
+            <div class="periodic-table" id="periodicTable"></div>
+        </div>
+    </div>
+
+    <script>
+        // Categories metadata
+    const CATEGORIES = {
+      'nonmetal': { name: 'อโลหะ', color: '#22c55e' },
+      'noble-gas': { name: 'แก๊สมีสกุล', color: '#a855f7' },
+      'alkali-metal': { name: 'โลหะแอลคาไล', color: '#ef4444' },
+      'alkaline-earth': { name: 'โลหะแอลคาไลน์เอิร์ท', color: '#f97316' },
+      'metalloid': { name: 'กึ่งโลหะ', color: '#14b8a6' },
+      'halogen': { name: 'แฮโลเจน', color: '#eab308' },
+      'transition-metal': { name: 'โลหะแทรนซิชัน', color: '#3b82f6' },
+      'post-transition': { name: 'โลหะหลังแทรนซิชัน', color: '#06b6d4' },
+      'lanthanide': { name: 'แลนทาไนด์', color: '#ec4899' },
+      'actinide': { name: 'แอกทิไนด์', color: '#f43f5e' }
+    };
+
+    // All 118 Elements: [number, symbol, nameEn, nameTh, mass, category, gridCol, gridRow]
+    const ELEMENTS = [
+      [1, 'H', 'Hydrogen', 'ไฮโดรเจน', '1.008', 'nonmetal', 1, 1],
+      [2, 'He', 'Helium', 'ฮีเลียม', '4.0026', 'noble-gas', 18, 1],
+      [3, 'Li', 'Lithium', 'ลิเทียม', '6.94', 'alkali-metal', 1, 2],
+      [4, 'Be', 'Beryllium', 'เบริลเลียม', '9.0122', 'alkaline-earth', 2, 2],
+      [5, 'B', 'Boron', 'โบรอน', '10.81', 'metalloid', 13, 2],
+      [6, 'C', 'Carbon', 'คาร์บอน', '12.011', 'nonmetal', 14, 2],
+      [7, 'N', 'Nitrogen', 'ไนโตรเจน', '14.007', 'nonmetal', 15, 2],
+      [8, 'O', 'Oxygen', 'ออกซิเจน', '15.999', 'nonmetal', 16, 2],
+      [9, 'F', 'Fluorine', 'ฟลูออรีน', '18.998', 'halogen', 17, 2],
+      [10, 'Ne', 'Neon', 'นีออน', '20.180', 'noble-gas', 18, 2],
+      [11, 'Na', 'Sodium', 'โซเดียม', '22.990', 'alkali-metal', 1, 3],
+      [12, 'Mg', 'Magnesium', 'แมกนีเซียม', '24.305', 'alkaline-earth', 2, 3],
+      [13, 'Al', 'Aluminium', 'อะลูมิเนียม', '26.982', 'post-transition', 13, 3],
+      [14, 'Si', 'Silicon', 'ซิลิคอน', '28.085', 'metalloid', 14, 3],
+      [15, 'P', 'Phosphorus', 'ฟอสฟอรัส', '30.974', 'nonmetal', 15, 3],
+      [16, 'S', 'Sulfur', 'กำมะถัน', '32.06', 'nonmetal', 16, 3],
+      [17, 'Cl', 'Chlorine', 'คลอรีน', '35.45', 'halogen', 17, 3],
+      [18, 'Ar', 'Argon', 'อาร์กอน', '39.948', 'noble-gas', 18, 3],
+      [19, 'K', 'Potassium', 'โพแทสเซียม', '39.098', 'alkali-metal', 1, 4],
+      [20, 'Ca', 'Calcium', 'แคลเซียม', '40.078', 'alkaline-earth', 2, 4],
+      [21, 'Sc', 'Scandium', 'สแคนเดียม', '44.956', 'transition-metal', 3, 4],
+      [22, 'Ti', 'Titanium', 'ไทเทเนียม', '47.867', 'transition-metal', 4, 4],
+      [23, 'V', 'Vanadium', 'วาเนเดียม', '50.942', 'transition-metal', 5, 4],
+      [24, 'Cr', 'Chromium', 'โครเมียม', '51.996', 'transition-metal', 6, 4],
+      [25, 'Mn', 'Manganese', 'แมงกานีส', '54.938', 'transition-metal', 7, 4],
+      [26, 'Fe', 'Iron', 'เหล็ก', '55.845', 'transition-metal', 8, 4],
+      [27, 'Co', 'Cobalt', 'โคบอลต์', '58.933', 'transition-metal', 9, 4],
+      [28, 'Ni', 'Nickel', 'นิกเกิล', '58.693', 'transition-metal', 10, 4],
+      [29, 'Cu', 'Copper', 'ทองแดง', '63.546', 'transition-metal', 11, 4],
+      [30, 'Zn', 'Zinc', 'สังกะสี', '65.38', 'transition-metal', 12, 4],
+      [31, 'Ga', 'Gallium', 'แกลเลียม', '69.723', 'post-transition', 13, 4],
+      [32, 'Ge', 'Germanium', 'เจอร์เมเนียม', '72.630', 'metalloid', 14, 4],
+      [33, 'As', 'Arsenic', 'สารหนู', '74.922', 'metalloid', 15, 4],
+      [34, 'Se', 'Selenium', 'ซีลีเนียม', '78.971', 'nonmetal', 16, 4],
+      [35, 'Br', 'Bromine', 'โบรมีน', '79.904', 'halogen', 17, 4],
+      [36, 'Kr', 'Krypton', 'คริปทอน', '83.798', 'noble-gas', 18, 4],
+      [37, 'Rb', 'Rubidium', 'รูบิเดียม', '85.468', 'alkali-metal', 1, 5],
+      [38, 'Sr', 'Strontium', 'สตรอนเชียม', '87.62', 'alkaline-earth', 2, 5],
+      [39, 'Y', 'Yttrium', 'อิตเทรียม', '88.906', 'transition-metal', 3, 5],
+      [40, 'Zr', 'Zirconium', 'เซอร์โคเนียม', '91.224', 'transition-metal', 4, 5],
+      [41, 'Nb', 'Niobium', 'ไนโอเบียม', '92.906', 'transition-metal', 5, 5],
+      [42, 'Mo', 'Molybdenum', 'โมลิบดีนัม', '95.95', 'transition-metal', 6, 5],
+      [43, 'Tc', 'Technetium', 'เทคนีเชียม', '(98)', 'transition-metal', 7, 5],
+      [44, 'Ru', 'Ruthenium', 'รูทีเนียม', '101.07', 'transition-metal', 8, 5],
+      [45, 'Rh', 'Rhodium', 'โรเดียม', '102.91', 'transition-metal', 9, 5],
+      [46, 'Pd', 'Palladium', 'แพลเลเดียม', '106.42', 'transition-metal', 10, 5],
+      [47, 'Ag', 'Silver', 'เงิน', '107.87', 'transition-metal', 11, 5],
+      [48, 'Cd', 'Cadmium', 'แคดเมียม', '112.41', 'transition-metal', 12, 5],
+      [49, 'In', 'Indium', 'อินเดียม', '114.82', 'post-transition', 13, 5],
+      [50, 'Sn', 'Tin', 'ดีบุก', '118.71', 'post-transition', 14, 5],
+      [51, 'Sb', 'Antimony', 'พลวง', '121.76', 'metalloid', 15, 5],
+      [52, 'Te', 'Tellurium', 'เทลลูเรียม', '127.60', 'metalloid', 16, 5],
+      [53, 'I', 'Iodine', 'ไอโอดีน', '126.90', 'halogen', 17, 5],
+      [54, 'Xe', 'Xenon', 'ซีนอน', '131.29', 'noble-gas', 18, 5],
+      [55, 'Cs', 'Cesium', 'ซีเซียม', '132.91', 'alkali-metal', 1, 6],
+      [56, 'Ba', 'Barium', 'แบเรียม', '137.33', 'alkaline-earth', 2, 6],
+      // Lanthanides (Row 9, Cols 4-18)
+      [57, 'La', 'Lanthanum', 'แลนทานัม', '138.91', 'lanthanide', 4, 9],
+      [58, 'Ce', 'Cerium', 'ซีเรียม', '140.12', 'lanthanide', 5, 9],
+      [59, 'Pr', 'Praseodymium', 'เพรซีโอดิเมียม', '140.91', 'lanthanide', 6, 9],
+      [60, 'Nd', 'Neodymium', 'นีโอดิเมียม', '144.24', 'lanthanide', 7, 9],
+      [61, 'Pm', 'Promethium', 'โพรมีเทียม', '(145)', 'lanthanide', 8, 9],
+      [62, 'Sm', 'Samarium', 'ซาแมเรียม', '150.36', 'lanthanide', 9, 9],
+      [63, 'Eu', 'Europium', 'ยูโรเพียม', '151.96', 'lanthanide', 10, 9],
+      [64, 'Gd', 'Gadolinium', 'แกโดลิเนียม', '157.25', 'lanthanide', 11, 9],
+      [65, 'Tb', 'Terbium', 'เทอร์เบียม', '158.93', 'lanthanide', 12, 9],
+      [66, 'Dy', 'Dysprosium', 'ดิสโพรเซียม', '162.50', 'lanthanide', 13, 9],
+      [67, 'Ho', 'Holmium', 'โฮลเมียม', '164.93', 'lanthanide', 14, 9],
+      [68, 'Er', 'Erbium', 'เออร์เบียม', '167.26', 'lanthanide', 15, 9],
+      [69, 'Tm', 'Thulium', 'ทูเลียม', '168.93', 'lanthanide', 16, 9],
+      [70, 'Yb', 'Ytterbium', 'อิตเทอร์เบียม', '173.05', 'lanthanide', 17, 9],
+      [71, 'Lu', 'Lutetium', 'ลูทีเชียม', '174.97', 'lanthanide', 18, 9],
+      // Row 6 continued
+      [72, 'Hf', 'Hafnium', 'แฮฟเนียม', '178.49', 'transition-metal', 4, 6],
+      [73, 'Ta', 'Tantalum', 'แทนทาลัม', '180.95', 'transition-metal', 5, 6],
+      [74, 'W', 'Tungsten', 'ทังสเตน', '183.84', 'transition-metal', 6, 6],
+      [75, 'Re', 'Rhenium', 'รีเนียม', '186.21', 'transition-metal', 7, 6],
+      [76, 'Os', 'Osmium', 'ออสเมียม', '190.23', 'transition-metal', 8, 6],
+      [77, 'Ir', 'Iridium', 'อิริเดียม', '192.22', 'transition-metal', 9, 6],
+      [78, 'Pt', 'Platinum', 'แพลทินัม', '195.08', 'transition-metal', 10, 6],
+      [79, 'Au', 'Gold', 'ทองคำ', '196.97', 'transition-metal', 11, 6],
+      [80, 'Hg', 'Mercury', 'ปรอท', '200.59', 'transition-metal', 12, 6],
+      [81, 'Tl', 'Thallium', 'แทลเลียม', '204.38', 'post-transition', 13, 6],
+      [82, 'Pb', 'Lead', 'ตะกั่ว', '207.2', 'post-transition', 14, 6],
+      [83, 'Bi', 'Bismuth', 'บิสมัท', '208.98', 'post-transition', 15, 6],
+      [84, 'Po', 'Polonium', 'พอโลเนียม', '(209)', 'post-transition', 16, 6],
+      [85, 'At', 'Astatine', 'แอสทาทีน', '(210)', 'halogen', 17, 6],
+      [86, 'Rn', 'Radon', 'เรดอน', '(222)', 'noble-gas', 18, 6],
+      // Row 7
+      [87, 'Fr', 'Francium', 'แฟรนเซียม', '(223)', 'alkali-metal', 1, 7],
+      [88, 'Ra', 'Radium', 'เรเดียม', '(226)', 'alkaline-earth', 2, 7],
+      // Actinides (Row 10, Cols 4-18)
+      [89, 'Ac', 'Actinium', 'แอกทิเนียม', '(227)', 'actinide', 4, 10],
+      [90, 'Th', 'Thorium', 'ทอเรียม', '232.04', 'actinide', 5, 10],
+      [91, 'Pa', 'Protactinium', 'โพรแทกทิเนียม', '231.04', 'actinide', 6, 10],
+      [92, 'U', 'Uranium', 'ยูเรเนียม', '238.03', 'actinide', 7, 10],
+      [93, 'Np', 'Neptunium', 'เนปทูเนียม', '(237)', 'actinide', 8, 10],
+      [94, 'Pu', 'Plutonium', 'พลูโทเนียม', '(244)', 'actinide', 9, 10],
+      [95, 'Am', 'Americium', 'อะเมริเซียม', '(243)', 'actinide', 10, 10],
+      [96, 'Cm', 'Curium', 'คูเรียม', '(247)', 'actinide', 11, 10],
+      [97, 'Bk', 'Berkelium', 'เบอร์คีเลียม', '(247)', 'actinide', 12, 10],
+      [98, 'Cf', 'Californium', 'แคลิฟอร์เนียม', '(251)', 'actinide', 13, 10],
+      [99, 'Es', 'Einsteinium', 'ไอน์สไตเนียม', '(252)', 'actinide', 14, 10],
+      [100, 'Fm', 'Fermium', 'เฟอร์เมียม', '(257)', 'actinide', 15, 10],
+      [101, 'Md', 'Mendelevium', 'เมนเดลีเวียม', '(258)', 'actinide', 16, 10],
+      [102, 'No', 'Nobelium', 'โนเบเลียม', '(259)', 'actinide', 17, 10],
+      [103, 'Lr', 'Lawrencium', 'ลอว์เรนเซียม', '(266)', 'actinide', 18, 10],
+      // Row 7 continued
+      [104, 'Rf', 'Rutherfordium', 'รัทเทอร์ฟอร์เดียม', '(267)', 'transition-metal', 4, 7],
+      [105, 'Db', 'Dubnium', 'ดุบเนียม', '(268)', 'transition-metal', 5, 7],
+      [106, 'Sg', 'Seaborgium', 'ซีบอร์เกียม', '(269)', 'transition-metal', 6, 7],
+      [107, 'Bh', 'Bohrium', 'โบห์เรียม', '(270)', 'transition-metal', 7, 7],
+      [108, 'Hs', 'Hassium', 'ฮัสเซียม', '(277)', 'transition-metal', 8, 7],
+      [109, 'Mt', 'Meitnerium', 'ไมต์เนเรียม', '(278)', 'transition-metal', 9, 7],
+      [110, 'Ds', 'Darmstadtium', 'ดาร์มสตัดเทียม', '(281)', 'transition-metal', 10, 7],
+      [111, 'Rg', 'Roentgenium', 'เรินต์เกเนียม', '(282)', 'transition-metal', 11, 7],
+      [112, 'Cn', 'Copernicium', 'โคเปอร์นิเซียม', '(285)', 'transition-metal', 12, 7],
+      [113, 'Nh', 'Nihonium', 'นิโฮเนียม', '(286)', 'post-transition', 13, 7],
+      [114, 'Fl', 'Flerovium', 'ฟลิโรเวียม', '(289)', 'post-transition', 14, 7],
+      [115, 'Mc', 'Moscovium', 'มอสโกเวียม', '(290)', 'post-transition', 15, 7],
+      [116, 'Lv', 'Livermorium', 'ลิเวอร์มอเรียม', '(293)', 'post-transition', 16, 7],
+      [117, 'Ts', 'Tennessine', 'เทนเนสซีน', '(294)', 'halogen', 17, 7],
+      [118, 'Og', 'Oganesson', 'ออกาเนสซอน', '(294)', 'noble-gas', 18, 7]
+    ];
+
+    // Map by symbol for quick lookup
+    const ELEMENT_MAP = Object.fromEntries(ELEMENTS.map(el => [el[1], el]));
+
+    // Known compound/alloy recipes (Key = alphabetically sorted "SymbolCount-...")
+    const RECIPES = {
+      'H2': { formula: 'H₂', name: 'แก๊สไฮโดรเจน (Hydrogen Gas)', type: 'โมเลกุลธาตุ (โคเวเลนต์)', desc: 'แก๊สที่เบาที่สุดในเอกภพ ไม่มีสี ไม่มีกลิ่น ติดไฟได้ง่ายมาก' },
+      'O2': { formula: 'O₂', name: 'แก๊สออกซิเจน (Oxygen Gas)', type: 'โมเลกุลธาตุ (โคเวเลนต์)', desc: 'แก๊สที่จำเป็นต่อการหายใจของสิ่งมีชีวิตและช่วยในการเผาไหม้' },
+      'O3': { formula: 'O₃', name: 'โอโซน (Ozone)', type: 'โมเลกุลธาตุ (อัญรูป)', desc: 'พบมากในชั้นบรรยากาศสตราโตสเฟียร์ ช่วยกรองรังสีอัลตราไวโอเลต (UV)' },
+      'N2': { formula: 'N₂', name: 'แก๊สไนโตรเจน (Nitrogen Gas)', type: 'โมเลกุลธาตุ (โคเวเลนต์)', desc: 'เป็นองค์ประกอบหลักของอากาศโลกถึงประมาณ 78% มีความเสถียรสูง' },
+      'Cl2': { formula: 'Cl₂', name: 'แก๊สคลอรีน (Chlorine Gas)', type: 'โมเลกุลธาตุ (โคเวเลนต์)', desc: 'แก๊สสีเหลืองอมเขียว มีกลิ่นฉุนรุนแรง ใช้ฆ่าเชื้อในน้ำประปา' },
+      'H2-O1': { formula: 'H₂O', name: 'น้ำ (Water)', type: 'สารประกอบโคเวเลนต์', desc: 'ของเหลวใสที่เป็นรากฐานของสิ่งมีชีวิตทุกชนิดบนโลก เป็นตัวทำละลายสากล' },
+      'H2-O2': { formula: 'H₂O₂', name: 'ไฮโดรเจนเปอร์ออกไซด์', type: 'สารประกอบโคเวเลนต์', desc: 'สารละลายใส นิยมใช้ล้างแผล ฟอกสี และฆ่าเชื้อโรค' },
+      'C1-O1': { formula: 'CO', name: 'คาร์บอนมอนอกไซด์', type: 'สารประกอบโคเวเลนต์', desc: 'แก๊สพิษไร้สีไร้กลิ่น เกิดจากการเผาไหม้ที่ไม่สมบูรณ์' },
+      'C1-O2': { formula: 'CO₂', name: 'คาร์บอนไดออกไซด์', type: 'สารประกอบโคเวเลนต์', desc: 'แก๊สเรือนกระจกที่พืชใช้ในการสังเคราะห์ด้วยแสง และทำให้น้ำอัดลมซ่า' },
+      'C1-H4': { formula: 'CH₄', name: 'มีเทน (Methane)', type: 'สารประกอบอินทรีย์ (อัลเคน)', desc: 'องค์ประกอบหลักของแก๊สธรรมชาติ ติดไฟง่าย ใช้เป็นเชื้อเพลิง' },
+      'C2-H2': { formula: 'C₂H₂', name: 'อะเซทิลีน (Acetylene)', type: 'สารประกอบอินทรีย์ (อัลไคน์)', desc: 'แก๊สที่ใช้ในงานเชื่อมและตัดโลหะเพราะให้ความร้อนสูงมากเมื่อเผาไหม้' },
+      'C1-H2-O1': { formula: 'CH₂O', name: 'ฟอร์มาลดีไฮด์ (Formaldehyde)', type: 'สารประกอบอินทรีย์', desc: 'เมื่อละลายน้ำเรียกว่า ฟอร์มาลิน ใช้ในอุตสาหกรรมและดองตัวอย่างทางชีววิทยา' },
+      'C1-H2-O2': { formula: 'HCOOH', name: 'กรดฟอร์มิก (กรดมด)', type: 'กรดอินทรีย์', desc: 'พบในเหล็กไนของมดและผึ้ง มีกลิ่นฉุนและฤทธิ์กัดกร่อน' },
+      'C1-Cl4': { formula: 'CCl₄', name: 'คาร์บอนเตตระคลอไรด์', type: 'สารประกอบโคเวเลนต์', desc: 'ของเหลวไม่มีสี เคยใช้เป็นตัวทำละลายและในถังดับเพลิง' },
+      'C1-H1-Cl3': { formula: 'CHCl₃', name: 'คลอโรฟอร์ม (Chloroform)', type: 'สารประกอบอินทรีย์', desc: 'ของเหลวระเหยง่าย มีกลิ่นหวาน อดีตเคยใช้เป็นยาสลบ' },
+      'H3-N1': { formula: 'NH₃', name: 'แอมโมเนีย (Ammonia)', type: 'สารประกอบโคเวเลนต์', desc: 'แก๊สกลิ่นฉุนรุนแรง ใช้ผลิตปุ๋ยเคมี สารทำความเย็น และยาดม' },
+      'N1-O1': { formula: 'NO', name: 'ไนตริกออกไซด์', type: 'สารประกอบโคเวเลนต์', desc: 'แก๊สที่ทำหน้าที่เป็นโมเลกุลส่งสัญญาณสำคัญในร่างกายมนุษย์' },
+      'N1-O2': { formula: 'NO₂', name: 'ไนโตรเจนไดออกไซด์', type: 'สารประกอบโคเวเลนต์', desc: 'แก๊สสีน้ำตาลแดง มีกลิ่นฉุน เป็นมลพิษทางอากาศและสาเหตุของฝนกรด' },
+      'N2-O1': { formula: 'N₂O', name: 'ไนตรัสออกไซด์ (แก๊สหัวเราะ)', type: 'สารประกอบโคเวเลนต์', desc: 'ใช้เป็นยาระงับความรู้สึกทางทันตกรรม และช่วยเพิ่มกำลังเครื่องยนต์แข่ง' },
+      'H1-N1-O3': { formula: 'HNO₃', name: 'กรดไนตริก (กรดดินประสิว)', type: 'กรดแก่', desc: 'กรดที่มีฤทธิ์กัดกร่อนสูง ใช้ผลิตปุ๋ย วัตถุระเบิด และสกัดโลหะมีค่า' },
+      'Cl1-Na1': { formula: 'NaCl', name: 'โซเดียมคลอไรด์ (เกลือแกง)', type: 'สารประกอบไอออนิก', desc: 'ผลึกสีขาวรสเค็ม ใช้ปรุงอาหารและถนอมอาหารมาแต่โบราณ' },
+      'Cl1-H1': { formula: 'HCl', name: 'กรดไฮโดรคลอริก (กรดเกลือ)', type: 'กรดแก่', desc: 'กรดที่พบในกระเพาะอาหารของมนุษย์เพื่อช่วยย่อยอาหารและฆ่าเชื้อ' },
+      'F1-H1': { formula: 'HF', name: 'กรดไฮโดรฟลูออริก (กรดกัดแก้ว)', type: 'กรดอ่อน (อันตรายสูง)', desc: 'สามารถกัดกร่อนแก้วและซิลิคอนได้ ใช้ในอุตสาหกรรมเซมิคอนดักเตอร์' },
+      'H1-Na1-O1': { formula: 'NaOH', name: 'โซเดียมไฮดรอกไซด์ (โซดาไฟ)', type: 'เบสแก่ (ไอออนิก)', desc: 'มีฤทธิ์กัดกร่อนไขมันได้ดี ใช้ทำสบู่และล้างท่ออุดตัน' },
+      'H1-K1-O1': { formula: 'KOH', name: 'โพแทสเซียมไฮดรอกไซด์', type: 'เบสแก่ (ไอออนิก)', desc: 'ใช้ทำสบู่เหลว อิเล็กโทรไลต์ในแบตเตอรี่อัลคาไลน์' },
+      'Cl1-Na1-O1': { formula: 'NaClO', name: 'โซเดียมไฮโปคลอไรต์', type: 'สารประกอบไอออนิก', desc: 'สารออกฤทธิ์หลักในน้ำยาฟอกขาวและน้ำยาฆ่าเชื้อ' },
+      'H2-S1': { formula: 'H₂S', name: 'ไฮโดรเจนซัลไฟด์ (แก๊สไข่เน่า)', type: 'สารประกอบโคเวเลนต์', desc: 'แก๊สพิษมีกลิ่นเหม็นเหมือนไข่เน่า พบได้ตามบ่อน้ำพุร้อนและท่อน้ำเสีย' },
+      'O2-S1': { formula: 'SO₂', name: 'ซัลเฟอร์ไดออกไซด์', type: 'สารประกอบโคเวเลนต์', desc: 'แก๊สกลิ่นฉุน เกิดจากภูเขาไฟและโรงไฟฟ้าถ่านหิน เป็นต้นเหตุของฝนกรด' },
+      'O3-S1': { formula: 'SO₃', name: 'ซัลเฟอร์ไตรออกไซด์', type: 'สารประกอบโคเวเลนต์', desc: 'สารตั้งต้นสำคัญในการผลิตกรดซัลฟิวริก (กรดกำมะถัน)' },
+      'O2-Si1': { formula: 'SiO₂', name: 'ซิลิคอนไดออกไซด์ (ควอตซ์/ทราย)', type: 'โครงผลึกร่างตาข่าย', desc: 'องค์ประกอบหลักของทราย หินเขี้ยวหนุมาน และวัตถุดิบในการทำแก้ว' },
+      'C1-Si1': { formula: 'SiC', name: 'ซิลิคอนคาร์ไบด์ (คาร์บอรันดัม)', type: 'สารประกอบโคเวเลนต์', desc: 'วัสดุที่มีความแข็งใกล้เคียงเพชร ใช้ทำกระดาษทรายและจานเบรก' },
+      'Ca1-O1': { formula: 'CaO', name: 'แคลเซียมออกไซด์ (ปูนขาว)', type: 'สารประกอบไอออนิก', desc: 'ใช้ในงานก่อสร้าง อุตสาหกรรมเหล็ก และปรับสภาพดินที่เป็นกรด' },
+      'C1-Ca1-O3': { formula: 'CaCO₃', name: 'แคลเซียมคาร์บอเนต (หินปูน)', type: 'สารประกอบไอออนิก', desc: 'องค์ประกอบของหินปูน ชอล์ก เปลือกหอย และเปลือกไข่' },
+      'Mg1-O1': { formula: 'MgO', name: 'แมกนีเซียมออกไซด์', type: 'สารประกอบไอออนิก', desc: 'ผงสีขาวทนความร้อนสูง ใช้ทำวัสดุทนไฟและยาลดกรดในกระเพาะ' },
+      'Al2-O3': { formula: 'Al₂O₃', name: 'อะลูมินา (แร่คอรันดัม)', type: 'สารประกอบไอออนิก', desc: 'แร่แข็งมาก เมื่อมีสารเจือปนจะเกิดเป็นอัญมณีทับทิมและไพลิน' },
+      'Fe2-O3': { formula: 'Fe₂O₃', name: 'เหล็ก(III) ออกไซด์ (สนิมเหล็ก)', type: 'สารประกอบไอออนิก', desc: 'เกิดจากเหล็กทำปฏิกิริยากับออกซิเจนและความชื้น เป็นสีแดงที่เห็นบนดาวอังคาร' },
+      'Ag1-N1-O3': { formula: 'AgNO₃', name: 'ซิลเวอร์ไนเตรต', type: 'สารประกอบไอออนิก', desc: 'ใช้ในห้องปฏิบัติการเคมีเพื่อทดสอบคลอไรด์และในอุตสาหกรรมฟิล์ม' },
+      'C1-H1-N1': { formula: 'HCN', name: 'กรดไฮโดรไซยานิก (ไซยาไนด์)', type: 'สารประกอบโคเวเลนต์', desc: 'สารพิษร้ายแรงที่มีกลิ่นคล้ายอัลมอนด์ขม ขัดขวางการหายใจระดับเซลล์' },
+      'Hg1-S1': { formula: 'HgS', name: 'เมอร์คิวรี(II) ซัลไฟด์ (แร่ชาด)', type: 'สารประกอบไอออนิก', desc: 'แร่สีแดงสด อดีตใช้ทำสีทาภาพเขียนและประทับตรา' },
+      'Cu1-Fe1-S2': { formula: 'CuFeS₂', name: 'แร่คาลโคไพไรต์', type: 'แร่ซัลไฟด์', desc: 'แร่สินแร่ทองแดงที่สำคัญที่สุดในโลก มีสีเหลืองทองคล้ายทองคำ' },
+      // Alloys
+      'C1-Fe1': { formula: 'Fe-C', name: 'เหล็กกล้า (Carbon Steel)', type: 'โลหะผสม (Alloy)', desc: 'การเติมคาร์บอนเล็กน้อยลงในเหล็ก ช่วยเพิ่มความแข็งแรงและความเหนียวอย่างมหาศาล' },
+      'Cr1-Fe1-Ni1': { formula: 'Fe-Cr-Ni', name: 'สแตนเลส (Stainless Steel)', type: 'โลหะผสมทนสนิม', desc: 'เหล็กกล้าไร้สนิม ผสมโครเมียมและนิกเกิล ทนทานต่อการกัดกร่อนสูง' },
+      'Cu1-Zn1': { formula: 'Cu-Zn', name: 'ทองเหลือง (Brass)', type: 'โลหะผสม (Alloy)', desc: 'โลหะสีเหลืองทอง เงางาม ใช้ทำเครื่องดนตรี ก๊อกน้ำ และกระสุนปืน' },
+      'Cu1-Sn1': { formula: 'Cu-Sn', name: 'สัมฤทธิ์ / ทองสำริด (Bronze)', type: 'โลหะผสม (Alloy)', desc: 'โลหะผสมยุคโบราณที่มีความแข็งแกร่งกว่าทองแดง ใช้หล่อระฆังและรูปปั้น' },
+      'Au1-Cu1': { formula: 'Au-Cu', name: 'โรสโกลด์ / ทองชมพู (Rose Gold)', type: 'โลหะผสมมีค่า', desc: 'ทองคำผสมทองแดง ให้สีชมพูอมส้มสวยงามและแข็งแรงขึ้น นิยมทำเครื่องประดับ' },
+      'Ag1-Cu1': { formula: 'Ag-Cu', name: 'เงินสเตอร์ลิง (Sterling Silver)', type: 'โลหะผสมมีค่า', desc: 'เงินผสมทองแดงเล็กน้อย เพื่อเพิ่มความแข็งแรงสำหรับทำเครื่องประดับและช้อนส้อม' }
+    };
+
+    // State
+    const MAX_SLOTS = 5;
+    let selectedElements = []; // array of element symbols
+    let activeCategoryFilter = null;
+
+    // DOM Elements
+    const slotsContainer = document.getElementById('slotsContainer');
+    const slotCounter = document.getElementById('slotCounter');
+    const mixBtn = document.getElementById('mixBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const resultBox = document.getElementById('resultBox');
+    const periodicTable = document.getElementById('periodicTable');
+    const legendEl = document.getElementById('legend');
+    const toastMsg = document.getElementById('toastMsg');
+
+    // Helper: Convert numbers to subscripts
+    function toSubscript(num) {
+      if (num <= 1) return '';
+      const subs = '₀₁₂₃₄₅₆₇₈₉';
+      return String(num).split('').map(d => subs[Number(d)]).join('');
+    }
+
+    // Build Legend
+    function renderLegend() {
+      legendEl.innerHTML = '';
+      Object.entries(CATEGORIES).forEach(([key, cat]) => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.dataset.cat = key;
+        item.innerHTML = `<span class="legend-dot" style="background:${cat.color}"></span><span>${cat.name}</span>`;
+        item.addEventListener('click', () => {
+          if (activeCategoryFilter === key) {
+            activeCategoryFilter = null;
+            item.classList.remove('active');
+          } else {
+            activeCategoryFilter = key;
+            document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('active'));
+            item.classList.add('active');
+          }
+          updateTableHighlights();
+        });
+        legendEl.appendChild(item);
+      });
+    }
+
+    // Build Periodic Table
+    function renderTable() {
+      periodicTable.innerHTML = '';
+
+      // Placeholders for Lanthanides and Actinides in main grid
+      const phLan = document.createElement('div');
+      phLan.className = 'series-placeholder';
+      phLan.style.gridColumn = '3';
+      phLan.style.gridRow = '6';
+      phLan.innerHTML = '<span>57-71</span><span>La-Lu</span>';
+      periodicTable.appendChild(phLan);
+
+      const phAct = document.createElement('div');
+      phAct.className = 'series-placeholder';
+      phAct.style.gridColumn = '3';
+      phAct.style.gridRow = '7';
+      phAct.innerHTML = '<span>89-103</span><span>Ac-Lr</span>';
+      periodicTable.appendChild(phAct);
+
+      // Spacer Row 8
+      const spacer = document.createElement('div');
+      spacer.className = 'spacer-row';
+      spacer.style.gridRow = '8';
+      periodicTable.appendChild(spacer);
+
+      // Labels for f-block rows
+      const labelLan = document.createElement('div');
+      labelLan.className = 'series-label';
+      labelLan.style.gridRow = '9';
+      labelLan.textContent = 'แลนทาไนด์ (57–71)';
+      periodicTable.appendChild(labelLan);
+
+      const labelAct = document.createElement('div');
+      labelAct.className = 'series-label';
+      labelAct.style.gridRow = '10';
+      labelAct.textContent = 'แอกทิไนด์ (89–103)';
+      periodicTable.appendChild(labelAct);
+
+      // Elements
+      ELEMENTS.forEach(el => {
+        const [num, sym, nameEn, nameTh, mass, cat, col, row] = el;
+        const cell = document.createElement('div');
+        cell.className = 'element-cell';
+        cell.dataset.sym = sym;
+        cell.dataset.cat = cat;
+        cell.style.gridColumn = col;
+        cell.style.gridRow = row;
+        cell.style.setProperty('--el-color', CATEGORIES[cat].color);
+
+        cell.innerHTML = `
+          <div class="el-num">${num}</div>
+          <div class="el-sym">${sym}</div>
+          <div class="el-name">${nameTh}</div>
+        `;
+
+        cell.addEventListener('mouseenter', () => inspectElement(el));
+        cell.addEventListener('click', () => {
+          inspectElement(el);
+          addElementToMixer(sym);
+        });
+
+        periodicTable.appendChild(cell);
+      });
+    }
+
+    // Update Inspector Panel
+    function inspectElement(el) {
+      const [num, sym, nameEn, nameTh, mass, cat, col, row] = el;
+      const catInfo = CATEGORIES[cat];
+
+      document.getElementById('inspNum').textContent = num;
+      document.getElementById('inspSym').textContent = sym;
+      document.getElementById('inspMass').textContent = mass;
+      document.getElementById('inspNameTh').textContent = nameTh;
+      document.getElementById('inspNameEn').textContent = nameEn;
+      document.getElementById('inspAtomic').textContent = num;
+      document.getElementById('inspMassFull').textContent = `${mass} u`;
+
+      const periodText = row <= 7 ? row : (row === 9 ? '6 (แลนทาไนด์)' : '7 (แอกทิไนด์)');
+      const groupText = row <= 7 ? `หมู่ ${col}` : 'f-block';
+      document.getElementById('inspGP').textContent = `${groupText} / คาบ ${periodText}`;
+
+      const badge = document.getElementById('inspBadge');
+      badge.style.borderColor = catInfo.color;
+
+      const catEl = document.getElementById('inspCat');
+      catEl.textContent = catInfo.name;
+      catEl.style.background = `${catInfo.color}33`;
+      catEl.style.color = '#fff';
+      catEl.style.border = `1px solid ${catInfo.color}`;
+    }
+
+    function showToast(msg) {
+      toastMsg.textContent = msg;
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => {
+        toastMsg.textContent = '';
+      }, 3000);
+    }
+
+    // Mixer Logic
+    function addElementToMixer(sym) {
+      if (selectedElements.length >= MAX_SLOTS) {
+        slotsContainer.classList.remove('shake');
+        void slotsContainer.offsetWidth;
+        slotsContainer.classList.add('shake');
+        showToast('⚠️ ผสมได้สูงสุด 5 ตัวเท่านั้น! คลิกที่ช่องด้านบนเพื่อลบธาตุออก');
+        return;
+      }
+      selectedElements.push(sym);
+      toastMsg.textContent = '';
+      renderMixer();
+    }
+
+    function removeElementFromMixer(index) {
+      selectedElements.splice(index, 1);
+      renderMixer();
+    }
+
+    function clearMixer() {
+      selectedElements = [];
+      renderMixer();
+      resultBox.innerHTML = `
+        <div class="result-empty">
+          เลือกธาตุอย่างน้อย 2 ตัวขึ้นไป แล้วกดปุ่ม <strong>"ผสมธาตุที่เลือก"</strong> เพื่อดูผลลัพธ์
+        </div>
+      `;
+    }
+
+    function renderMixer() {
+      slotsContainer.innerHTML = '';
+      for (let i = 0; i < MAX_SLOTS; i++) {
+        const slot = document.createElement('div');
+        const sym = selectedElements[i];
+
+        if (sym) {
+          const el = ELEMENT_MAP[sym];
+          const [num, , , nameTh, , cat] = el;
+          slot.className = 'slot filled';
+          slot.style.borderColor = CATEGORIES[cat].color;
+          slot.innerHTML = `
+            <span class="slot-num">${num}</span>
+            <span class="slot-symbol">${sym}</span>
+            <span class="slot-name">${nameTh}</span>
+          `;
+          slot.title = `คลิกเพื่อนำ ${nameTh} ออก`;
+          slot.addEventListener('click', () => removeElementFromMixer(i));
+        } else {
+          slot.className = 'slot';
+          slot.innerHTML = `<span class="slot-empty-text">ช่องที่ ${i + 1}</span>`;
+        }
+        slotsContainer.appendChild(slot);
+      }
+
+      slotCounter.textContent = `${selectedElements.length} / ${MAX_SLOTS} ตัว`;
+      mixBtn.disabled = selectedElements.length < 2;
+      updateTableHighlights();
+    }
+
+    function updateTableHighlights() {
+      document.querySelectorAll('.element-cell').forEach(cell => {
+        const sym = cell.dataset.sym;
+        const cat = cell.dataset.cat;
+
+        if (selectedElements.includes(sym)) {
+          cell.classList.add('in-mixer');
+        } else {
+          cell.classList.remove('in-mixer');
+        }
+
+        if (activeCategoryFilter && cat !== activeCategoryFilter) {
+          cell.classList.add('dimmed');
+        } else {
+          cell.classList.remove('dimmed');
+        }
+      });
+    }
+
+    // Mix Computation
+    function mixElements() {
+      if (selectedElements.length < 2) return;
+
+      // Count occurrences
+      const counts = {};
+      selectedElements.forEach(sym => {
+        counts[sym] = (counts[sym] || 0) + 1;
+      });
+
+      // Build canonical sorted key
+      const sortedSymbols = Object.keys(counts).sort();
+      const recipeKey = sortedSymbols.map(sym => `${sym}${counts[sym]}`).join('-');
+
+      // Check database first
+      if (RECIPES[recipeKey]) {
+        const res = RECIPES[recipeKey];
+        displayResult(res.formula, res.name, res.type, res.desc);
+        return;
+      }
+
+      // Procedural fallback analysis for any combination!
+      const uniqueElements = sortedSymbols.map(s => ELEMENT_MAP[s]);
+      const formulaDisplay = sortedSymbols.map(s => `${s}${toSubscript(counts[s])}`).join('');
+      const namesTh = uniqueElements.map(el => el[3]).join(' + ');
+
+      const hasNobleGas = uniqueElements.some(el => el[5] === 'noble-gas');
+      const hasRadioactive = uniqueElements.some(el => el[0] >= 84 || el[0] === 43 || el[0] === 61);
+
+      const metalCats = new Set(['alkali-metal', 'alkaline-earth', 'transition-metal', 'post-transition', 'lanthanide', 'actinide']);
+      const allMetals = uniqueElements.every(el => metalCats.has(el[5]));
+      const hasMetal = uniqueElements.some(el => metalCats.has(el[5]));
+      const hasNonMetal = uniqueElements.some(el => !metalCats.has(el[5]) && el[5] !== 'noble-gas');
+
+      // Case 1: Only 1 unique element repeated
+      if (uniqueElements.length === 1) {
+        const el = uniqueElements[0];
+        displayResult(
+          formulaDisplay,
+          `กลุ่มอะตอม${el[3]} (${el[2]} Cluster)`,
+          'ธาตุบริสุทธิ์',
+          `เป็นการรวมตัวของธาตุ ${el[3]} (${el[1]}) จำนวน ${counts[el[1]]} อะตอมเพียงชนิดเดียว`
+        );
+        return;
+      }
+
+      // Case 2: Contains Noble Gas
+      if (hasNobleGas) {
+        displayResult(
+          formulaDisplay,
+          `ของผสมแก๊สเฉื่อย (${namesTh})`,
+          'ไม่เกิดปฏิกิริยาเคมีง่าย',
+          'มีธาตุในกลุ่มแก๊สมีสกุลอยู่ด้วย ซึ่งมีอิเล็กตรอนวงนอกสุดครบแล้ว จึงเสถียรและแทบไม่ทำปฏิกิริยากับธาตุอื่นในสภาวะปกติ'
+        );
+        return;
+      }
+
+      // Case 3: Radioactive elements involved
+      if (hasRadioactive) {
+        displayResult(
+          formulaDisplay,
+          `สารประกอบกัมมันตรังสี (${namesTh})`,
+          'สารประกอบไม่เสถียร / แผ่รังสี',
+          'มีธาตุกัมมันตรังสีเป็นองค์ประกอบ นิวเคลียสไม่เสถียรและอาจสลายตัวแผ่รังสีได้ ต้องจัดการในห้องปฏิบัติการเฉพาะทาง'
+        );
+        return;
+      }
+
+      // Case 4: All Metals -> Alloy
+      if (allMetals) {
+        displayResult(
+          sortedSymbols.join('-'),
+          `โลหะผสม (${namesTh})`,
+          'โลหะผสม (Alloy)',
+          `เป็นการหลอมรวมโลหะ ${uniqueElements.length} ชนิดเข้าด้วยกัน ช่วยปรับเปลี่ยนสมบัติทางกายภาพ เช่น ความแข็ง จุดหลอมเหลว และการนำไฟฟ้า`
+        );
+        return;
+      }
+
+      // Case 5: Metal + Non-metal -> Ionic
+      if (hasMetal && hasNonMetal) {
+        displayResult(
+          formulaDisplay,
+          `สารประกอบไอออนิกสมมติ (${namesTh})`,
+          'พันธะไอออนิก (โดยประมาณ)',
+          'เกิดจากการรวมตัวระหว่างโลหะ (ผู้ให้อิเล็กตรอน) และอโลหะ/กึ่งโลหะ (ผู้รับอิเล็กตรอน) มักมีลักษณะเป็นผลึกและจุดหลอมเหลวสูง'
+        );
+        return;
+      }
+
+      // Case 6: Non-metals -> Covalent
+      displayResult(
+        formulaDisplay,
+        `สารประกอบโคเวเลนต์สมมติ (${namesTh})`,
+        'พันธะโคเวเลนต์',
+        'เกิดจากการใช้อิเล็กตรอนร่วมกันระหว่างธาตุอโลหะหรือกึ่งโลหะ สูตรนี้เป็นสารประกอบเชิงทฤษฎีหรืออาจต้องใช้สภาวะพิเศษในการสังเคราะห์'
+      );
+    }
+
+    function displayResult(formula, name, type, desc) {
+      resultBox.innerHTML = `
+        <div class="result-header">
+          <div class="result-formula">${formula}</div>
+          <span class="result-type">${type}</span>
+        </div>
+        <div class="result-name">${name}</div>
+        <div class="result-desc">${desc}</div>
+      `;
+    }
+
+    // Event Listeners
+    mixBtn.addEventListener('click', mixElements);
+    clearBtn.addEventListener('click', clearMixer);
+
+    document.querySelectorAll('.preset-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedElements = btn.dataset.recipe.split(',').slice(0, MAX_SLOTS);
+        renderMixer();
+        mixElements();
+      });
+    });
+
+    // Initialize
+    renderLegend();
+    renderTable();
+    renderMixer();
+    inspectElement(ELEMENTS[0]); // Default inspect Hydrogen
+    </script>
+</body>
+
+</html>
