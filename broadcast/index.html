@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Broadcast (4-Digit Code)</title>
+    <!-- ใช้ MQTT over WSS สำหรับทำ Signaling จับคู่ WebRTC ข้ามเครื่อง -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --border: #334155;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px 16px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            margin: 0 0 6px;
+            font-size: 1.5rem;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            margin: 0 0 18px;
+            font-size: 0.92rem;
+        }
+
+        /* แถบสลับหน้าต่าง Viewer / Host ด้านบน */
+        .tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            background: var(--card);
+            color: var(--muted);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .tab-btn.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 16px;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        /* ช่องกรอกรหัส 4 หลัก */
+        .code-input {
+            background: #0f172a;
+            color: var(--text);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.35em;
+            text-align: center;
+            width: 155px;
+            outline: none;
+        }
+
+        .code-input:focus {
+            border-color: var(--primary);
+        }
+
+        textarea,
+        input[type="text"] {
+            background: #0f172a;
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        textarea {
+            width: 100%;
+            resize: vertical;
+            min-height: 86px;
+            font-family: inherit;
+        }
+
+        textarea:focus,
+        input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+
+        button {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 11px 16px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:hover:not(:disabled) {
+            background: var(--primary-hover);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        button.danger {
+            background: var(--danger);
+        }
+
+        button.secondary {
+            background: #334155;
+        }
+
+        button.small {
+            padding: 6px 10px;
+            font-size: 0.8rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            background: #334155;
+        }
+
+        .badge.connected {
+            background: rgba(16, 185, 129, 0.18);
+            color: #34d399;
+        }
+
+        .badge.waiting {
+            background: rgba(245, 158, 11, 0.18);
+            color: #fbbf24;
+        }
+
+        .badge.disconnected {
+            background: rgba(239, 68, 68, 0.18);
+            color: #f87171;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .feed {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .msg-item {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+
+        .msg-meta {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .msg-body {
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+
+        .msg-body a {
+            color: #60a5fa;
+            text-decoration: underline;
+        }
+
+        .msg-actions {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .empty {
+            color: var(--muted);
+            text-align: center;
+            padding: 24px 0;
+            font-size: 0.9rem;
+        }
+
+        .hint {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Broadcast Text</h1>
+        <p class="subtitle">ส่งต่อข้อความ ลิงก์ และ URL ข้ามเครื่องแบบเรียลไทม์ด้วยรหัสตัวเลข 4 หลัก</p>
+
+        <!-- แยกหน้าต่างชัดเจน: ให้ Viewer ขึ้นก่อน -->
+        <div class="tabs">
+            <button id="tabViewer" class="tab-btn active">หน้าต่างผู้รับ (Viewer)</button>
+            <button id="tabHost" class="tab-btn">หน้าต่างผู้ส่ง (Host)</button>
+        </div>
+
+        <!-- ==================== หน้าต่าง VIEWER (แสดงก่อน) ==================== -->
+        <div id="viewerView">
+            <div class="card">
+                <div style="font-weight:600; margin-bottom:10px;">กรอกรหัส 4 หลักจากเครื่อง Host</div>
+                <div class="row">
+                    <input id="viewerCodeInput" class="code-input" type="text" inputmode="numeric" maxlength="4" placeholder="0000" />
+                    <button id="viewerJoinBtn">เชื่อมต่อรับข้อมูล</button>
+                    <button id="viewerLeaveBtn" class="danger hidden">ตัดการเชื่อมต่อ</button>
+                </div>
+                <div class="row" style="margin-top:14px; justify-content:space-between;">
+                    <span id="viewerStatusBadge" class="badge disconnected">ยังไม่เชื่อมต่อ</span>
+                </div>
+                <div style="margin-top:12px;">
+                    <label class="row" style="cursor:pointer; font-size:0.9rem;">
+            <input type="checkbox" id="autoOpenCheckbox" />
+            <span>เปิดลิงก์ในแท็บใหม่อัตโนมัติเมื่อได้รับ URL (ต้องอนุญาต Pop-up)</span>
+          </label>
+                </div>
+                <div class="hint">
+                    * หากทดสอบข้ามเครือข่ายคนละวง (เช่น Wi-Fi บ้าน กับ 4G/5G มือถือ) เครือข่ายบางแห่งอาจบล็อก P2P
+                    ถ้าไม่มี TURN Server
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== หน้าต่าง HOST ==================== -->
+        <div id="hostView" class="hidden">
+            <div class="card">
+                <div style="font-weight:600; margin-bottom:10px;">ตั้งรหัสห้อง 4 หลัก (Host)</div>
+                <div class="row">
+                    <input id="hostCodeInput" class="code-input" type="text" inputmode="numeric" maxlength="4" placeholder="0000" />
+                    <button id="randomCodeBtn" class="secondary">สุ่มเลข</button>
+                    <button id="hostStartBtn">เปิดห้องส่งข้อมูล</button>
+                    <button id="hostStopBtn" class="danger hidden">ปิดห้อง</button>
+                    <button id="copyInviteBtn" class="secondary hidden">คัดลอกรหัส/ลิงก์</button>
+                </div>
+                <div class="row" style="margin-top:14px; justify-content:space-between;">
+                    <span id="hostStatusBadge" class="badge disconnected">ยังไม่เปิดห้อง</span>
+                    <span id="hostPeerCount" style="font-size:0.9rem; color:var(--muted);"></span>
+                </div>
+            </div>
+
+            <div id="hostSendPanel" class="card hidden">
+                <div style="font-weight:600; margin-bottom:8px;">ส่งข้อความ หรือ URL ไปยังผู้รับทั้งหมด</div>
+                <textarea id="messageInput" placeholder="พิมพ์ข้อความ หรือวางลิงก์ https://... (กด Ctrl+Enter เพื่อส่ง)"></textarea>
+                <div class="row" style="margin-top:10px; justify-content:space-between;">
+                    <span style="font-size:0.82rem; color:var(--muted);">* ตรวจจับลิงก์ http/https ให้อัตโนมัติ</span>
+                    <button id="sendBtn">Broadcast ข้อความ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== รายการข้อความ / ลิงก์ ==================== -->
+        <div class="card">
+            <div class="row" style="justify-content:space-between; margin-bottom:12px;">
+                <strong>รายการข้อความ / ลิงก์ที่ส่ง</strong>
+                <button id="clearBtn" class="secondary small">ล้างหน้าจอ</button>
+            </div>
+            <div id="feed" class="feed">
+                <div class="empty">ยังไม่มีข้อความ</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MQTT_BROKER = 'wss://broker.emqx.io:8084/mqtt';
+    const TOPIC_PREFIX = 'webrtc-bc-4d-v1';
+    const ICE_CONFIG = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun.cloudflare.com:3478' }
+      ]
+    };
+    const URL_REGEX = /(https?:\/\/[^\s<>"']+)/g;
+
+    // Elements
+    const tabViewer = document.getElementById('tabViewer');
+    const tabHost = document.getElementById('tabHost');
+    const viewerView = document.getElementById('viewerView');
+    const hostView = document.getElementById('hostView');
+
+    const hostCodeInput = document.getElementById('hostCodeInput');
+    const randomCodeBtn = document.getElementById('randomCodeBtn');
+    const hostStartBtn = document.getElementById('hostStartBtn');
+    const hostStopBtn = document.getElementById('hostStopBtn');
+    const copyInviteBtn = document.getElementById('copyInviteBtn');
+    const hostStatusBadge = document.getElementById('hostStatusBadge');
+    const hostPeerCount = document.getElementById('hostPeerCount');
+    const hostSendPanel = document.getElementById('hostSendPanel');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    const viewerCodeInput = document.getElementById('viewerCodeInput');
+    const viewerJoinBtn = document.getElementById('viewerJoinBtn');
+    const viewerLeaveBtn = document.getElementById('viewerLeaveBtn');
+    const viewerStatusBadge = document.getElementById('viewerStatusBadge');
+    const autoOpenCheckbox = document.getElementById('autoOpenCheckbox');
+
+    const feedEl = document.getElementById('feed');
+    const clearBtn = document.getElementById('clearBtn');
+
+    // Helpers
+    function generateId() {
+      return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    }
+
+    function random4Digits() {
+      return String(Math.floor(1000 + Math.random() * 9000));
+    }
+
+    function enforce4Digits(inputEl) {
+      inputEl.addEventListener('input', () => {
+        inputEl.value = inputEl.value.replace(/\D/g, '').slice(0, 4);
+      });
+    }
+    enforce4Digits(hostCodeInput);
+    enforce4Digits(viewerCodeInput);
+
+    async function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+
+    function setBadge(el, text, type) {
+      el.textContent = text;
+      el.className = `badge ${type}`;
+    }
+
+    function renderMessage(payload, isSelf = false) {
+      const emptyEl = feedEl.querySelector('.empty');
+      if (emptyEl) emptyEl.remove();
+
+      const item = document.createElement('div');
+      item.className = 'msg-item';
+
+      const meta = document.createElement('div');
+      meta.className = 'msg-meta';
+      const timeStr = new Date(payload.timestamp).toLocaleTimeString('th-TH');
+      meta.textContent = `${isSelf ? 'คุณ (Host)' : 'ได้รับผ่าน WebRTC P2P'} • ${timeStr}`;
+
+      const body = document.createElement('div');
+      body.className = 'msg-body';
+
+      const parts = payload.text.split(URL_REGEX);
+      parts.forEach((part) => {
+        if (/^https?:\/\//.test(part)) {
+          const a = document.createElement('a');
+          a.href = part;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.textContent = part;
+          body.appendChild(a);
+        } else {
+          body.appendChild(document.createTextNode(part));
+        }
+      });
+
+      item.appendChild(meta);
+      item.appendChild(body);
+
+      const urls = payload.text.match(URL_REGEX) || [];
+      if (urls.length > 0) {
+        const actions = document.createElement('div');
+        actions.className = 'msg-actions';
+
+        urls.forEach((url, idx) => {
+          const openBtn = document.createElement('button');
+          openBtn.className = 'secondary small';
+          openBtn.textContent = urls.length > 1 ? `เปิดลิงก์ #${idx + 1}` : 'เปิดลิงก์';
+          openBtn.onclick = () => window.open(url, '_blank', 'noopener,noreferrer');
+
+          const copyBtn = document.createElement('button');
+          copyBtn.className = 'secondary small';
+          copyBtn.textContent = 'คัดลอก URL';
+          copyBtn.onclick = async () => {
+            await copyText(url);
+            copyBtn.textContent = 'คัดลอกแล้ว!';
+            setTimeout(() => (copyBtn.textContent = 'คัดลอก URL'), 1500);
+          };
+
+          actions.appendChild(openBtn);
+          actions.appendChild(copyBtn);
+        });
+
+        item.appendChild(actions);
+      }
+
+      feedEl.prepend(item);
+
+      if (!isSelf && activeMode === 'viewer' && autoOpenCheckbox.checked && urls.length > 0) {
+        window.open(urls[0], '_blank', 'noopener,noreferrer');
+      }
+    }
+
+    // ================= STATE & MODE SWITCHING =================
+    let activeMode = 'viewer';
+    let mqttClient = null;
+    let activeCode = '';
+
+    // Host state
+    let hostId = null;
+    const hostPeers = new Map();
+
+    // Viewer state
+    let viewerId = null;
+    let viewerPc = null;
+    let viewerDc = null;
+    let viewerPendingCandidates = [];
+    let currentHostId = null;
+    let joinRetryTimer = null;
+
+    function switchTab(mode) {
+      if (mqttClient) {
+        stopHost();
+        leaveViewer();
+      }
+      activeMode = mode;
+      tabViewer.classList.toggle('active', mode === 'viewer');
+      tabHost.classList.toggle('active', mode === 'host');
+      viewerView.classList.toggle('hidden', mode !== 'viewer');
+      hostView.classList.toggle('hidden', mode !== 'host');
+    }
+
+    tabViewer.addEventListener('click', () => switchTab('viewer'));
+    tabHost.addEventListener('click', () => switchTab('host'));
+
+    // ================= HOST LOGIC =================
+    function updateHostPeerCount() {
+      let openCount = 0;
+      for (const p of hostPeers.values()) {
+        if (p.dc && p.dc.readyState === 'open') openCount++;
+      }
+      hostPeerCount.textContent = `ผู้รับเชื่อมต่ออยู่: ${openCount} คน`;
+    }
+
+    function cleanupHostPeer(vId) {
+      const p = hostPeers.get(vId);
+      if (p) {
+        p.dc?.close();
+        p.pc?.close();
+        hostPeers.delete(vId);
+        updateHostPeerCount();
+      }
+    }
+
+    async function hostHandleJoin(vId) {
+      const existing = hostPeers.get(vId);
+      if (existing && ['new', 'connecting', 'connected'].includes(existing.pc.connectionState)) {
+        return;
+      }
+      cleanupHostPeer(vId);
+
+      const pc = new RTCPeerConnection(ICE_CONFIG);
+      const pendingCandidates = [];
+      const dc = pc.createDataChannel('broadcast', { ordered: true });
+
+      dc.onopen = () => updateHostPeerCount();
+      dc.onclose = () => updateHostPeerCount();
+
+      pc.onicecandidate = (e) => {
+        if (e.candidate && mqttClient?.connected) {
+          mqttClient.publish(
+            `${TOPIC_PREFIX}/${activeCode}/viewer/${vId}`,
+            JSON.stringify({ type: 'ice', hostId, candidate: e.candidate })
+          );
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        if (['failed', 'closed', 'disconnected'].includes(pc.connectionState)) {
+          updateHostPeerCount();
+        }
+      };
+
+      hostPeers.set(vId, { pc, dc, pendingCandidates });
+      updateHostPeerCount();
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      mqttClient.publish(
+        `${TOPIC_PREFIX}/${activeCode}/viewer/${vId}`,
+        JSON.stringify({ type: 'offer', hostId, sdp: pc.localDescription })
+      );
+    }
+
+    function startHost() {
+      if (typeof mqtt === 'undefined') {
+        alert('ไม่สามารถโหลดไลบรารี Signaling ได้ กรุณาตรวจสอบอินเทอร์เน็ต');
+        return;
+      }
+      const code = hostCodeInput.value.trim();
+      if (!/^\d{4}$/.test(code)) {
+        alert('กรุณากรอกรหัสตัวเลข 4 หลัก (เช่น 1234)');
+        return;
+      }
+
+      activeCode = code;
+      hostId = generateId();
+      hostCodeInput.disabled = true;
+      randomCodeBtn.disabled = true;
+      hostStartBtn.classList.add('hidden');
+      hostStopBtn.classList.remove('hidden');
+      setBadge(hostStatusBadge, 'กำลังเปิดห้อง...', 'waiting');
+
+      mqttClient = mqtt.connect(MQTT_BROKER, {
+        clientId: 'h_' + hostId,
+        clean: true,
+        connectTimeout: 8000
+      });
+
+      mqttClient.on('connect', () => {
+        mqttClient.subscribe(`${TOPIC_PREFIX}/${activeCode}/host`, (err) => {
+          if (err) return;
+          setBadge(hostStatusBadge, `เปิดห้อง ${activeCode} สำเร็จ (พร้อมส่ง)`, 'connected');
+          hostSendPanel.classList.remove('hidden');
+          copyInviteBtn.classList.remove('hidden');
+          updateHostPeerCount();
+          mqttClient.publish(
+            `${TOPIC_PREFIX}/${activeCode}/announce`,
+            JSON.stringify({ type: 'host-ready', hostId })
+          );
+        });
+      });
+
+      mqttClient.on('message', async (_topic, buf) => {
+        let msg;
+        try { msg = JSON.parse(buf.toString()); } catch { return; }
+
+        if (msg.type === 'join' && msg.viewerId) {
+          await hostHandleJoin(msg.viewerId);
+        } else if (msg.type === 'answer' && msg.viewerId) {
+          const p = hostPeers.get(msg.viewerId);
+          if (p && !p.pc.remoteDescription?.type) {
+            await p.pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+            for (const c of p.pendingCandidates) {
+              await p.pc.addIceCandidate(new RTCIceCandidate(c));
+            }
+            p.pendingCandidates = [];
+          }
+        } else if (msg.type === 'ice' && msg.viewerId && msg.candidate) {
+          const p = hostPeers.get(msg.viewerId);
+          if (p) {
+            if (p.pc.remoteDescription?.type) {
+              await p.pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+            } else {
+              p.pendingCandidates.push(msg.candidate);
+            }
+          }
+        } else if (msg.type === 'viewer-left' && msg.viewerId) {
+          cleanupHostPeer(msg.viewerId);
+        }
+      });
+
+      mqttClient.on('error', () => {
+        setBadge(hostStatusBadge, 'เชื่อมต่อ Signaling ไม่สำเร็จ', 'disconnected');
+      });
+    }
+
+    function stopHost() {
+      if (mqttClient?.connected && activeCode && hostId) {
+        mqttClient.publish(
+          `${TOPIC_PREFIX}/${activeCode}/announce`,
+          JSON.stringify({ type: 'host-left', hostId })
+        );
+      }
+      for (const vId of [...hostPeers.keys()]) {
+        cleanupHostPeer(vId);
+      }
+      if (mqttClient) {
+        mqttClient.end(true);
+        mqttClient = null;
+      }
+      hostCodeInput.disabled = false;
+      randomCodeBtn.disabled = false;
+      hostStartBtn.classList.remove('hidden');
+      hostStopBtn.classList.add('hidden');
+      copyInviteBtn.classList.add('hidden');
+      hostSendPanel.classList.add('hidden');
+      hostPeerCount.textContent = '';
+      setBadge(hostStatusBadge, 'ยังไม่เปิดห้อง', 'disconnected');
+    }
+
+    function broadcastMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+      const payload = { text, timestamp: Date.now() };
+      const jsonStr = JSON.stringify(payload);
+
+      for (const p of hostPeers.values()) {
+        if (p.dc && p.dc.readyState === 'open') {
+          p.dc.send(jsonStr);
+        }
+      }
+      renderMessage(payload, true);
+      messageInput.value = '';
+      messageInput.focus();
+    }
+
+    // ================= VIEWER LOGIC =================
+    function cleanupViewerRtc() {
+      viewerDc?.close();
+      viewerPc?.close();
+      viewerDc = null;
+      viewerPc = null;
+      viewerPendingCandidates = [];
+    }
+
+    function sendJoinRequest() {
+      if (mqttClient?.connected && activeCode && viewerId) {
+        mqttClient.publish(
+          `${TOPIC_PREFIX}/${activeCode}/host`,
+          JSON.stringify({ type: 'join', viewerId })
+        );
+      }
+    }
+
+    async function viewerHandleOffer(msg) {
+      clearInterval(joinRetryTimer);
+      joinRetryTimer = null;
+      cleanupViewerRtc();
+
+      currentHostId = msg.hostId;
+      setBadge(viewerStatusBadge, 'กำลังจับคู่ WebRTC P2P...', 'waiting');
+
+      viewerPc = new RTCPeerConnection(ICE_CONFIG);
+      viewerPendingCandidates = [];
+
+      viewerPc.ondatachannel = (event) => {
+        viewerDc = event.channel;
+        viewerDc.onopen = () => {
+          setBadge(viewerStatusBadge, `เชื่อมต่อห้อง ${activeCode} สำเร็จ (พร้อมรับข้อมูล)`, 'connected');
+        };
+        viewerDc.onclose = () => {
+          setBadge(viewerStatusBadge, 'การเชื่อมต่อถูกปิด', 'disconnected');
+        };
+        viewerDc.onmessage = (e) => {
+          try {
+            const payload = JSON.parse(e.data);
+            if (payload && typeof payload.text === 'string') {
+              renderMessage(payload, false);
+            }
+          } catch {}
+        };
+      };
+
+      viewerPc.onicecandidate = (e) => {
+        if (e.candidate && mqttClient?.connected) {
+          mqttClient.publish(
+            `${TOPIC_PREFIX}/${activeCode}/host`,
+            JSON.stringify({ type: 'ice', viewerId, candidate: e.candidate })
+          );
+        }
+      };
+
+      viewerPc.oniceconnectionstatechange = () => {
+        if (viewerPc.iceConnectionState === 'failed') {
+          setBadge(viewerStatusBadge, 'เชื่อมต่อ P2P ไม่สำเร็จ (เครือข่ายอาจบล็อก)', 'disconnected');
+        }
+      };
+
+      await viewerPc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+      for (const c of viewerPendingCandidates) {
+        await viewerPc.addIceCandidate(new RTCIceCandidate(c));
+      }
+      viewerPendingCandidates = [];
+
+      const answer = await viewerPc.createAnswer();
+      await viewerPc.setLocalDescription(answer);
+      mqttClient.publish(
+        `${TOPIC_PREFIX}/${activeCode}/host`,
+        JSON.stringify({ type: 'answer', viewerId, sdp: viewerPc.localDescription })
+      );
+    }
+
+    function joinViewer() {
+      if (typeof mqtt === 'undefined') {
+        alert('ไม่สามารถโหลดไลบรารี Signaling ได้ กรุณาตรวจสอบอินเทอร์เน็ต');
+        return;
+      }
+      const code = viewerCodeInput.value.trim();
+      if (!/^\d{4}$/.test(code)) {
+        alert('กรุณากรอกรหัสตัวเลข 4 หลักให้ครบถ้วน');
+        return;
+      }
+
+      activeCode = code;
+      viewerId = generateId();
+      viewerCodeInput.disabled = true;
+      viewerJoinBtn.classList.add('hidden');
+      viewerLeaveBtn.classList.remove('hidden');
+      setBadge(viewerStatusBadge, `กำลังค้นหาห้อง ${activeCode}...`, 'waiting');
+
+      mqttClient = mqtt.connect(MQTT_BROKER, {
+        clientId: 'v_' + viewerId,
+        clean: true,
+        connectTimeout: 8000
+      });
+
+      mqttClient.on('connect', () => {
+        const myTopic = `${TOPIC_PREFIX}/${activeCode}/viewer/${viewerId}`;
+        const announceTopic = `${TOPIC_PREFIX}/${activeCode}/announce`;
+        mqttClient.subscribe([myTopic, announceTopic], (err) => {
+          if (err) return;
+          setBadge(viewerStatusBadge, `รอการตอบรับจากห้อง ${activeCode}...`, 'waiting');
+          sendJoinRequest();
+          clearInterval(joinRetryTimer);
+          joinRetryTimer = setInterval(sendJoinRequest, 2500);
+        });
+      });
+
+      mqttClient.on('message', async (_topic, buf) => {
+        let msg;
+        try { msg = JSON.parse(buf.toString()); } catch { return; }
+
+        if (msg.type === 'host-ready') {
+          sendJoinRequest();
+        } else if (msg.type === 'offer' && msg.sdp) {
+          await viewerHandleOffer(msg);
+        } else if (msg.type === 'ice' && msg.candidate && viewerPc) {
+          if (viewerPc.remoteDescription?.type) {
+            await viewerPc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+          } else {
+            viewerPendingCandidates.push(msg.candidate);
+          }
+        } else if (msg.type === 'host-left' && msg.hostId === currentHostId) {
+          cleanupViewerRtc();
+          setBadge(viewerStatusBadge, 'ผู้ส่งปิดห้องแล้ว (รอเปิดใหม่...)', 'waiting');
+          clearInterval(joinRetryTimer);
+          joinRetryTimer = setInterval(sendJoinRequest, 2500);
+        }
+      });
+
+      mqttClient.on('error', () => {
+        setBadge(viewerStatusBadge, 'เชื่อมต่อ Signaling ไม่สำเร็จ', 'disconnected');
+      });
+    }
+
+    function leaveViewer() {
+      clearInterval(joinRetryTimer);
+      joinRetryTimer = null;
+      if (mqttClient?.connected && activeCode && viewerId) {
+        mqttClient.publish(
+          `${TOPIC_PREFIX}/${activeCode}/host`,
+          JSON.stringify({ type: 'viewer-left', viewerId })
+        );
+      }
+      cleanupViewerRtc();
+      if (mqttClient) {
+        mqttClient.end(true);
+        mqttClient = null;
+      }
+      viewerCodeInput.disabled = false;
+      viewerJoinBtn.classList.remove('hidden');
+      viewerLeaveBtn.classList.add('hidden');
+      setBadge(viewerStatusBadge, 'ยังไม่เชื่อมต่อ', 'disconnected');
+    }
+
+    // ================= EVENTS & INIT =================
+    hostCodeInput.value = random4Digits();
+
+    randomCodeBtn.addEventListener('click', () => {
+      hostCodeInput.value = random4Digits();
+    });
+
+    copyInviteBtn.addEventListener('click', async () => {
+      const shareText = location.protocol.startsWith('http')
+        ? `${location.origin}${location.pathname}?code=${activeCode}`
+        : activeCode;
+      await copyText(shareText);
+      copyInviteBtn.textContent = 'คัดลอกแล้ว!';
+      setTimeout(() => (copyInviteBtn.textContent = 'คัดลอกรหัส/ลิงก์'), 1500);
+    });
+
+    hostStartBtn.addEventListener('click', startHost);
+    hostStopBtn.addEventListener('click', stopHost);
+    sendBtn.addEventListener('click', broadcastMessage);
+    hostCodeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') startHost();
+    });
+    messageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) broadcastMessage();
+    });
+
+    viewerJoinBtn.addEventListener('click', joinViewer);
+    viewerLeaveBtn.addEventListener('click', leaveViewer);
+    viewerCodeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') joinViewer();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      feedEl.innerHTML = '<div class="empty">ยังไม่มีข้อความ</div>';
+    });
+
+    // รองรับการเปิดผ่าน ?code=1234 เพื่อกรอกรหัสในหน้า Viewer ให้อัตโนมัติ
+    const params = new URLSearchParams(location.search);
+    const codeParam = (params.get('code') || '').replace(/\D/g, '').slice(0, 4);
+    if (/^\d{4}$/.test(codeParam)) {
+      viewerCodeInput.value = codeParam;
+    }
+    </script>
+</body>
+
+</html>
