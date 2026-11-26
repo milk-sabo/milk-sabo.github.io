@@ -109,12 +109,17 @@ button.block{flex:1 1 auto}
 .drop{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;padding:12px 14px;border:2px dashed var(--line);border-radius:12px;color:var(--muted);font-size:.88rem;transition:border-color .15s,background .15s}
 .drop.over{border-color:var(--brand);background:var(--brand-soft)}
 .file-row{display:flex;align-items:center;gap:12px}
-.file-ico{flex:none;width:38px;height:44px;border-radius:6px;background:var(--bad-soft);color:var(--bad);display:grid;place-items:center;font-size:.68rem;font-weight:700}
+.file-ico{flex:none;width:38px;height:44px;border-radius:6px;background:var(--bad-soft);color:var(--bad);display:grid;place-items:center;font-size:.62rem;font-weight:700;letter-spacing:.02em}
+.file-ico.t-docx{background:rgba(47,134,230,.16);color:#2f86e6}
+.file-ico.t-pptx{background:rgba(232,117,40,.16);color:#e87528}
+.file-ico.t-xlsx{background:rgba(26,158,112,.16);color:#1a9e70}
+.file-ico.t-img{background:rgba(140,100,220,.16);color:#8c64dc}
 .file-info{min-width:0;flex:1}
 .file-name{font-weight:600;word-break:break-all}
 .file-sub{font-size:.8rem;color:var(--muted)}
 .bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:6px}
 .bar>i{display:block;height:100%;width:0;background:var(--brand);transition:width .15s}
+.thumb{display:block;max-width:100%;max-height:220px;margin-top:10px;border-radius:10px;border:1px solid var(--line);cursor:zoom-in;object-fit:contain;background:var(--surface)}
 .modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
 .mode{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:2px solid var(--line);border-radius:12px;cursor:pointer;transition:border-color .15s,background .15s}
 .mode input{margin-top:4px;accent-color:var(--brand)}
@@ -171,7 +176,7 @@ button.sent{animation:sent .5s ease-out}
     </div>
     <div>
       <h1>BROADCAST</h1>
-      <p class="subtitle">ส่งข้อความ ลิงก์ และไฟล์ PDF ข้ามเครื่องแบบเรียลไทม์ ด้วยรหัส 4 หลัก</p>
+      <p class="subtitle">ส่งข้อความ ลิงก์ และไฟล์ (PDF, Word, PowerPoint, Excel, รูปภาพ) ข้ามเครื่องแบบเรียลไทม์ ด้วยรหัส 4 หลัก</p>
     </div>
   </header>
 
@@ -238,9 +243,9 @@ button.sent{animation:sent .5s ease-out}
         <button id="sendBtn">ส่งข้อความ</button>
       </div>
       <div id="dropZone" class="drop">
-        <span>ลากไฟล์ PDF มาวางที่นี่ (สูงสุด 50 MB)</span>
-        <button id="pickFileBtn" class="secondary small">เลือกไฟล์ PDF</button>
-        <input id="fileInput" type="file" accept="application/pdf,.pdf" hidden />
+        <span>ลากไฟล์มาวางที่นี่ หรือวางรูปจากคลิปบอร์ด<br><small>PDF, DOCX, PPTX, XLSX, JPG, PNG (สูงสุด 50 MB)</small></span>
+        <button id="pickFileBtn" class="secondary small">เลือกไฟล์</button>
+        <input id="fileInput" type="file" accept=".pdf,.docx,.pptx,.xlsx,.jpg,.jpeg,.png" hidden />
       </div>
     </div>
   </div>
@@ -248,7 +253,7 @@ button.sent{animation:sent .5s ease-out}
   <!-- FEED -->
   <div class="card">
     <div class="feed-head">
-      <h2 class="card-title" style="margin:0">ข้อความและลิงก์</h2>
+      <h2 class="card-title" style="margin:0">ข้อความ ลิงก์ และไฟล์</h2>
       <button id="clearBtn" class="secondary small">ล้างหน้าจอ</button>
     </div>
     <div id="feed" class="feed"><div class="empty">ยังไม่มีข้อความ</div></div>
@@ -270,6 +275,30 @@ const URL_REGEX = /(https?:\/\/[^\s<>"']+)/g;
 const MAX_FILE = 50 * 1024 * 1024, CHUNK = 16384, BUF_HIGH = 1048576, BUF_LOW = 262144;
 const MAX_FEED = 100, MAX_TEXT = 5000, MAX_JSON = 40000, STALL_MS = 30000;
 const $ = (id) => document.getElementById(id);
+
+// ================= FILE TYPES (ตรวจจากนามสกุล + magic bytes; ไม่เชื่อ mime จากผู้ส่ง) =================
+const ZIP_MAGIC = [0x50, 0x4b, 0x03, 0x04];
+const FILE_TYPES = {
+  pdf:  { ext: 'pdf',  label: 'PDF',  cls: '',       mime: 'application/pdf', magic: [0x25, 0x50, 0x44, 0x46, 0x2d], viewable: true },
+  docx: { ext: 'docx', label: 'DOCX', cls: 't-docx', mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', magic: ZIP_MAGIC },
+  pptx: { ext: 'pptx', label: 'PPTX', cls: 't-pptx', mime: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', magic: ZIP_MAGIC },
+  xlsx: { ext: 'xlsx', label: 'XLSX', cls: 't-xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', magic: ZIP_MAGIC },
+  jpg:  { ext: 'jpg',  label: 'JPG',  cls: 't-img',  mime: 'image/jpeg', magic: [0xff, 0xd8, 0xff], viewable: true, image: true },
+  png:  { ext: 'png',  label: 'PNG',  cls: 't-img',  mime: 'image/png',  magic: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], viewable: true, image: true }
+};
+FILE_TYPES.jpeg = FILE_TYPES.jpg;
+const OWN_PROPS = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+function fileTypeOf(name) {
+  const m = /\.([a-z0-9]+)$/i.exec(String(name || ''));
+  const e = m && m[1].toLowerCase();
+  return e && OWN_PROPS(FILE_TYPES, e) ? FILE_TYPES[e] : null;
+}
+function sniff(bytes, type) {
+  const m = type.magic;
+  if (bytes.length < m.length) return false;
+  for (let i = 0; i < m.length; i++) if (bytes[i] !== m[i]) return false;
+  return true;
+}
 
 const tabViewer = $('tabViewer'), tabHost = $('tabHost'), viewerView = $('viewerView'), hostView = $('hostView');
 const hostCodeInput = $('hostCodeInput'), randomCodeBtn = $('randomCodeBtn'), hostStartBtn = $('hostStartBtn'),
@@ -366,10 +395,11 @@ function renderMessage(payload, isSelf = false) {
 
 // ================= SECURITY / FILE HELPERS =================
 function safeName(n) {
+  const t = fileTypeOf(n) || FILE_TYPES.pdf;
   let s = String(n || '').normalize('NFC')
     .replace(/[\u0000-\u001f\u007f<>:"\/\\|?*\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, '_')
-    .replace(/^\.+/, '').replace(/\.pdf$/i, '').trim().slice(0, 100);
-  return (s || 'document') + '.pdf';
+    .replace(/\.[a-z0-9]+$/i, '').replace(/^\.+/, '').trim().slice(0, 100);
+  return (s || 'file') + '.' + t.ext;
 }
 function fmtSize(b) { return b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
 function hostOf(u) { try { return new URL(u).hostname; } catch { return ''; } }
@@ -388,7 +418,8 @@ function safeAutoOpen(url) {
   toast('กำลังเปิด: ' + u.hostname);
   window.open(u.href, '_blank', 'noopener,noreferrer');
 }
-function createFileItem(name, size, isSelf) {
+function createFileItem(name, size, isSelf, type) {
+  type = type || FILE_TYPES.pdf;
   const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
   const item = el('div', 'msg-item' + (isSelf ? ' self' : ''));
   const meta = el('div', 'msg-meta', `${isSelf ? 'คุณ (Host)' : 'ได้รับผ่าน WebRTC P2P'} • ${new Date().toLocaleTimeString('th-TH')}`);
@@ -396,21 +427,34 @@ function createFileItem(name, size, isSelf) {
   const sub = el('div', 'file-sub', fmtSize(size)), bar = el('div', 'bar'), fill = el('i');
   bar.appendChild(fill);
   info.append(el('div', 'file-name', name), sub, bar);
-  row.append(el('div', 'file-ico', 'PDF'), info);
+  row.append(el('div', 'file-ico ' + type.cls, type.label), info);
   item.append(meta, row);
   addToFeed(item);
+
+  function showThumb(url) {
+    const img = el('img', 'thumb');
+    img.alt = name; img.src = url; img.loading = 'lazy';
+    img.onclick = () => window.open(url, '_blank', 'noopener,noreferrer');
+    item.appendChild(img);
+  }
   return {
     progress(f, label) { const p = Math.round(f * 100); fill.style.width = p + '%'; sub.textContent = `${label} ${p}% • ${fmtSize(size)}`; },
+    // ฝั่งผู้ส่ง: แสดงตัวอย่างรูปจากไฟล์ต้นฉบับ
+    preview(file) { if (type.image) showThumb(URL.createObjectURL(file)); },
     done(blob, text) {
       bar.remove();
-      sub.textContent = fmtSize(size) + ' • ' + (text || 'ตรวจสอบเป็น PDF แล้ว');
+      sub.textContent = fmtSize(size) + ' • ' + (text || 'ตรวจสอบชนิดไฟล์แล้ว');
       if (!blob) return;
+      if (type.image) showThumb(URL.createObjectURL(blob));
       const act = el('div', 'msg-actions');
-      const openB = el('button', 'secondary small', 'เปิด PDF');
-      openB.onclick = () => { const u = URL.createObjectURL(blob); window.open(u, '_blank', 'noopener,noreferrer'); setTimeout(() => URL.revokeObjectURL(u), 60000); };
+      if (type.viewable) {
+        const openB = el('button', 'secondary small', type.image ? 'เปิดรูป' : 'เปิด PDF');
+        openB.onclick = () => { const u = URL.createObjectURL(blob); window.open(u, '_blank', 'noopener,noreferrer'); setTimeout(() => URL.revokeObjectURL(u), 60000); };
+        act.append(openB);
+      }
       const dlB = el('button', 'secondary small', 'ดาวน์โหลด');
       dlB.onclick = () => { const u = URL.createObjectURL(blob), a = document.createElement('a'); a.href = u; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(u), 10000); };
-      act.append(openB, dlB);
+      act.append(dlB);
       item.appendChild(act);
     },
     fail(msg) { bar.remove(); sub.textContent = msg; sub.style.color = 'var(--bad)'; }
@@ -641,19 +685,21 @@ function waitDrain(dc) {
   });
 }
 
-async function sendPdf(file) {
+async function sendFile(file) {
   if (!file) return;
   if (sendingFile) return toast('กำลังส่งไฟล์อื่นอยู่');
-  if (!/\.pdf$/i.test(file.name) || (file.type && file.type !== 'application/pdf')) return toast('รองรับเฉพาะไฟล์ .pdf');
+  const type = fileTypeOf(file.name);
+  if (!type) return toast('รองรับเฉพาะ PDF, DOCX, PPTX, XLSX, JPG, PNG');
   if (file.size < 8 || file.size > MAX_FILE) return toast(`ขนาดไฟล์ต้องไม่เกิน ${fmtSize(MAX_FILE)}`);
   const peers = [...hostPeers.values()].filter((p) => p.dc?.readyState === 'open');
   if (!peers.length) return toast('ยังไม่มีผู้รับเชื่อมต่อ');
   sendingFile = true;
   const name = safeName(file.name);
-  const ui = createFileItem(name, file.size, true);
+  const ui = createFileItem(name, file.size, true, type);
   try {
     const buf = await file.arrayBuffer();
-    if (String.fromCharCode(...new Uint8Array(buf, 0, 5)) !== '%PDF-') { ui.fail('ไม่ใช่ไฟล์ PDF ที่ถูกต้อง'); return; }
+    if (!sniff(new Uint8Array(buf, 0, Math.min(8, buf.byteLength)), type)) { ui.fail(`ไม่ใช่ไฟล์ ${type.label} ที่ถูกต้อง`); return; }
+    ui.preview(file);
     const id = generateId();
     const total = Math.ceil(buf.byteLength / CHUNK) * peers.length;
     let sent = 0;
@@ -760,13 +806,15 @@ function handleViewerData(data) {
       if (incoming) return violation('ส่งไฟล์ซ้อนกัน');
       const size = Number(p.size);
       if (!Number.isInteger(size) || size < 8 || size > MAX_FILE) return violation(`ไฟล์ใหญ่เกิน ${fmtSize(MAX_FILE)} หรือขนาดไม่ถูกต้อง`);
-      const name = safeName(p.name);   // ไม่รับ mime จากผู้ส่ง: บังคับเป็น PDF เสมอ
-      incoming = { id: String(p.id || '').slice(0, 40), name, size, chunks: [], received: 0, ui: createFileItem(name, size, false), timer: null };
+      const type = fileTypeOf(p.name);
+      if (!type) return violation('ชนิดไฟล์ไม่อยู่ในรายการที่อนุญาต');   // อนุญาตเฉพาะ pdf/docx/pptx/xlsx/jpg/png
+      const name = safeName(p.name);   // ไม่รับ mime จากผู้ส่ง: กำหนดจากนามสกุลที่อนุญาตเท่านั้น
+      incoming = { id: String(p.id || '').slice(0, 40), name, size, type, chunks: [], received: 0, ui: createFileItem(name, size, false, type), timer: null };
       armStall();
     } else if (p.type === 'file-end') {
       if (!incoming || String(p.id) !== incoming.id || incoming.received !== incoming.size) return violation('ไฟล์ไม่ครบหรือไม่ตรงกับที่แจ้ง');
       clearTimeout(incoming.timer);
-      incoming.ui.done(new Blob(incoming.chunks, { type: 'application/pdf' }));
+      incoming.ui.done(new Blob(incoming.chunks, { type: incoming.type.mime }));
       incoming = null;
     } else if (typeof p.text === 'string' && p.text.length <= MAX_TEXT) {
       renderMessage({ text: p.text, timestamp: Date.now() }, false);
@@ -776,8 +824,8 @@ function handleViewerData(data) {
   if (!(data instanceof ArrayBuffer)) return;
   if (!incoming) return violation('ได้รับข้อมูลไบนารีโดยไม่ได้ขอ');
   if (incoming.chunks.length === 0) {
-    const h = new Uint8Array(data, 0, Math.min(5, data.byteLength));
-    if (String.fromCharCode(...h) !== '%PDF-') return violation('ไฟล์ไม่ใช่ PDF (ตรวจ magic bytes ไม่ผ่าน)');
+    const h = new Uint8Array(data, 0, Math.min(8, data.byteLength));
+    if (!sniff(h, incoming.type)) return violation(`ไฟล์ไม่ใช่ ${incoming.type.label} (ตรวจ magic bytes ไม่ผ่าน)`);
   }
   incoming.received += data.byteLength;
   if (incoming.received > incoming.size) return violation('ข้อมูลเกินขนาดที่แจ้งไว้');
@@ -880,10 +928,18 @@ clearBtn.addEventListener('click', () => { feedEl.innerHTML = '<div class="empty
 $('lobbyAllBtn').addEventListener('click', () => [...pendingJoins.keys()].forEach(approveJoin));
 const dropZone = $('dropZone'), fileInput = $('fileInput');
 $('pickFileBtn').addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', () => sendPdf(fileInput.files[0]));
+fileInput.addEventListener('change', () => sendFile(fileInput.files[0]));
 ['dragenter', 'dragover'].forEach((ev) => dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.add('over'); }));
 ['dragleave', 'drop'].forEach((ev) => dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.remove('over'); }));
-dropZone.addEventListener('drop', (e) => sendPdf(e.dataTransfer.files[0]));
+dropZone.addEventListener('drop', (e) => sendFile(e.dataTransfer.files[0]));
+// วางรูปจากคลิปบอร์ด (Ctrl+V) ในช่องข้อความ
+messageInput.addEventListener('paste', (e) => {
+  const f = [...(e.clipboardData?.files || [])].find((x) => /^image\/(png|jpeg)$/.test(x.type));
+  if (!f) return;
+  e.preventDefault();
+  const ext = f.type === 'image/png' ? 'png' : 'jpg';
+  sendFile(new File([f], f.name && /\.(png|jpe?g)$/i.test(f.name) ? f.name : `image-${Date.now()}.${ext}`, { type: f.type }));
+});
 autoOpenCheckbox.addEventListener('change', () => {
   if (autoOpenCheckbox.checked && !confirm('คำเตือน: ลิงก์จากผู้ส่งจะถูกเปิดอัตโนมัติโดยไม่ถามซ้ำ\nเปิดใช้เฉพาะเมื่อไว้ใจผู้ส่งเท่านั้น (จำกัด 1 ลิงก์ต่อ 10 วินาที)\n\nต้องการเปิดใช้หรือไม่?')) autoOpenCheckbox.checked = false;
 });
