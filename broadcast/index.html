@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Broadcast (4-Digit Code)</title>
+<link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1789/1789302.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -114,6 +115,18 @@ button.block{flex:1 1 auto}
 .file-sub{font-size:.8rem;color:var(--muted)}
 .bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:6px}
 .bar>i{display:block;height:100%;width:0;background:var(--brand);transition:width .15s}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.mode{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:2px solid var(--line);border-radius:12px;cursor:pointer;transition:border-color .15s,background .15s}
+.mode input{margin-top:4px;accent-color:var(--brand)}
+.mode span{display:flex;flex-direction:column;line-height:1.35}
+.mode small{color:var(--muted);font-size:.78rem}
+.mode:has(input:checked){border-color:var(--brand);background:var(--brand-soft)}
+.mode:has(input:disabled){opacity:.7;cursor:not-allowed}
+.count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:99px;background:var(--warn-soft);color:var(--warn);font-size:.78rem;margin-left:6px;vertical-align:middle}
+.lobby{display:flex;flex-direction:column;gap:8px}
+.lobby-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:12px;animation:rise .3s both}
+.lobby-row small{color:var(--muted)}
+@media (max-width:480px){.modes{grid-template-columns:1fr}}
 /* ส่งข้อความ = เขียว */
 #hostView{--brand:var(--send);--brand-d:var(--send-d);--brand-soft:var(--send-soft)}
 #tabHost.active{background:var(--send)}
@@ -157,7 +170,7 @@ button.sent{animation:sent .5s ease-out}
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2" fill="#fff"/><path class="w1" d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7"/><path class="w2" d="M5.5 5.5a9 9 0 0 0 0 13M18.5 5.5a9 9 0 0 1 0 13"/></svg>
     </div>
     <div>
-      <h1>Broadcast Text</h1>
+      <h1>BROADCAST</h1>
       <p class="subtitle">ส่งข้อความ ลิงก์ และไฟล์ PDF ข้ามเครื่องแบบเรียลไทม์ ด้วยรหัส 4 หลัก</p>
     </div>
   </header>
@@ -192,6 +205,10 @@ button.sent{animation:sent .5s ease-out}
       <h2 class="card-title">เปิดห้องส่งข้อมูล</h2>
       <p class="card-desc">ตั้งรหัส 4 หลัก แล้วบอกรหัสให้ผู้รับ</p>
       <div class="plate"><input id="hostCodeInput" class="code-input" type="text" inputmode="numeric" maxlength="4" placeholder="0000" aria-label="รหัสห้อง 4 หลัก" /></div>
+      <div class="modes" role="radiogroup" aria-label="รูปแบบการเข้าห้อง">
+        <label class="mode"><input type="radio" name="joinmode" value="open" checked /><span><b>เข้าได้ทันที</b><small>ใครมีรหัสก็เข้าได้เลย</small></span></label>
+        <label class="mode"><input type="radio" name="joinmode" value="lobby" /><span><b>ห้องรอ (Lobby)</b><small>Host กดอนุมัติทีละคน</small></span></label>
+      </div>
       <div class="row actions">
         <button id="randomCodeBtn" class="secondary">สุ่มเลข</button>
         <button id="hostStartBtn" class="block">เปิดห้องส่งข้อมูล</button>
@@ -202,6 +219,14 @@ button.sent{animation:sent .5s ease-out}
         <span id="hostStatusBadge" class="badge disconnected">ยังไม่เปิดห้อง</span>
         <span id="hostPeerCount" class="peers"></span>
       </div>
+    </div>
+
+    <div id="lobbyPanel" class="card hidden">
+      <div class="feed-head">
+        <h2 class="card-title" style="margin:0">ห้องรอ (Lobby)<span id="lobbyCount" class="count">0</span></h2>
+        <button id="lobbyAllBtn" class="secondary small" disabled>อนุมัติทั้งหมด</button>
+      </div>
+      <div id="lobbyList" class="lobby"></div>
     </div>
 
     <div id="hostSendPanel" class="card hidden">
@@ -457,6 +482,58 @@ async function hostHandleJoin(vId) {
     JSON.stringify({ type: 'offer', hostId, sdp: pc.localDescription }));
 }
 
+const pendingJoins = new Map(), approved = new Set(), rejected = new Set();
+let lobbyOn = false, lobbyCounter = 0, lobbyTimer = null;
+const VID_RE = /^[a-z0-9]{6,32}$/;
+
+function pubToViewer(vId, obj) {
+  if (mqttClient?.connected) mqttClient.publish(`${TOPIC_PREFIX}/${activeCode}/viewer/${vId}`, JSON.stringify(obj));
+}
+function renderLobby() {
+  const list = $('lobbyList');
+  list.replaceChildren();
+  $('lobbyCount').textContent = pendingJoins.size;
+  $('lobbyAllBtn').disabled = pendingJoins.size === 0;
+  if (!pendingJoins.size) {
+    const e = document.createElement('div'); e.className = 'empty'; e.textContent = 'ยังไม่มีผู้ขอเข้าห้อง';
+    list.appendChild(e); return;
+  }
+  for (const [vId, info] of pendingJoins) {
+    const row = document.createElement('div'); row.className = 'lobby-row';
+    const label = document.createElement('div');
+    const b = document.createElement('b'); b.textContent = `อุปกรณ์ #${info.n}`;
+    const sm = document.createElement('small'); sm.textContent = ' • ขอเข้าห้อง';
+    label.append(b, sm);
+    const acts = document.createElement('div'); acts.className = 'row';
+    const ok = document.createElement('button'); ok.className = 'small'; ok.textContent = 'อนุมัติ'; ok.onclick = () => approveJoin(vId);
+    const no = document.createElement('button'); no.className = 'danger small'; no.textContent = 'ปฏิเสธ'; no.onclick = () => rejectJoin(vId);
+    acts.append(ok, no);
+    row.append(label, acts);
+    list.appendChild(row);
+  }
+}
+function approveJoin(vId) {
+  if (!pendingJoins.has(vId)) return;
+  pendingJoins.delete(vId); approved.add(vId); renderLobby();
+  hostHandleJoin(vId);
+}
+function rejectJoin(vId) {
+  pendingJoins.delete(vId); rejected.add(vId); renderLobby();
+  pubToViewer(vId, { type: 'rejected', hostId });
+}
+async function requestJoin(vId) {
+  if (!lobbyOn || approved.has(vId)) return hostHandleJoin(vId);
+  if (rejected.has(vId)) return pubToViewer(vId, { type: 'rejected', hostId });
+  const e = pendingJoins.get(vId);
+  if (e) e.seen = Date.now();
+  else {
+    if (pendingJoins.size >= 20) return;          // กันการยิงคำขอรัว
+    pendingJoins.set(vId, { n: ++lobbyCounter, seen: Date.now() });
+    renderLobby(); toast('มีผู้ขอเข้าห้องใหม่');
+  }
+  pubToViewer(vId, { type: 'pending', hostId });
+}
+
 function startHost() {
   if (typeof mqtt === 'undefined') { alert('ไม่สามารถโหลดไลบรารี Signaling ได้ กรุณาตรวจสอบอินเทอร์เน็ต'); return; }
   const code = hostCodeInput.value.trim();
@@ -464,6 +541,9 @@ function startHost() {
 
   activeCode = code;
   hostId = generateId();
+  lobbyOn = document.querySelector('input[name="joinmode"]:checked').value === 'lobby';
+  document.querySelectorAll('input[name="joinmode"]').forEach((r) => (r.disabled = true));
+  approved.clear(); rejected.clear(); pendingJoins.clear(); lobbyCounter = 0; renderLobby();
   hostCodeInput.disabled = true;
   randomCodeBtn.disabled = true;
   hostStartBtn.classList.add('hidden');
@@ -475,7 +555,14 @@ function startHost() {
   mqttClient.on('connect', () => {
     mqttClient.subscribe(`${TOPIC_PREFIX}/${activeCode}/host`, (err) => {
       if (err) return;
-      setBadge(hostStatusBadge, `เปิดห้อง ${activeCode} สำเร็จ (พร้อมส่ง)`, 'connected');
+      setBadge(hostStatusBadge, `เปิดห้อง ${activeCode} สำเร็จ${lobbyOn ? ' (ต้องอนุมัติ)' : ' (พร้อมส่ง)'}`, 'connected');
+      $('lobbyPanel').classList.toggle('hidden', !lobbyOn);
+      clearInterval(lobbyTimer);
+      lobbyTimer = setInterval(() => {            // ล้างคำขอที่หายไปแล้ว (ผู้ขอปิดหน้า)
+        let changed = false;
+        for (const [id, i] of pendingJoins) if (Date.now() - i.seen > 15000) { pendingJoins.delete(id); changed = true; }
+        if (changed) renderLobby();
+      }, 5000);
       hostSendPanel.classList.remove('hidden');
       copyInviteBtn.classList.remove('hidden');
       updateHostPeerCount();
@@ -487,8 +574,9 @@ function startHost() {
     let msg;
     try { msg = JSON.parse(buf.toString()); } catch { return; }
 
+    if (msg.viewerId !== undefined && !VID_RE.test(String(msg.viewerId))) return;   // กัน viewerId แปลกปลอมใน topic
     if (msg.type === 'join' && msg.viewerId) {
-      await hostHandleJoin(msg.viewerId);
+      await requestJoin(msg.viewerId);
     } else if (msg.type === 'answer' && msg.viewerId) {
       const p = hostPeers.get(msg.viewerId);
       if (p && !p.pc.remoteDescription?.type) {
@@ -504,6 +592,7 @@ function startHost() {
       }
     } else if (msg.type === 'viewer-left' && msg.viewerId) {
       cleanupHostPeer(msg.viewerId);
+      if (pendingJoins.delete(msg.viewerId)) renderLobby();
     }
   });
 
@@ -523,6 +612,10 @@ function stopHost() {
   copyInviteBtn.classList.add('hidden');
   hostSendPanel.classList.add('hidden');
   hostPeerCount.textContent = '';
+  clearInterval(lobbyTimer); lobbyTimer = null;
+  approved.clear(); rejected.clear(); pendingJoins.clear(); renderLobby();
+  $('lobbyPanel').classList.add('hidden');
+  document.querySelectorAll('input[name="joinmode"]').forEach((r) => (r.disabled = false));
   setBadge(hostStatusBadge, 'ยังไม่เปิดห้อง', 'disconnected');
 }
 
@@ -723,7 +816,13 @@ function joinViewer() {
     let msg;
     try { msg = JSON.parse(buf.toString()); } catch { return; }
 
-    if (msg.type === 'host-ready') {
+    if (msg.type === 'pending') {
+      if (viewerDc?.readyState !== 'open') setBadge(viewerStatusBadge, 'รอ Host อนุมัติให้เข้าห้อง...', 'waiting');
+    } else if (msg.type === 'rejected') {
+      if (viewerDc?.readyState === 'open') return;
+      clearInterval(joinRetryTimer); joinRetryTimer = null;
+      setBadge(viewerStatusBadge, 'Host ปฏิเสธการเข้าห้อง', 'disconnected');
+    } else if (msg.type === 'host-ready') {
       sendJoinRequest();
     } else if (msg.type === 'offer' && msg.sdp) {
       await viewerHandleOffer(msg);
@@ -778,6 +877,7 @@ viewerLeaveBtn.addEventListener('click', leaveViewer);
 viewerCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') joinViewer(); });
 clearBtn.addEventListener('click', () => { feedEl.innerHTML = '<div class="empty">ยังไม่มีข้อความ</div>'; });
 
+$('lobbyAllBtn').addEventListener('click', () => [...pendingJoins.keys()].forEach(approveJoin));
 const dropZone = $('dropZone'), fileInput = $('fileInput');
 $('pickFileBtn').addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', () => sendPdf(fileInput.files[0]));
