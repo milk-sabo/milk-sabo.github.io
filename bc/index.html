@@ -1,268 +1,860 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Broadcast (4-Digit Code)</title>
-<link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1789/1789302.png">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#e9eef0; --surface:#fff; --ink:#13293d; --muted:#5d7083; --line:#d6dee3;
-  --brand:#1a73d9; --brand-d:#145db0; --brand-soft:#e1effd;
-  --send:#0f8a5f; --send-d:#0b6f4d; --send-soft:#dcf5ea;
-  --ok:#0f8a5f; --ok-soft:#dcf5ea; --warn:#a96400; --warn-soft:#fff0d3;
-  --bad:#c23b3b; --bad-soft:#fde5e5; --plate:#13293d; --plate-ink:#f3f7fa;
-  --shadow:0 1px 2px rgba(19,41,61,.06),0 8px 24px -12px rgba(19,41,61,.18);
-}
-@media (prefers-color-scheme:dark){
-  :root{
-    --bg:#0c1722; --surface:#14232f; --ink:#e8eff4; --muted:#8fa3b3; --line:#243746;
-    --brand:#2f86e6; --brand-d:#5aa9ff; --brand-soft:#12294a;
-    --send:#1a9e70; --send-d:#2fbf8a; --send-soft:#10382c;
-    --ok:#4ad6a0; --ok-soft:#10382c; --warn:#f2b44d; --warn-soft:#3b2d0f;
-    --bad:#ff8a8a; --bad-soft:#3d1c1c; --plate:#0a121a; --plate-ink:#f3f7fa;
-    --shadow:0 8px 24px -12px rgba(0,0,0,.6);
-  }
-}
-*{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Thai',system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.55;padding:28px 16px 48px}
-.container{max-width:720px;margin:0 auto}
-header{display:flex;align-items:center;gap:14px;margin-bottom:22px}
-.logo{width:46px;height:46px;border-radius:14px;background:var(--plate);display:grid;place-items:center;flex:none}
-.logo svg{width:26px;height:26px}
-h1{margin:0;font-size:1.4rem;line-height:1.2;font-weight:700}
-.subtitle{margin:2px 0 0;color:var(--muted);font-size:.9rem}
-
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:14px;margin-bottom:16px}
-.tab-btn{background:transparent;color:var(--muted);border:0;border-radius:10px;padding:12px 10px;font:inherit;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0;transition:background .15s,color .15s}
-.tab-btn small{font-weight:400;font-size:.75rem;opacity:.85}
-.tab-btn.active{background:var(--brand);color:#fff}
-.tab-btn:not(.active):hover{background:var(--brand-soft);color:var(--brand)}
-
-.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
-.card-title{font-weight:700;font-size:1.02rem;margin:0 0 4px}
-.card-desc{color:var(--muted);font-size:.88rem;margin:0 0 16px}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.stack{display:flex;flex-direction:column;gap:12px}
-
-/* แผ่นป้ายรหัส 4 หลัก */
-.plate{background:var(--plate);border-radius:14px;padding:18px 16px;display:flex;justify-content:center;margin-bottom:14px}
-.code-input{background:transparent;color:var(--plate-ink);border:0;border-bottom:3px solid rgba(255,255,255,.25);border-radius:0;padding:2px 0 6px 0.4em;width:7.2em;font:700 3rem/1.1 'IBM Plex Sans Thai',ui-monospace,monospace;font-variant-numeric:tabular-nums;letter-spacing:.4em;text-align:center;outline:none;transition:border-color .15s}
-.code-input::placeholder{color:rgba(255,255,255,.22)}
-.code-input:focus{border-bottom-color:#8aa4ff}
-.code-input:disabled{opacity:.75}
-
-textarea{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit;min-height:100px;resize:vertical;outline:none}
-textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
-
-button{background:var(--brand);color:#fff;border:0;border-radius:10px;padding:11px 18px;font:inherit;font-size:.93rem;font-weight:600;cursor:pointer;transition:background .15s,transform .05s}
-button:hover:not(:disabled){background:var(--brand-d)}
-button:active:not(:disabled){transform:translateY(1px)}
-button:disabled{opacity:.5;cursor:not-allowed}
-button.danger{background:var(--bad-soft);color:var(--bad)}
-button.danger:hover:not(:disabled){background:var(--bad);color:#fff}
-button.secondary{background:var(--brand-soft);color:var(--brand)}
-button.secondary:hover:not(:disabled){background:var(--brand);color:#fff}
-button.small{padding:6px 12px;font-size:.8rem;border-radius:8px}
-button.block{flex:1 1 auto}
-:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
-
-.statusbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
-.badge{display:inline-flex;align-items:center;gap:8px;padding:5px 13px;border-radius:999px;font-size:.84rem;font-weight:600;background:var(--line);color:var(--muted)}
-.badge::before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor}
-.badge.connected{background:var(--ok-soft);color:var(--ok)}
-.badge.connected::before{animation:pulse 1.8s ease-out infinite}
-.badge.waiting{background:var(--warn-soft);color:var(--warn)}
-.badge.disconnected{background:var(--bad-soft);color:var(--bad)}
-@keyframes pulse{0%{box-shadow:0 0 0 0 currentColor}70%,100%{box-shadow:0 0 0 7px transparent}}
-.peers{font-size:.88rem;color:var(--muted);font-weight:500}
-
-.check{display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:.9rem;margin-top:14px}
-.check input{width:18px;height:18px;margin-top:2px;accent-color:var(--brand)}
-.hint{font-size:.82rem;color:var(--muted);margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
-.hidden{display:none !important}
-
-.feed-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.feed{display:flex;flex-direction:column;gap:10px;max-height:420px;overflow-y:auto}
-.msg-item{background:var(--bg);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:12px;padding:12px 14px;animation:in .35s cubic-bezier(.2,.8,.2,1),flash 1.4s ease-out}
-.msg-item.self{border-left-color:var(--ok)}
-@keyframes in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-.msg-meta{font-size:.78rem;color:var(--muted);margin-bottom:4px}
-.msg-body{word-break:break-word;white-space:pre-wrap}
-.msg-body a{color:var(--brand);text-decoration:underline;text-underline-offset:2px}
-.msg-actions{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
-.empty{color:var(--muted);text-align:center;padding:32px 0;font-size:.9rem}
-
-.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--plate);color:var(--plate-ink);padding:10px 18px;border-radius:999px;font-size:.88rem;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:10}
-.toast.show{opacity:1;transform:translate(-50%,0)}
-
-@media (max-width:480px){
-  .code-input{font-size:2.4rem}
-  .card{padding:16px}
-  .row.actions button{flex:1 1 100%}
-}
-
-.drop{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;padding:12px 14px;border:2px dashed var(--line);border-radius:12px;color:var(--muted);font-size:.88rem;transition:border-color .15s,background .15s}
-.drop.over{border-color:var(--brand);background:var(--brand-soft)}
-.file-row{display:flex;align-items:center;gap:12px}
-.file-ico{flex:none;width:38px;height:44px;border-radius:6px;background:var(--bad-soft);color:var(--bad);display:grid;place-items:center;font-size:.62rem;font-weight:700;letter-spacing:.02em}
-.file-ico.t-docx{background:rgba(47,134,230,.16);color:#2f86e6}
-.file-ico.t-pptx{background:rgba(232,117,40,.16);color:#e87528}
-.file-ico.t-xlsx{background:rgba(26,158,112,.16);color:#1a9e70}
-.file-ico.t-img{background:rgba(140,100,220,.16);color:#8c64dc}
-.file-info{min-width:0;flex:1}
-.file-name{font-weight:600;word-break:break-all}
-.file-sub{font-size:.8rem;color:var(--muted)}
-.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:6px}
-.bar>i{display:block;height:100%;width:0;background:var(--brand);transition:width .15s}
-.thumb{display:block;max-width:100%;max-height:220px;margin-top:10px;border-radius:10px;border:1px solid var(--line);cursor:zoom-in;object-fit:contain;background:var(--surface)}
-.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-.mode{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:2px solid var(--line);border-radius:12px;cursor:pointer;transition:border-color .15s,background .15s}
-.mode input{margin-top:4px;accent-color:var(--brand)}
-.mode span{display:flex;flex-direction:column;line-height:1.35}
-.mode small{color:var(--muted);font-size:.78rem}
-.mode:has(input:checked){border-color:var(--brand);background:var(--brand-soft)}
-.mode:has(input:disabled){opacity:.7;cursor:not-allowed}
-.count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:99px;background:var(--warn-soft);color:var(--warn);font-size:.78rem;margin-left:6px;vertical-align:middle}
-.lobby{display:flex;flex-direction:column;gap:8px}
-.lobby-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:12px;animation:rise .3s both}
-.lobby-row small{color:var(--muted)}
-@media (max-width:480px){.modes{grid-template-columns:1fr}}
-/* ส่งข้อความ = เขียว */
-#hostView{--brand:var(--send);--brand-d:var(--send-d);--brand-soft:var(--send-soft)}
-#tabHost.active{background:var(--send)}
-#tabHost:not(.active):hover{background:var(--send-soft);color:var(--send)}
-#hostView .plate::before,#hostView .plate::after{border-color:#4ad6a0}
-.plate::before,.plate::after{border-color:#5aa9ff}
-.code-input:focus{border-bottom-color:#5aa9ff}
-#hostView .code-input:focus{border-bottom-color:#4ad6a0}
-/* ===== Animations ===== */
-@keyframes rise{from{opacity:0;transform:translateY(16px)}}
-@keyframes pop{from{opacity:0;transform:scale(.4) rotate(-20deg)}}
-@keyframes wave{0%,100%{opacity:.2}40%{opacity:1}}
-@keyframes ripple{0%{transform:scale(1);opacity:.65}100%{transform:scale(16);opacity:0}}
-@keyframes seek{50%{border-bottom-color:#f2b44d}}
-@keyframes digit{40%{transform:scale(1.1)}}
-@keyframes flash{from{box-shadow:0 0 0 3px var(--brand-soft),0 0 20px var(--brand)}to{box-shadow:0 0 0 0 transparent}}
-@keyframes sent{40%{transform:scale(.94);box-shadow:0 0 0 8px var(--brand-soft)}}
-.logo{animation:pop .7s cubic-bezier(.3,1.6,.5,1) both}
-.w1{animation:wave 2.4s ease-in-out infinite}
-.w2{animation:wave 2.4s ease-in-out .5s infinite}
-header>div:last-child{animation:rise .5s .12s both}
-.tabs{animation:rise .5s .2s both}
-.card{animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
-.container>.card{animation-delay:.35s}
-.plate{position:relative;overflow:hidden}
-.plate::before,.plate::after{content:'';position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px;border-radius:50%;border:2px solid #5aa9ff;opacity:0;pointer-events:none}
-.plate.live::before{animation:ripple 2.8s ease-out infinite}
-.plate.live::after{animation:ripple 2.8s ease-out 1.4s infinite}
-.plate.seeking .code-input{animation:seek 1.1s ease-in-out infinite}
-.code-input.pop{animation:digit .25s ease-out}
-.peers.bump{animation:digit .35s ease-out}
-button.sent{animation:sent .5s ease-out}
-.tab-btn.active{animation:digit .3s ease-out}
-@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
-</style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Broadcast (4-Digit Code)</title>
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1789/1789302.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #e9eef0;
+            --surface: #fff;
+            --ink: #13293d;
+            --muted: #5d7083;
+            --line: #d6dee3;
+            --brand: #1a73d9;
+            --brand-d: #145db0;
+            --brand-soft: #e1effd;
+            --send: #0f8a5f;
+            --send-d: #0b6f4d;
+            --send-soft: #dcf5ea;
+            --ok: #0f8a5f;
+            --ok-soft: #dcf5ea;
+            --warn: #a96400;
+            --warn-soft: #fff0d3;
+            --bad: #c23b3b;
+            --bad-soft: #fde5e5;
+            --plate: #13293d;
+            --plate-ink: #f3f7fa;
+            --shadow: 0 1px 2px rgba(19, 41, 61, .06), 0 8px 24px -12px rgba(19, 41, 61, .18);
+        }
+        @media (prefers-color-scheme:dark) {
+            :root {
+                --bg: #0c1722;
+                --surface: #14232f;
+                --ink: #e8eff4;
+                --muted: #8fa3b3;
+                --line: #243746;
+                --brand: #2f86e6;
+                --brand-d: #5aa9ff;
+                --brand-soft: #12294a;
+                --send: #1a9e70;
+                --send-d: #2fbf8a;
+                --send-soft: #10382c;
+                --ok: #4ad6a0;
+                --ok-soft: #10382c;
+                --warn: #f2b44d;
+                --warn-soft: #3b2d0f;
+                --bad: #ff8a8a;
+                --bad-soft: #3d1c1c;
+                --plate: #0a121a;
+                --plate-ink: #f3f7fa;
+                --shadow: 0 8px 24px -12px rgba(0, 0, 0, .6);
+            }
+        }
+        * {
+            box-sizing: border-box
+        }
+        html {
+            -webkit-text-size-adjust: 100%
+        }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: 'IBM Plex Sans Thai', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            line-height: 1.55;
+            padding: 28px 16px 48px
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto
+        }
+        header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 22px
+        }
+        .logo {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            background: var(--plate);
+            display: grid;
+            place-items: center;
+            flex: none
+        }
+        .logo svg {
+            width: 26px;
+            height: 26px
+        }
+        h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            line-height: 1.2;
+            font-weight: 700
+        }
+        .subtitle {
+            margin: 2px 0 0;
+            color: var(--muted);
+            font-size: .9rem
+        }
+        .tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            padding: 4px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            margin-bottom: 16px
+        }
+        .tab-btn {
+            background: transparent;
+            color: var(--muted);
+            border: 0;
+            border-radius: 10px;
+            padding: 12px 10px;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            transition: background .15s, color .15s
+        }
+        .tab-btn small {
+            font-weight: 400;
+            font-size: .75rem;
+            opacity: .85
+        }
+        .tab-btn.active {
+            background: var(--brand);
+            color: #fff
+        }
+        .tab-btn:not(.active):hover {
+            background: var(--brand-soft);
+            color: var(--brand)
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow)
+        }
+        .card-title {
+            font-weight: 700;
+            font-size: 1.02rem;
+            margin: 0 0 4px
+        }
+        .card-desc {
+            color: var(--muted);
+            font-size: .88rem;
+            margin: 0 0 16px
+        }
+        .row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center
+        }
+        .stack {
+            display: flex;
+            flex-direction: column;
+            gap: 12px
+        }
+        /* แผ่นป้ายรหัส 4 หลัก */
+        .plate {
+            background: var(--plate);
+            border-radius: 14px;
+            padding: 18px 16px;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 14px
+        }
+        .code-input {
+            background: transparent;
+            color: var(--plate-ink);
+            border: 0;
+            border-bottom: 3px solid rgba(255, 255, 255, .25);
+            border-radius: 0;
+            padding: 2px 0 6px 0.4em;
+            width: 7.2em;
+            font: 700 3rem/1.1 'IBM Plex Sans Thai', ui-monospace, monospace;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: .4em;
+            text-align: center;
+            outline: none;
+            transition: border-color .15s
+        }
+        .code-input::placeholder {
+            color: rgba(255, 255, 255, .22)
+        }
+        .code-input:focus {
+            border-bottom-color: #8aa4ff
+        }
+        .code-input:disabled {
+            opacity: .75
+        }
+        textarea {
+            width: 100%;
+            background: var(--bg);
+            color: var(--ink);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font: inherit;
+            min-height: 100px;
+            resize: vertical;
+            outline: none
+        }
+        textarea:focus {
+            border-color: var(--brand);
+            box-shadow: 0 0 0 3px var(--brand-soft)
+        }
+        button {
+            background: var(--brand);
+            color: #fff;
+            border: 0;
+            border-radius: 10px;
+            padding: 11px 18px;
+            font: inherit;
+            font-size: .93rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .15s, transform .05s
+        }
+        button:hover:not(:disabled) {
+            background: var(--brand-d)
+        }
+        button:active:not(:disabled) {
+            transform: translateY(1px)
+        }
+        button:disabled {
+            opacity: .5;
+            cursor: not-allowed
+        }
+        button.danger {
+            background: var(--bad-soft);
+            color: var(--bad)
+        }
+        button.danger:hover:not(:disabled) {
+            background: var(--bad);
+            color: #fff
+        }
+        button.secondary {
+            background: var(--brand-soft);
+            color: var(--brand)
+        }
+        button.secondary:hover:not(:disabled) {
+            background: var(--brand);
+            color: #fff
+        }
+        button.small {
+            padding: 6px 12px;
+            font-size: .8rem;
+            border-radius: 8px
+        }
+        button.block {
+            flex: 1 1 auto
+        }
+        :focus-visible {
+            outline: 3px solid var(--brand);
+            outline-offset: 2px
+        }
+        .statusbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 14px
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 13px;
+            border-radius: 999px;
+            font-size: .84rem;
+            font-weight: 600;
+            background: var(--line);
+            color: var(--muted)
+        }
+        .badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor
+        }
+        .badge.connected {
+            background: var(--ok-soft);
+            color: var(--ok)
+        }
+        .badge.connected::before {
+            animation: pulse 1.8s ease-out infinite
+        }
+        .badge.waiting {
+            background: var(--warn-soft);
+            color: var(--warn)
+        }
+        .badge.disconnected {
+            background: var(--bad-soft);
+            color: var(--bad)
+        }
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 currentColor
+            }
+            70%,
+            100% {
+                box-shadow: 0 0 0 7px transparent
+            }
+        }
+        .peers {
+            font-size: .88rem;
+            color: var(--muted);
+            font-weight: 500
+        }
+        .check {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            cursor: pointer;
+            font-size: .9rem;
+            margin-top: 14px
+        }
+        .check input {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            accent-color: var(--brand)
+        }
+        .hint {
+            font-size: .82rem;
+            color: var(--muted);
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--line)
+        }
+        .hidden {
+            display: none !important
+        }
+        .feed-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px
+        }
+        .feed {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 420px;
+            overflow-y: auto
+        }
+        .msg-item {
+            background: var(--bg);
+            border: 1px solid var(--line);
+            border-left: 4px solid var(--brand);
+            border-radius: 12px;
+            padding: 12px 14px;
+            animation: in .35s cubic-bezier(.2, .8, .2, 1), flash 1.4s ease-out
+        }
+        .msg-item.self {
+            border-left-color: var(--ok)
+        }
+        @keyframes in {
+            from {
+                opacity: 0;
+                transform: translateY(-6px)
+            }
+            to {
+                opacity: 1;
+                transform: none
+            }
+        }
+        .msg-meta {
+            font-size: .78rem;
+            color: var(--muted);
+            margin-bottom: 4px
+        }
+        .msg-body {
+            word-break: break-word;
+            white-space: pre-wrap
+        }
+        .msg-body a {
+            color: var(--brand);
+            text-decoration: underline;
+            text-underline-offset: 2px
+        }
+        .msg-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+        .empty {
+            color: var(--muted);
+            text-align: center;
+            padding: 32px 0;
+            font-size: .9rem
+        }
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            transform: translate(-50%, 20px);
+            background: var(--plate);
+            color: var(--plate-ink);
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-size: .88rem;
+            font-weight: 500;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s, transform .2s;
+            z-index: 10
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translate(-50%, 0)
+        }
+        @media (max-width:480px) {
+            .code-input {
+                font-size: 2.4rem
+            }
+            .card {
+                padding: 16px
+            }
+            .row.actions button {
+                flex: 1 1 100%
+            }
+        }
+        .drop {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+            padding: 12px 14px;
+            border: 2px dashed var(--line);
+            border-radius: 12px;
+            color: var(--muted);
+            font-size: .88rem;
+            transition: border-color .15s, background .15s
+        }
+        .drop.over {
+            border-color: var(--brand);
+            background: var(--brand-soft)
+        }
+        .file-row {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+        .file-ico {
+            flex: none;
+            width: 38px;
+            height: 44px;
+            border-radius: 6px;
+            background: var(--bad-soft);
+            color: var(--bad);
+            display: grid;
+            place-items: center;
+            font-size: .62rem;
+            font-weight: 700;
+            letter-spacing: .02em
+        }
+        .file-ico.t-docx {
+            background: rgba(47, 134, 230, .16);
+            color: #2f86e6
+        }
+        .file-ico.t-pptx {
+            background: rgba(232, 117, 40, .16);
+            color: #e87528
+        }
+        .file-ico.t-xlsx {
+            background: rgba(26, 158, 112, .16);
+            color: #1a9e70
+        }
+        .file-ico.t-img {
+            background: rgba(140, 100, 220, .16);
+            color: #8c64dc
+        }
+        .file-info {
+            min-width: 0;
+            flex: 1
+        }
+        .file-name {
+            font-weight: 600;
+            word-break: break-all
+        }
+        .file-sub {
+            font-size: .8rem;
+            color: var(--muted)
+        }
+        .bar {
+            height: 6px;
+            border-radius: 99px;
+            background: var(--line);
+            overflow: hidden;
+            margin-top: 6px
+        }
+        .bar>i {
+            display: block;
+            height: 100%;
+            width: 0;
+            background: var(--brand);
+            transition: width .15s
+        }
+        .thumb {
+            display: block;
+            max-width: 100%;
+            max-height: 220px;
+            margin-top: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            cursor: zoom-in;
+            object-fit: contain;
+            background: var(--surface)
+        }
+        .modes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 14px
+        }
+        .mode {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            padding: 10px 12px;
+            border: 2px solid var(--line);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: border-color .15s, background .15s
+        }
+        .mode input {
+            margin-top: 4px;
+            accent-color: var(--brand)
+        }
+        .mode span {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.35
+        }
+        .mode small {
+            color: var(--muted);
+            font-size: .78rem
+        }
+        .mode:has(input:checked) {
+            border-color: var(--brand);
+            background: var(--brand-soft)
+        }
+        .mode:has(input:disabled) {
+            opacity: .7;
+            cursor: not-allowed
+        }
+        .count {
+            display: inline-grid;
+            place-items: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 6px;
+            border-radius: 99px;
+            background: var(--warn-soft);
+            color: var(--warn);
+            font-size: .78rem;
+            margin-left: 6px;
+            vertical-align: middle
+        }
+        .lobby {
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+        .lobby-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 10px 12px;
+            background: var(--bg);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            animation: rise .3s both
+        }
+        .lobby-row small {
+            color: var(--muted)
+        }
+        @media (max-width:480px) {
+            .modes {
+                grid-template-columns: 1fr
+            }
+        }
+        /* ส่งข้อความ = เขียว */
+        #hostView {
+            --brand: var(--send);
+            --brand-d: var(--send-d);
+            --brand-soft: var(--send-soft)
+        }
+        #tabHost.active {
+            background: var(--send)
+        }
+        #tabHost:not(.active):hover {
+            background: var(--send-soft);
+            color: var(--send)
+        }
+        #hostView .plate::before,
+        #hostView .plate::after {
+            border-color: #4ad6a0
+        }
+        .plate::before,
+        .plate::after {
+            border-color: #5aa9ff
+        }
+        .code-input:focus {
+            border-bottom-color: #5aa9ff
+        }
+        #hostView .code-input:focus {
+            border-bottom-color: #4ad6a0
+        }
+        /* ===== Animations ===== */
+        @keyframes rise {
+            from {
+                opacity: 0;
+                transform: translateY(16px)
+            }
+        }
+        @keyframes pop {
+            from {
+                opacity: 0;
+                transform: scale(.4) rotate(-20deg)
+            }
+        }
+        @keyframes wave {
+            0%,
+            100% {
+                opacity: .2
+            }
+            40% {
+                opacity: 1
+            }
+        }
+        @keyframes ripple {
+            0% {
+                transform: scale(1);
+                opacity: .65
+            }
+            100% {
+                transform: scale(16);
+                opacity: 0
+            }
+        }
+        @keyframes seek {
+            50% {
+                border-bottom-color: #f2b44d
+            }
+        }
+        @keyframes digit {
+            40% {
+                transform: scale(1.1)
+            }
+        }
+        @keyframes flash {
+            from {
+                box-shadow: 0 0 0 3px var(--brand-soft), 0 0 20px var(--brand)
+            }
+            to {
+                box-shadow: 0 0 0 0 transparent
+            }
+        }
+        @keyframes sent {
+            40% {
+                transform: scale(.94);
+                box-shadow: 0 0 0 8px var(--brand-soft)
+            }
+        }
+        .logo {
+            animation: pop .7s cubic-bezier(.3, 1.6, .5, 1) both
+        }
+        .w1 {
+            animation: wave 2.4s ease-in-out infinite
+        }
+        .w2 {
+            animation: wave 2.4s ease-in-out .5s infinite
+        }
+        header>div:last-child {
+            animation: rise .5s .12s both
+        }
+        .tabs {
+            animation: rise .5s .2s both
+        }
+        .card {
+            animation: rise .5s cubic-bezier(.2, .7, .2, 1) both
+        }
+        .container>.card {
+            animation-delay: .35s
+        }
+        .plate {
+            position: relative;
+            overflow: hidden
+        }
+        .plate::before,
+        .plate::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 30px;
+            height: 30px;
+            margin: -15px;
+            border-radius: 50%;
+            border: 2px solid #5aa9ff;
+            opacity: 0;
+            pointer-events: none
+        }
+        .plate.live::before {
+            animation: ripple 2.8s ease-out infinite
+        }
+        .plate.live::after {
+            animation: ripple 2.8s ease-out 1.4s infinite
+        }
+        .plate.seeking .code-input {
+            animation: seek 1.1s ease-in-out infinite
+        }
+        .code-input.pop {
+            animation: digit .25s ease-out
+        }
+        .peers.bump {
+            animation: digit .35s ease-out
+        }
+        button.sent {
+            animation: sent .5s ease-out
+        }
+        .tab-btn.active {
+            animation: digit .3s ease-out
+        }
+        @media (prefers-reduced-motion:reduce) {
+            * {
+                animation: none !important;
+                transition: none !important
+            }
+        }
+    </style>
 </head>
 <body>
-<div class="container">
-  <header>
-    <div class="logo" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2" fill="#fff"/><path class="w1" d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7"/><path class="w2" d="M5.5 5.5a9 9 0 0 0 0 13M18.5 5.5a9 9 0 0 1 0 13"/></svg>
-    </div>
-    <div>
-      <h1>BROADCAST</h1>
-      <p class="subtitle">ส่งข้อความ ลิงก์ และไฟล์ (PDF, Word, PowerPoint, Excel, รูปภาพ) ข้ามเครื่องแบบเรียลไทม์ ด้วยรหัส 4 หลัก</p>
-    </div>
-  </header>
-
-  <div class="tabs" role="tablist">
-    <button id="tabViewer" class="tab-btn active" role="tab">รับข้อความ<small>Viewer</small></button>
-    <button id="tabHost" class="tab-btn" role="tab">ส่งข้อความ<small>Host</small></button>
-  </div>
-
-  <!-- VIEWER -->
-  <div id="viewerView">
-    <div class="card">
-      <h2 class="card-title">เข้าห้องรับข้อมูล</h2>
-      <p class="card-desc">กรอกรหัส 4 หลักที่แสดงบนเครื่องผู้ส่ง</p>
-      <div class="plate"><input id="viewerCodeInput" class="code-input" type="text" inputmode="numeric" maxlength="4" placeholder="0000" aria-label="รหัส 4 หลัก" /></div>
-      <div class="row actions">
-        <button id="viewerJoinBtn" class="block">เชื่อมต่อรับข้อมูล</button>
-        <button id="viewerLeaveBtn" class="danger block hidden">ตัดการเชื่อมต่อ</button>
-      </div>
-      <div class="statusbar"><span id="viewerStatusBadge" class="badge disconnected">ยังไม่เชื่อมต่อ</span></div>
-      <label class="check">
+    <div class="container">
+        <header>
+            <div class="logo" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="2" fill="#fff" />
+                    <path class="w1" d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7" />
+                    <path class="w2" d="M5.5 5.5a9 9 0 0 0 0 13M18.5 5.5a9 9 0 0 1 0 13" />
+                </svg>
+            </div>
+            <div>
+                <h1>BROADCAST</h1>
+                <p class="subtitle">ส่งข้อความ ลิงก์ และไฟล์ (PDF, Word, PowerPoint, Excel, รูปภาพ)
+                    ข้ามเครื่องแบบเรียลไทม์ ด้วยรหัส 4 หลัก</p>
+            </div>
+        </header>
+        <div class="tabs" role="tablist">
+            <button id="tabViewer" class="tab-btn active" role="tab">รับข้อความ<small>Viewer</small></button>
+            <button id="tabHost" class="tab-btn" role="tab">ส่งข้อความ<small>Host</small></button>
+        </div>
+        <!-- VIEWER -->
+        <div id="viewerView">
+            <div class="card">
+                <h2 class="card-title">เข้าห้องรับข้อมูล</h2>
+                <p class="card-desc">กรอกรหัส 4 หลักที่แสดงบนเครื่องผู้ส่ง</p>
+                <div class="plate"><input id="viewerCodeInput" class="code-input" type="text" inputmode="numeric" maxlength="4" placeholder="0000" aria-label="รหัส 4 หลัก" />
+                </div>
+                <div class="row actions">
+                    <button id="viewerJoinBtn" class="block">เชื่อมต่อรับข้อมูล</button>
+                    <button id="viewerLeaveBtn" class="danger block hidden">ตัดการเชื่อมต่อ</button>
+                </div>
+                <div class="statusbar"><span id="viewerStatusBadge" class="badge disconnected">ยังไม่เชื่อมต่อ</span>
+                </div>
+                <label class="check">
         <input type="checkbox" id="autoOpenCheckbox" />
         <span>เปิดลิงก์ในแท็บใหม่อัตโนมัติเมื่อได้รับ URL (ต้องอนุญาต Pop-up)</span>
       </label>
-      <div class="hint">หากอยู่คนละเครือข่าย (เช่น Wi-Fi บ้านกับ 4G/5G) บางเครือข่ายอาจบล็อก P2P ถ้าไม่มี TURN Server</div>
+                <div class="hint">หากอยู่คนละเครือข่าย (เช่น Wi-Fi บ้านกับ 4G/5G) บางเครือข่ายอาจบล็อก P2P ถ้าไม่มี TURN
+                    Server</div>
+            </div>
+        </div>
+        <!-- HOST -->
+        <div id="hostView" class="hidden">
+            <div class="card">
+                <h2 class="card-title">เปิดห้องส่งข้อมูล</h2>
+                <p class="card-desc">ตั้งรหัส 4 หลัก แล้วบอกรหัสให้ผู้รับ</p>
+                <div class="plate"><input id="hostCodeInput" class="code-input" type="text" inputmode="numeric" maxlength="4" placeholder="0000" aria-label="รหัสห้อง 4 หลัก" />
+                </div>
+                <div class="modes" role="radiogroup" aria-label="รูปแบบการเข้าห้อง">
+                    <label class="mode"><input type="radio" name="joinmode" value="open" checked /><span><b>เข้าได้ทันที</b><small>ใครมีรหัสก็เข้าได้เลย</small></span></label>
+                    <label class="mode"><input type="radio" name="joinmode" value="lobby" /><span><b>ห้องรอ (Lobby)</b><small>Host กดอนุมัติทีละคน</small></span></label>
+                </div>
+                <div class="row actions">
+                    <button id="randomCodeBtn" class="secondary">สุ่มเลข</button>
+                    <button id="hostStartBtn" class="block">เปิดห้องส่งข้อมูล</button>
+                    <button id="hostStopBtn" class="danger block hidden">ปิดห้อง</button>
+                    <button id="copyInviteBtn" class="secondary hidden">คัดลอกรหัส/ลิงก์</button>
+                </div>
+                <div class="statusbar">
+                    <span id="hostStatusBadge" class="badge disconnected">ยังไม่เปิดห้อง</span>
+                    <span id="hostPeerCount" class="peers"></span>
+                </div>
+            </div>
+            <div id="lobbyPanel" class="card hidden">
+                <div class="feed-head">
+                    <h2 class="card-title" style="margin:0">ห้องรอ (Lobby)<span id="lobbyCount" class="count">0</span>
+                    </h2>
+                    <button id="lobbyAllBtn" class="secondary small" disabled>อนุมัติทั้งหมด</button>
+                </div>
+                <div id="lobbyList" class="lobby"></div>
+            </div>
+            <div id="hostSendPanel" class="card hidden">
+                <h2 class="card-title">ส่งถึงผู้รับทั้งหมด</h2>
+                <p class="card-desc">พิมพ์ข้อความหรือวางลิงก์ ระบบตรวจจับ URL ให้อัตโนมัติ</p>
+                <textarea id="messageInput" maxlength="5000" placeholder="พิมพ์ข้อความ หรือวางลิงก์ https://..."></textarea>
+                <div class="row" style="margin-top:12px;justify-content:space-between">
+                    <span class="peers">กด Ctrl + Enter เพื่อส่ง</span>
+                    <button id="sendBtn">ส่งข้อความ</button>
+                </div>
+                <div id="dropZone" class="drop">
+                    <span>ลากไฟล์มาวางที่นี่ หรือวางรูปจากคลิปบอร์ด<br><small>PDF, DOCX, PPTX, XLSX, JPG, PNG (สูงสุด 50 MB)</small></span>
+                    <button id="pickFileBtn" class="secondary small">เลือกไฟล์</button>
+                    <input id="fileInput" type="file" accept=".pdf,.docx,.pptx,.xlsx,.jpg,.jpeg,.png" hidden />
+                </div>
+            </div>
+        </div>
+        <!-- FEED -->
+        <div class="card">
+            <div class="feed-head">
+                <h2 class="card-title" style="margin:0">ข้อความ ลิงก์ และไฟล์</h2>
+                <button id="clearBtn" class="secondary small">ล้างหน้าจอ</button>
+            </div>
+            <div id="feed" class="feed">
+                <div class="empty">ยังไม่มีข้อความ</div>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <!-- HOST -->
-  <div id="hostView" class="hidden">
-    <div class="card">
-      <h2 class="card-title">เปิดห้องส่งข้อมูล</h2>
-      <p class="card-desc">ตั้งรหัส 4 หลัก แล้วบอกรหัสให้ผู้รับ</p>
-      <div class="plate"><input id="hostCodeInput" class="code-input" type="text" inputmode="numeric" maxlength="4" placeholder="0000" aria-label="รหัสห้อง 4 หลัก" /></div>
-      <div class="modes" role="radiogroup" aria-label="รูปแบบการเข้าห้อง">
-        <label class="mode"><input type="radio" name="joinmode" value="open" checked /><span><b>เข้าได้ทันที</b><small>ใครมีรหัสก็เข้าได้เลย</small></span></label>
-        <label class="mode"><input type="radio" name="joinmode" value="lobby" /><span><b>ห้องรอ (Lobby)</b><small>Host กดอนุมัติทีละคน</small></span></label>
-      </div>
-      <div class="row actions">
-        <button id="randomCodeBtn" class="secondary">สุ่มเลข</button>
-        <button id="hostStartBtn" class="block">เปิดห้องส่งข้อมูล</button>
-        <button id="hostStopBtn" class="danger block hidden">ปิดห้อง</button>
-        <button id="copyInviteBtn" class="secondary hidden">คัดลอกรหัส/ลิงก์</button>
-      </div>
-      <div class="statusbar">
-        <span id="hostStatusBadge" class="badge disconnected">ยังไม่เปิดห้อง</span>
-        <span id="hostPeerCount" class="peers"></span>
-      </div>
-    </div>
-
-    <div id="lobbyPanel" class="card hidden">
-      <div class="feed-head">
-        <h2 class="card-title" style="margin:0">ห้องรอ (Lobby)<span id="lobbyCount" class="count">0</span></h2>
-        <button id="lobbyAllBtn" class="secondary small" disabled>อนุมัติทั้งหมด</button>
-      </div>
-      <div id="lobbyList" class="lobby"></div>
-    </div>
-
-    <div id="hostSendPanel" class="card hidden">
-      <h2 class="card-title">ส่งถึงผู้รับทั้งหมด</h2>
-      <p class="card-desc">พิมพ์ข้อความหรือวางลิงก์ ระบบตรวจจับ URL ให้อัตโนมัติ</p>
-      <textarea id="messageInput" maxlength="5000" placeholder="พิมพ์ข้อความ หรือวางลิงก์ https://..."></textarea>
-      <div class="row" style="margin-top:12px;justify-content:space-between">
-        <span class="peers">กด Ctrl + Enter เพื่อส่ง</span>
-        <button id="sendBtn">ส่งข้อความ</button>
-      </div>
-      <div id="dropZone" class="drop">
-        <span>ลากไฟล์มาวางที่นี่ หรือวางรูปจากคลิปบอร์ด<br><small>PDF, DOCX, PPTX, XLSX, JPG, PNG (สูงสุด 50 MB)</small></span>
-        <button id="pickFileBtn" class="secondary small">เลือกไฟล์</button>
-        <input id="fileInput" type="file" accept=".pdf,.docx,.pptx,.xlsx,.jpg,.jpeg,.png" hidden />
-      </div>
-    </div>
-  </div>
-
-  <!-- FEED -->
-  <div class="card">
-    <div class="feed-head">
-      <h2 class="card-title" style="margin:0">ข้อความ ลิงก์ และไฟล์</h2>
-      <button id="clearBtn" class="secondary small">ล้างหน้าจอ</button>
-    </div>
-    <div id="feed" class="feed"><div class="empty">ยังไม่มีข้อความ</div></div>
-  </div>
-</div>
-<div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-<script>
-const MQTT_BROKER = 'wss://broker.emqx.io:8084/mqtt';
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script>
+        const MQTT_BROKER = 'wss://broker.emqx.io:8084/mqtt';
 const TOPIC_PREFIX = 'webrtc-bc-4d-v1';
 const ICE_CONFIG = {
   iceServers: [
@@ -275,7 +867,6 @@ const URL_REGEX = /(https?:\/\/[^\s<>"']+)/g;
 const MAX_FILE = 50 * 1024 * 1024, CHUNK = 16384, BUF_HIGH = 1048576, BUF_LOW = 262144;
 const MAX_FEED = 100, MAX_TEXT = 5000, MAX_JSON = 40000, STALL_MS = 30000;
 const $ = (id) => document.getElementById(id);
-
 // ================= FILE TYPES (ตรวจจากนามสกุล + magic bytes; ไม่เชื่อ mime จากผู้ส่ง) =================
 const ZIP_MAGIC = [0x50, 0x4b, 0x03, 0x04];
 const FILE_TYPES = {
@@ -299,7 +890,6 @@ function sniff(bytes, type) {
   for (let i = 0; i < m.length; i++) if (bytes[i] !== m[i]) return false;
   return true;
 }
-
 const tabViewer = $('tabViewer'), tabHost = $('tabHost'), viewerView = $('viewerView'), hostView = $('hostView');
 const hostCodeInput = $('hostCodeInput'), randomCodeBtn = $('randomCodeBtn'), hostStartBtn = $('hostStartBtn'),
   hostStopBtn = $('hostStopBtn'), copyInviteBtn = $('copyInviteBtn'), hostStatusBadge = $('hostStatusBadge'),
@@ -307,13 +897,11 @@ const hostCodeInput = $('hostCodeInput'), randomCodeBtn = $('randomCodeBtn'), ho
 const viewerCodeInput = $('viewerCodeInput'), viewerJoinBtn = $('viewerJoinBtn'), viewerLeaveBtn = $('viewerLeaveBtn'),
   viewerStatusBadge = $('viewerStatusBadge'), autoOpenCheckbox = $('autoOpenCheckbox');
 const feedEl = $('feed'), clearBtn = $('clearBtn'), toastEl = $('toast');
-
 function generateId() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
 function random4Digits() { return String(Math.floor(1000 + Math.random() * 9000)); }
 function enforce4Digits(el) { el.addEventListener('input', () => { el.value = el.value.replace(/\D/g, '').slice(0, 4); el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }); }
 enforce4Digits(hostCodeInput);
 enforce4Digits(viewerCodeInput);
-
 let toastTimer = null;
 function toast(text) {
   toastEl.textContent = text;
@@ -321,14 +909,12 @@ function toast(text) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
 }
-
 async function copyText(text) {
   if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return; }
   const ta = document.createElement('textarea');
   ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
   document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
 }
-
 function setBadge(el, text, type) {
   el.textContent = text; el.className = `badge ${type}`;
   const plate = el.closest('.card')?.querySelector('.plate');
@@ -339,19 +925,15 @@ function rollCode() {
   const t = setInterval(() => { hostCodeInput.value = random4Digits(); if (++n >= 10) clearInterval(t); }, 45);
 }
 function flashEl(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
-
 function renderMessage(payload, isSelf = false) {
   const emptyEl = feedEl.querySelector('.empty');
   if (emptyEl) emptyEl.remove();
-
   const item = document.createElement('div');
   item.className = 'msg-item' + (isSelf ? ' self' : '');
-
   const meta = document.createElement('div');
   meta.className = 'msg-meta';
   const timeStr = new Date(payload.timestamp).toLocaleTimeString('th-TH');
   meta.textContent = `${isSelf ? 'คุณ (Host)' : 'ได้รับผ่าน WebRTC P2P'} • ${timeStr}`;
-
   const body = document.createElement('div');
   body.className = 'msg-body';
   payload.text.split(URL_REGEX).forEach((part) => {
@@ -363,36 +945,29 @@ function renderMessage(payload, isSelf = false) {
       body.appendChild(document.createTextNode(part));
     }
   });
-
   item.appendChild(meta);
   item.appendChild(body);
-
   const urls = payload.text.match(URL_REGEX) || [];
   if (urls.length > 0) {
     const actions = document.createElement('div');
     actions.className = 'msg-actions';
-    urls.forEach((url, idx) => {
+    urls.forEach((url) => {
       const openBtn = document.createElement('button');
       openBtn.className = 'secondary small';
       openBtn.textContent = 'เปิด ' + (hostOf(url).slice(0, 40) || 'ลิงก์');
       openBtn.onclick = () => window.open(url, '_blank', 'noopener,noreferrer');
-
       const copyBtn = document.createElement('button');
       copyBtn.className = 'secondary small';
       copyBtn.textContent = 'คัดลอก URL';
       copyBtn.onclick = async () => { await copyText(url); toast('คัดลอก URL แล้ว'); };
-
       actions.appendChild(openBtn);
       actions.appendChild(copyBtn);
     });
     item.appendChild(actions);
   }
-
   addToFeed(item);
-
   if (!isSelf && activeMode === 'viewer' && autoOpenCheckbox.checked && urls.length > 0) safeAutoOpen(urls[0]);
 }
-
 // ================= SECURITY / FILE HELPERS =================
 function safeName(n) {
   const t = fileTypeOf(n) || FILE_TYPES.pdf;
@@ -430,7 +1005,6 @@ function createFileItem(name, size, isSelf, type) {
   row.append(el('div', 'file-ico ' + type.cls, type.label), info);
   item.append(meta, row);
   addToFeed(item);
-
   function showThumb(url) {
     const img = el('img', 'thumb');
     img.alt = name; img.src = url; img.loading = 'lazy';
@@ -460,18 +1034,14 @@ function createFileItem(name, size, isSelf, type) {
     fail(msg) { bar.remove(); sub.textContent = msg; sub.style.color = 'var(--bad)'; }
   };
 }
-
 // ================= STATE & MODE SWITCHING =================
 let activeMode = 'viewer';
 let mqttClient = null;
 let activeCode = '';
-
 let hostId = null;
 const hostPeers = new Map();
-
 let viewerId = null, viewerPc = null, viewerDc = null, viewerPendingCandidates = [], currentHostId = null, joinRetryTimer = null;
 let incoming = null, closeReason = null, sendingFile = false;
-
 function switchTab(mode) {
   if (mqttClient) { stopHost(); leaveViewer(); }
   activeMode = mode;
@@ -482,54 +1052,91 @@ function switchTab(mode) {
 }
 tabViewer.addEventListener('click', () => switchTab('viewer'));
 tabHost.addEventListener('click', () => switchTab('host'));
-
 // ================= HOST LOGIC =================
+function isPeerOpen(p) {
+  return (
+    p.dc?.readyState === 'open' &&
+    !['disconnected', 'failed', 'closed'].includes(p.pc?.connectionState) &&
+    !['disconnected', 'failed', 'closed'].includes(p.pc?.iceConnectionState)
+  );
+}
 function updateHostPeerCount() {
   let openCount = 0;
-  for (const p of hostPeers.values()) if (p.dc && p.dc.readyState === 'open') openCount++;
+  for (const p of hostPeers.values()) if (isPeerOpen(p)) openCount++;
   const txt = `ผู้รับเชื่อมต่ออยู่: ${openCount} คน`;
   if (hostPeerCount.textContent !== txt) { hostPeerCount.textContent = txt; flashEl(hostPeerCount, 'bump'); }
 }
-
 function cleanupHostPeer(vId) {
   const p = hostPeers.get(vId);
-  if (p) { p.dc?.close(); p.pc?.close(); hostPeers.delete(vId); updateHostPeerCount(); }
+  if (p) {
+    clearTimeout(p.disconnectTimer);
+    if (p.dc) { p.dc.onopen = null; p.dc.onclose = null; }
+    if (p.pc) {
+      p.pc.onconnectionstatechange = null;
+      p.pc.oniceconnectionstatechange = null;
+      p.pc.onicecandidate = null;
+    }
+    p.dc?.close();
+    p.pc?.close();
+    hostPeers.delete(vId);
+    updateHostPeerCount();
+  }
 }
-
 async function hostHandleJoin(vId) {
   const existing = hostPeers.get(vId);
   if (existing && ['new', 'connecting', 'connected'].includes(existing.pc.connectionState)) return;
   cleanupHostPeer(vId);
-
   const pc = new RTCPeerConnection(ICE_CONFIG);
   const pendingCandidates = [];
   const dc = pc.createDataChannel('broadcast', { ordered: true });
+  const peer = { pc, dc, pendingCandidates, disconnectTimer: null };
+  hostPeers.set(vId, peer);
   dc.onopen = () => updateHostPeerCount();
-  dc.onclose = () => updateHostPeerCount();
-
+  dc.onclose = () => {
+    if (hostPeers.get(vId) === peer) cleanupHostPeer(vId);
+  };
   pc.onicecandidate = (e) => {
     if (e.candidate && mqttClient?.connected) {
       mqttClient.publish(`${TOPIC_PREFIX}/${activeCode}/viewer/${vId}`,
         JSON.stringify({ type: 'ice', hostId, candidate: e.candidate }));
     }
   };
-  pc.onconnectionstatechange = () => {
-    if (['failed', 'closed', 'disconnected'].includes(pc.connectionState)) updateHostPeerCount();
+  const handleStateChange = () => {
+    if (hostPeers.get(vId) !== peer) return;
+    const conn = pc.connectionState;
+    const ice = pc.iceConnectionState;
+    if (conn === 'failed' || conn === 'closed' || ice === 'failed' || ice === 'closed') {
+      cleanupHostPeer(vId);
+      return;
+    }
+    if (conn === 'disconnected' || ice === 'disconnected') {
+      updateHostPeerCount();
+      clearTimeout(peer.disconnectTimer);
+      peer.disconnectTimer = setTimeout(() => {
+        if (hostPeers.get(vId) === peer &&
+            (pc.connectionState === 'disconnected' || pc.iceConnectionState === 'disconnected')) {
+          cleanupHostPeer(vId);
+        }
+      }, 5000);
+    } else {
+      clearTimeout(peer.disconnectTimer);
+      peer.disconnectTimer = null;
+      updateHostPeerCount();
+    }
   };
-
-  hostPeers.set(vId, { pc, dc, pendingCandidates });
+  pc.onconnectionstatechange = handleStateChange;
+  pc.oniceconnectionstatechange = handleStateChange;
   updateHostPeerCount();
-
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
-  mqttClient.publish(`${TOPIC_PREFIX}/${activeCode}/viewer/${vId}`,
-    JSON.stringify({ type: 'offer', hostId, sdp: pc.localDescription }));
+  if (hostPeers.get(vId) === peer && mqttClient?.connected) {
+    mqttClient.publish(`${TOPIC_PREFIX}/${activeCode}/viewer/${vId}`,
+      JSON.stringify({ type: 'offer', hostId, sdp: pc.localDescription }));
+  }
 }
-
 const pendingJoins = new Map(), approved = new Set(), rejected = new Set();
 let lobbyOn = false, lobbyCounter = 0, lobbyTimer = null;
 const VID_RE = /^[a-z0-9]{6,32}$/;
-
 function pubToViewer(vId, obj) {
   if (mqttClient?.connected) mqttClient.publish(`${TOPIC_PREFIX}/${activeCode}/viewer/${vId}`, JSON.stringify(obj));
 }
@@ -577,12 +1184,10 @@ async function requestJoin(vId) {
   }
   pubToViewer(vId, { type: 'pending', hostId });
 }
-
 function startHost() {
   if (typeof mqtt === 'undefined') { alert('ไม่สามารถโหลดไลบรารี Signaling ได้ กรุณาตรวจสอบอินเทอร์เน็ต'); return; }
   const code = hostCodeInput.value.trim();
   if (!/^\d{4}$/.test(code)) { alert('กรุณากรอกรหัสตัวเลข 4 หลัก (เช่น 1234)'); return; }
-
   activeCode = code;
   hostId = generateId();
   lobbyOn = document.querySelector('input[name="joinmode"]:checked').value === 'lobby';
@@ -593,9 +1198,17 @@ function startHost() {
   hostStartBtn.classList.add('hidden');
   hostStopBtn.classList.remove('hidden');
   setBadge(hostStatusBadge, 'กำลังเปิดห้อง...', 'waiting');
-
-  mqttClient = mqtt.connect(MQTT_BROKER, { clientId: 'h_' + hostId, clean: true, connectTimeout: 8000 });
-
+  mqttClient = mqtt.connect(MQTT_BROKER, {
+    clientId: 'h_' + hostId,
+    clean: true,
+    connectTimeout: 8000,
+    will: {
+      topic: `${TOPIC_PREFIX}/${activeCode}/announce`,
+      payload: JSON.stringify({ type: 'host-left', hostId }),
+      qos: 0,
+      retain: false
+    }
+  });
   mqttClient.on('connect', () => {
     mqttClient.subscribe(`${TOPIC_PREFIX}/${activeCode}/host`, (err) => {
       if (err) return;
@@ -613,11 +1226,9 @@ function startHost() {
       mqttClient.publish(`${TOPIC_PREFIX}/${activeCode}/announce`, JSON.stringify({ type: 'host-ready', hostId }));
     });
   });
-
   mqttClient.on('message', async (_topic, buf) => {
     let msg;
     try { msg = JSON.parse(buf.toString()); } catch { return; }
-
     if (msg.viewerId !== undefined && !VID_RE.test(String(msg.viewerId))) return;   // กัน viewerId แปลกปลอมใน topic
     if (msg.type === 'join' && msg.viewerId) {
       await requestJoin(msg.viewerId);
@@ -639,16 +1250,19 @@ function startHost() {
       if (pendingJoins.delete(msg.viewerId)) renderLobby();
     }
   });
-
   mqttClient.on('error', () => setBadge(hostStatusBadge, 'เชื่อมต่อ Signaling ไม่สำเร็จ', 'disconnected'));
 }
-
 function stopHost() {
   if (mqttClient?.connected && activeCode && hostId) {
     mqttClient.publish(`${TOPIC_PREFIX}/${activeCode}/announce`, JSON.stringify({ type: 'host-left', hostId }));
   }
   for (const vId of [...hostPeers.keys()]) cleanupHostPeer(vId);
-  if (mqttClient) { mqttClient.end(true); mqttClient = null; }
+  const client = mqttClient;
+  mqttClient = null;
+  if (client) {
+    if (client.connected) client.end();
+    else client.end(true);
+  }
   hostCodeInput.disabled = false;
   randomCodeBtn.disabled = false;
   hostStartBtn.classList.remove('hidden');
@@ -662,19 +1276,17 @@ function stopHost() {
   document.querySelectorAll('input[name="joinmode"]').forEach((r) => (r.disabled = false));
   setBadge(hostStatusBadge, 'ยังไม่เปิดห้อง', 'disconnected');
 }
-
 function broadcastMessage() {
   const text = messageInput.value.trim();
   if (!text) return;
   const payload = { text, timestamp: Date.now() };
   const jsonStr = JSON.stringify(payload);
-  for (const p of hostPeers.values()) if (p.dc && p.dc.readyState === 'open') p.dc.send(jsonStr);
+  for (const p of hostPeers.values()) if (isPeerOpen(p)) p.dc.send(jsonStr);
   renderMessage(payload, true);
   flashEl(sendBtn, 'sent');
   messageInput.value = '';
   messageInput.focus();
 }
-
 function waitDrain(dc) {
   return new Promise((res) => {
     if (dc.bufferedAmount <= BUF_HIGH) return res();
@@ -684,14 +1296,13 @@ function waitDrain(dc) {
     dc.addEventListener('close', done);
   });
 }
-
 async function sendFile(file) {
   if (!file) return;
   if (sendingFile) return toast('กำลังส่งไฟล์อื่นอยู่');
   const type = fileTypeOf(file.name);
   if (!type) return toast('รองรับเฉพาะ PDF, DOCX, PPTX, XLSX, JPG, PNG');
   if (file.size < 8 || file.size > MAX_FILE) return toast(`ขนาดไฟล์ต้องไม่เกิน ${fmtSize(MAX_FILE)}`);
-  const peers = [...hostPeers.values()].filter((p) => p.dc?.readyState === 'open');
+  const peers = [...hostPeers.values()].filter((p) => isPeerOpen(p));
   if (!peers.length) return toast('ยังไม่มีผู้รับเชื่อมต่อ');
   sendingFile = true;
   const name = safeName(file.name);
@@ -717,21 +1328,19 @@ async function sendFile(file) {
   } catch { ui.fail('ส่งไฟล์ไม่สำเร็จ'); }
   finally { sendingFile = false; $('fileInput').value = ''; }
 }
-
 // ================= VIEWER LOGIC =================
 function cleanupViewerRtc() {
   if (viewerDc) { viewerDc.onclose = null; viewerDc.onmessage = null; }
+  if (viewerPc) { viewerPc.oniceconnectionstatechange = null; viewerPc.onicecandidate = null; }
   viewerDc?.close(); viewerPc?.close();
   viewerDc = null; viewerPc = null; viewerPendingCandidates = [];
   abortIncoming('การเชื่อมต่อถูกปิดก่อนรับไฟล์ครบ');
 }
-
 function sendJoinRequest() {
   if (mqttClient?.connected && activeCode && viewerId) {
     mqttClient.publish(`${TOPIC_PREFIX}/${activeCode}/host`, JSON.stringify({ type: 'join', viewerId }));
   }
 }
-
 async function viewerHandleOffer(msg) {
   if (typeof msg.hostId !== 'string') return;
   if (viewerDc?.readyState === 'open') return;                         // มีการเชื่อมต่ออยู่แล้ว: เพิกเฉย offer ใหม่
@@ -739,13 +1348,10 @@ async function viewerHandleOffer(msg) {
   clearInterval(joinRetryTimer);
   joinRetryTimer = null;
   cleanupViewerRtc();
-
   currentHostId = msg.hostId;
   setBadge(viewerStatusBadge, 'กำลังจับคู่ WebRTC P2P...', 'waiting');
-
   viewerPc = new RTCPeerConnection(ICE_CONFIG);
   viewerPendingCandidates = [];
-
   viewerPc.ondatachannel = (event) => {
     viewerDc = event.channel;
     viewerDc.onopen = () => setBadge(viewerStatusBadge, `เชื่อมต่อห้อง ${activeCode} สำเร็จ (พร้อมรับข้อมูล)`, 'connected');
@@ -760,30 +1366,27 @@ async function viewerHandleOffer(msg) {
     };
     viewerDc.onmessage = (e) => handleViewerData(e.data);
   };
-
   viewerPc.onicecandidate = (e) => {
     if (e.candidate && mqttClient?.connected) {
       mqttClient.publish(`${TOPIC_PREFIX}/${activeCode}/host`,
         JSON.stringify({ type: 'ice', viewerId, candidate: e.candidate }));
     }
   };
-
   viewerPc.oniceconnectionstatechange = () => {
-    if (viewerPc.iceConnectionState === 'failed') {
+    if (viewerPc?.iceConnectionState === 'failed') {
       setBadge(viewerStatusBadge, 'เชื่อมต่อ P2P ไม่สำเร็จ (เครือข่ายอาจบล็อก)', 'disconnected');
     }
   };
-
   await viewerPc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
   for (const c of viewerPendingCandidates) await viewerPc.addIceCandidate(new RTCIceCandidate(c));
   viewerPendingCandidates = [];
-
   const answer = await viewerPc.createAnswer();
   await viewerPc.setLocalDescription(answer);
-  mqttClient.publish(`${TOPIC_PREFIX}/${activeCode}/host`,
-    JSON.stringify({ type: 'answer', viewerId, sdp: viewerPc.localDescription }));
+  if (mqttClient?.connected) {
+    mqttClient.publish(`${TOPIC_PREFIX}/${activeCode}/host`,
+      JSON.stringify({ type: 'answer', viewerId, sdp: viewerPc.localDescription }));
+  }
 }
-
 function abortIncoming(msg) {
   if (incoming) { clearTimeout(incoming.timer); incoming.ui.fail(msg); incoming = null; }
 }
@@ -833,21 +1436,27 @@ function handleViewerData(data) {
   incoming.ui.progress(incoming.received / incoming.size, 'กำลังรับ');
   armStall();
 }
-
 function joinViewer() {
   if (typeof mqtt === 'undefined') { alert('ไม่สามารถโหลดไลบรารี Signaling ได้ กรุณาตรวจสอบอินเทอร์เน็ต'); return; }
   const code = viewerCodeInput.value.trim();
   if (!/^\d{4}$/.test(code)) { alert('กรุณากรอกรหัสตัวเลข 4 หลักให้ครบถ้วน'); return; }
-
   activeCode = code;
   viewerId = generateId();
   viewerCodeInput.disabled = true;
   viewerJoinBtn.classList.add('hidden');
   viewerLeaveBtn.classList.remove('hidden');
   setBadge(viewerStatusBadge, `กำลังค้นหาห้อง ${activeCode}...`, 'waiting');
-
-  mqttClient = mqtt.connect(MQTT_BROKER, { clientId: 'v_' + viewerId, clean: true, connectTimeout: 8000 });
-
+  mqttClient = mqtt.connect(MQTT_BROKER, {
+    clientId: 'v_' + viewerId,
+    clean: true,
+    connectTimeout: 8000,
+    will: {
+      topic: `${TOPIC_PREFIX}/${activeCode}/host`,
+      payload: JSON.stringify({ type: 'viewer-left', viewerId }),
+      qos: 0,
+      retain: false
+    }
+  });
   mqttClient.on('connect', () => {
     const myTopic = `${TOPIC_PREFIX}/${activeCode}/viewer/${viewerId}`;
     const announceTopic = `${TOPIC_PREFIX}/${activeCode}/announce`;
@@ -859,11 +1468,9 @@ function joinViewer() {
       joinRetryTimer = setInterval(sendJoinRequest, 2500);
     });
   });
-
   mqttClient.on('message', async (_topic, buf) => {
     let msg;
     try { msg = JSON.parse(buf.toString()); } catch { return; }
-
     if (msg.type === 'pending') {
       if (viewerDc?.readyState !== 'open') setBadge(viewerStatusBadge, 'รอ Host อนุมัติให้เข้าห้อง...', 'waiting');
     } else if (msg.type === 'rejected') {
@@ -885,10 +1492,8 @@ function joinViewer() {
       joinRetryTimer = setInterval(sendJoinRequest, 2500);
     }
   });
-
   mqttClient.on('error', () => setBadge(viewerStatusBadge, 'เชื่อมต่อ Signaling ไม่สำเร็จ', 'disconnected'));
 }
-
 function leaveViewer() {
   clearInterval(joinRetryTimer);
   joinRetryTimer = null;
@@ -897,24 +1502,26 @@ function leaveViewer() {
   }
   cleanupViewerRtc();
   currentHostId = null; closeReason = null;
-  if (mqttClient) { mqttClient.end(true); mqttClient = null; }
+  const client = mqttClient;
+  mqttClient = null;
+  if (client) {
+    if (client.connected) client.end();
+    else client.end(true);
+  }
   viewerCodeInput.disabled = false;
   viewerJoinBtn.classList.remove('hidden');
   viewerLeaveBtn.classList.add('hidden');
   setBadge(viewerStatusBadge, 'ยังไม่เชื่อมต่อ', 'disconnected');
 }
-
 // ================= EVENTS & INIT =================
 hostCodeInput.value = random4Digits();
 randomCodeBtn.addEventListener('click', rollCode);
-
 copyInviteBtn.addEventListener('click', async () => {
   const shareText = location.protocol.startsWith('http')
     ? `${location.origin}${location.pathname}?code=${activeCode}` : activeCode;
   await copyText(shareText);
   toast('คัดลอกรหัส/ลิงก์แล้ว');
 });
-
 hostStartBtn.addEventListener('click', startHost);
 hostStopBtn.addEventListener('click', stopHost);
 sendBtn.addEventListener('click', broadcastMessage);
@@ -924,7 +1531,10 @@ viewerJoinBtn.addEventListener('click', joinViewer);
 viewerLeaveBtn.addEventListener('click', leaveViewer);
 viewerCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') joinViewer(); });
 clearBtn.addEventListener('click', () => { feedEl.innerHTML = '<div class="empty">ยังไม่มีข้อความ</div>'; });
-
+window.addEventListener('pagehide', () => {
+  if (activeMode === 'viewer' && mqttClient) leaveViewer();
+  else if (activeMode === 'host' && mqttClient) stopHost();
+});
 $('lobbyAllBtn').addEventListener('click', () => [...pendingJoins.keys()].forEach(approveJoin));
 const dropZone = $('dropZone'), fileInput = $('fileInput');
 $('pickFileBtn').addEventListener('click', () => fileInput.click());
@@ -943,10 +1553,9 @@ messageInput.addEventListener('paste', (e) => {
 autoOpenCheckbox.addEventListener('change', () => {
   if (autoOpenCheckbox.checked && !confirm('คำเตือน: ลิงก์จากผู้ส่งจะถูกเปิดอัตโนมัติโดยไม่ถามซ้ำ\nเปิดใช้เฉพาะเมื่อไว้ใจผู้ส่งเท่านั้น (จำกัด 1 ลิงก์ต่อ 10 วินาที)\n\nต้องการเปิดใช้หรือไม่?')) autoOpenCheckbox.checked = false;
 });
-
 const params = new URLSearchParams(location.search);
 const codeParam = (params.get('code') || '').replace(/\D/g, '').slice(0, 4);
 if (/^\d{4}$/.test(codeParam)) viewerCodeInput.value = codeParam;
-</script>
+    </script>
 </body>
 </html>
