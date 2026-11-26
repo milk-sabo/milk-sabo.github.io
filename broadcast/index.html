@@ -105,6 +105,15 @@ button.block{flex:1 1 auto}
   .row.actions button{flex:1 1 100%}
 }
 
+.drop{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;padding:12px 14px;border:2px dashed var(--line);border-radius:12px;color:var(--muted);font-size:.88rem;transition:border-color .15s,background .15s}
+.drop.over{border-color:var(--brand);background:var(--brand-soft)}
+.file-row{display:flex;align-items:center;gap:12px}
+.file-ico{flex:none;width:38px;height:44px;border-radius:6px;background:var(--bad-soft);color:var(--bad);display:grid;place-items:center;font-size:.68rem;font-weight:700}
+.file-info{min-width:0;flex:1}
+.file-name{font-weight:600;word-break:break-all}
+.file-sub{font-size:.8rem;color:var(--muted)}
+.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:6px}
+.bar>i{display:block;height:100%;width:0;background:var(--brand);transition:width .15s}
 /* ส่งข้อความ = เขียว */
 #hostView{--brand:var(--send);--brand-d:var(--send-d);--brand-soft:var(--send-soft)}
 #tabHost.active{background:var(--send)}
@@ -149,7 +158,7 @@ button.sent{animation:sent .5s ease-out}
     </div>
     <div>
       <h1>Broadcast Text</h1>
-      <p class="subtitle">ส่งข้อความและลิงก์ข้ามเครื่องแบบเรียลไทม์ ด้วยรหัส 4 หลัก</p>
+      <p class="subtitle">ส่งข้อความ ลิงก์ และไฟล์ PDF ข้ามเครื่องแบบเรียลไทม์ ด้วยรหัส 4 หลัก</p>
     </div>
   </header>
 
@@ -198,10 +207,15 @@ button.sent{animation:sent .5s ease-out}
     <div id="hostSendPanel" class="card hidden">
       <h2 class="card-title">ส่งถึงผู้รับทั้งหมด</h2>
       <p class="card-desc">พิมพ์ข้อความหรือวางลิงก์ ระบบตรวจจับ URL ให้อัตโนมัติ</p>
-      <textarea id="messageInput" placeholder="พิมพ์ข้อความ หรือวางลิงก์ https://..."></textarea>
+      <textarea id="messageInput" maxlength="5000" placeholder="พิมพ์ข้อความ หรือวางลิงก์ https://..."></textarea>
       <div class="row" style="margin-top:12px;justify-content:space-between">
         <span class="peers">กด Ctrl + Enter เพื่อส่ง</span>
         <button id="sendBtn">ส่งข้อความ</button>
+      </div>
+      <div id="dropZone" class="drop">
+        <span>ลากไฟล์ PDF มาวางที่นี่ (สูงสุด 50 MB)</span>
+        <button id="pickFileBtn" class="secondary small">เลือกไฟล์ PDF</button>
+        <input id="fileInput" type="file" accept="application/pdf,.pdf" hidden />
       </div>
     </div>
   </div>
@@ -228,6 +242,8 @@ const ICE_CONFIG = {
   ]
 };
 const URL_REGEX = /(https?:\/\/[^\s<>"']+)/g;
+const MAX_FILE = 50 * 1024 * 1024, CHUNK = 16384, BUF_HIGH = 1048576, BUF_LOW = 262144;
+const MAX_FEED = 100, MAX_TEXT = 5000, MAX_JSON = 40000, STALL_MS = 30000;
 const $ = (id) => document.getElementById(id);
 
 const tabViewer = $('tabViewer'), tabHost = $('tabHost'), viewerView = $('viewerView'), hostView = $('hostView');
@@ -304,7 +320,7 @@ function renderMessage(payload, isSelf = false) {
     urls.forEach((url, idx) => {
       const openBtn = document.createElement('button');
       openBtn.className = 'secondary small';
-      openBtn.textContent = urls.length > 1 ? `เปิดลิงก์ #${idx + 1}` : 'เปิดลิงก์';
+      openBtn.textContent = 'เปิด ' + (hostOf(url).slice(0, 40) || 'ลิงก์');
       openBtn.onclick = () => window.open(url, '_blank', 'noopener,noreferrer');
 
       const copyBtn = document.createElement('button');
@@ -318,11 +334,62 @@ function renderMessage(payload, isSelf = false) {
     item.appendChild(actions);
   }
 
-  feedEl.prepend(item);
+  addToFeed(item);
 
-  if (!isSelf && activeMode === 'viewer' && autoOpenCheckbox.checked && urls.length > 0) {
-    window.open(urls[0], '_blank', 'noopener,noreferrer');
-  }
+  if (!isSelf && activeMode === 'viewer' && autoOpenCheckbox.checked && urls.length > 0) safeAutoOpen(urls[0]);
+}
+
+// ================= SECURITY / FILE HELPERS =================
+function safeName(n) {
+  let s = String(n || '').normalize('NFC')
+    .replace(/[\u0000-\u001f\u007f<>:"\/\\|?*\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, '_')
+    .replace(/^\.+/, '').replace(/\.pdf$/i, '').trim().slice(0, 100);
+  return (s || 'document') + '.pdf';
+}
+function fmtSize(b) { return b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
+function hostOf(u) { try { return new URL(u).hostname; } catch { return ''; } }
+function addToFeed(item) {
+  feedEl.querySelector('.empty')?.remove();
+  feedEl.prepend(item);
+  while (feedEl.children.length > MAX_FEED) feedEl.lastElementChild.remove();
+}
+let lastAutoOpen = 0;
+function safeAutoOpen(url) {
+  let u; try { u = new URL(url); } catch { return; }
+  if (!/^https?:$/.test(u.protocol)) return;
+  const now = Date.now();
+  if (now - lastAutoOpen < 10000) { toast('ข้ามการเปิดอัตโนมัติ (รับลิงก์ถี่เกินไป)'); return; }
+  lastAutoOpen = now;
+  toast('กำลังเปิด: ' + u.hostname);
+  window.open(u.href, '_blank', 'noopener,noreferrer');
+}
+function createFileItem(name, size, isSelf) {
+  const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+  const item = el('div', 'msg-item' + (isSelf ? ' self' : ''));
+  const meta = el('div', 'msg-meta', `${isSelf ? 'คุณ (Host)' : 'ได้รับผ่าน WebRTC P2P'} • ${new Date().toLocaleTimeString('th-TH')}`);
+  const row = el('div', 'file-row'), info = el('div', 'file-info');
+  const sub = el('div', 'file-sub', fmtSize(size)), bar = el('div', 'bar'), fill = el('i');
+  bar.appendChild(fill);
+  info.append(el('div', 'file-name', name), sub, bar);
+  row.append(el('div', 'file-ico', 'PDF'), info);
+  item.append(meta, row);
+  addToFeed(item);
+  return {
+    progress(f, label) { const p = Math.round(f * 100); fill.style.width = p + '%'; sub.textContent = `${label} ${p}% • ${fmtSize(size)}`; },
+    done(blob, text) {
+      bar.remove();
+      sub.textContent = fmtSize(size) + ' • ' + (text || 'ตรวจสอบเป็น PDF แล้ว');
+      if (!blob) return;
+      const act = el('div', 'msg-actions');
+      const openB = el('button', 'secondary small', 'เปิด PDF');
+      openB.onclick = () => { const u = URL.createObjectURL(blob); window.open(u, '_blank', 'noopener,noreferrer'); setTimeout(() => URL.revokeObjectURL(u), 60000); };
+      const dlB = el('button', 'secondary small', 'ดาวน์โหลด');
+      dlB.onclick = () => { const u = URL.createObjectURL(blob), a = document.createElement('a'); a.href = u; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(u), 10000); };
+      act.append(openB, dlB);
+      item.appendChild(act);
+    },
+    fail(msg) { bar.remove(); sub.textContent = msg; sub.style.color = 'var(--bad)'; }
+  };
 }
 
 // ================= STATE & MODE SWITCHING =================
@@ -334,6 +401,7 @@ let hostId = null;
 const hostPeers = new Map();
 
 let viewerId = null, viewerPc = null, viewerDc = null, viewerPendingCandidates = [], currentHostId = null, joinRetryTimer = null;
+let incoming = null, closeReason = null, sendingFile = false;
 
 function switchTab(mode) {
   if (mqttClient) { stopHost(); leaveViewer(); }
@@ -470,10 +538,53 @@ function broadcastMessage() {
   messageInput.focus();
 }
 
+function waitDrain(dc) {
+  return new Promise((res) => {
+    if (dc.bufferedAmount <= BUF_HIGH) return res();
+    dc.bufferedAmountLowThreshold = BUF_LOW;
+    const done = () => { dc.removeEventListener('bufferedamountlow', done); dc.removeEventListener('close', done); res(); };
+    dc.addEventListener('bufferedamountlow', done);
+    dc.addEventListener('close', done);
+  });
+}
+
+async function sendPdf(file) {
+  if (!file) return;
+  if (sendingFile) return toast('กำลังส่งไฟล์อื่นอยู่');
+  if (!/\.pdf$/i.test(file.name) || (file.type && file.type !== 'application/pdf')) return toast('รองรับเฉพาะไฟล์ .pdf');
+  if (file.size < 8 || file.size > MAX_FILE) return toast(`ขนาดไฟล์ต้องไม่เกิน ${fmtSize(MAX_FILE)}`);
+  const peers = [...hostPeers.values()].filter((p) => p.dc?.readyState === 'open');
+  if (!peers.length) return toast('ยังไม่มีผู้รับเชื่อมต่อ');
+  sendingFile = true;
+  const name = safeName(file.name);
+  const ui = createFileItem(name, file.size, true);
+  try {
+    const buf = await file.arrayBuffer();
+    if (String.fromCharCode(...new Uint8Array(buf, 0, 5)) !== '%PDF-') { ui.fail('ไม่ใช่ไฟล์ PDF ที่ถูกต้อง'); return; }
+    const id = generateId();
+    const total = Math.ceil(buf.byteLength / CHUNK) * peers.length;
+    let sent = 0;
+    await Promise.all(peers.map(async ({ dc }) => {
+      dc.send(JSON.stringify({ type: 'file-start', id, name, size: buf.byteLength }));
+      for (let o = 0; o < buf.byteLength; o += CHUNK) {
+        await waitDrain(dc);
+        if (dc.readyState !== 'open') return;
+        dc.send(buf.slice(o, o + CHUNK));
+        ui.progress(++sent / total, 'กำลังส่ง');
+      }
+      if (dc.readyState === 'open') dc.send(JSON.stringify({ type: 'file-end', id }));
+    }));
+    ui.done(null, `ส่งแล้วถึง ${peers.length} คน`);
+  } catch { ui.fail('ส่งไฟล์ไม่สำเร็จ'); }
+  finally { sendingFile = false; $('fileInput').value = ''; }
+}
+
 // ================= VIEWER LOGIC =================
 function cleanupViewerRtc() {
+  if (viewerDc) { viewerDc.onclose = null; viewerDc.onmessage = null; }
   viewerDc?.close(); viewerPc?.close();
   viewerDc = null; viewerPc = null; viewerPendingCandidates = [];
+  abortIncoming('การเชื่อมต่อถูกปิดก่อนรับไฟล์ครบ');
 }
 
 function sendJoinRequest() {
@@ -483,6 +594,9 @@ function sendJoinRequest() {
 }
 
 async function viewerHandleOffer(msg) {
+  if (typeof msg.hostId !== 'string') return;
+  if (viewerDc?.readyState === 'open') return;                         // มีการเชื่อมต่ออยู่แล้ว: เพิกเฉย offer ใหม่
+  if (viewerPc && currentHostId && msg.hostId !== currentHostId) return; // ล็อกกับ Host ตัวแรก
   clearInterval(joinRetryTimer);
   joinRetryTimer = null;
   cleanupViewerRtc();
@@ -496,13 +610,16 @@ async function viewerHandleOffer(msg) {
   viewerPc.ondatachannel = (event) => {
     viewerDc = event.channel;
     viewerDc.onopen = () => setBadge(viewerStatusBadge, `เชื่อมต่อห้อง ${activeCode} สำเร็จ (พร้อมรับข้อมูล)`, 'connected');
-    viewerDc.onclose = () => setBadge(viewerStatusBadge, 'การเชื่อมต่อถูกปิด', 'disconnected');
-    viewerDc.onmessage = (e) => {
-      try {
-        const payload = JSON.parse(e.data);
-        if (payload && typeof payload.text === 'string') renderMessage(payload, false);
-      } catch {}
+    viewerDc.binaryType = 'arraybuffer';
+    viewerDc.onclose = () => {
+      abortIncoming('ช่องสัญญาณถูกปิดก่อนรับไฟล์ครบ');
+      currentHostId = null;
+      if (closeReason) { setBadge(viewerStatusBadge, closeReason, 'disconnected'); closeReason = null; return; }
+      setBadge(viewerStatusBadge, 'การเชื่อมต่อถูกปิด (รอเชื่อมต่อใหม่...)', 'waiting');
+      clearInterval(joinRetryTimer);
+      if (mqttClient?.connected) joinRetryTimer = setInterval(sendJoinRequest, 2500);
     };
+    viewerDc.onmessage = (e) => handleViewerData(e.data);
   };
 
   viewerPc.onicecandidate = (e) => {
@@ -526,6 +643,54 @@ async function viewerHandleOffer(msg) {
   await viewerPc.setLocalDescription(answer);
   mqttClient.publish(`${TOPIC_PREFIX}/${activeCode}/host`,
     JSON.stringify({ type: 'answer', viewerId, sdp: viewerPc.localDescription }));
+}
+
+function abortIncoming(msg) {
+  if (incoming) { clearTimeout(incoming.timer); incoming.ui.fail(msg); incoming = null; }
+}
+function violation(reason) {
+  closeReason = 'ตัดการเชื่อมต่อ: ' + reason;
+  abortIncoming(reason);
+  toast(closeReason);
+  viewerDc?.close(); viewerPc?.close();
+}
+function armStall() {
+  clearTimeout(incoming.timer);
+  incoming.timer = setTimeout(() => violation('รับไฟล์ค้างนานเกินไป'), STALL_MS);
+}
+function handleViewerData(data) {
+  if (typeof data === 'string') {
+    if (data.length > MAX_JSON) return violation('ข้อมูลใหญ่ผิดปกติ');
+    let p; try { p = JSON.parse(data); } catch { return; }
+    if (!p || typeof p !== 'object') return;
+    if (p.type === 'file-start') {
+      if (incoming) return violation('ส่งไฟล์ซ้อนกัน');
+      const size = Number(p.size);
+      if (!Number.isInteger(size) || size < 8 || size > MAX_FILE) return violation(`ไฟล์ใหญ่เกิน ${fmtSize(MAX_FILE)} หรือขนาดไม่ถูกต้อง`);
+      const name = safeName(p.name);   // ไม่รับ mime จากผู้ส่ง: บังคับเป็น PDF เสมอ
+      incoming = { id: String(p.id || '').slice(0, 40), name, size, chunks: [], received: 0, ui: createFileItem(name, size, false), timer: null };
+      armStall();
+    } else if (p.type === 'file-end') {
+      if (!incoming || String(p.id) !== incoming.id || incoming.received !== incoming.size) return violation('ไฟล์ไม่ครบหรือไม่ตรงกับที่แจ้ง');
+      clearTimeout(incoming.timer);
+      incoming.ui.done(new Blob(incoming.chunks, { type: 'application/pdf' }));
+      incoming = null;
+    } else if (typeof p.text === 'string' && p.text.length <= MAX_TEXT) {
+      renderMessage({ text: p.text, timestamp: Date.now() }, false);
+    }
+    return;
+  }
+  if (!(data instanceof ArrayBuffer)) return;
+  if (!incoming) return violation('ได้รับข้อมูลไบนารีโดยไม่ได้ขอ');
+  if (incoming.chunks.length === 0) {
+    const h = new Uint8Array(data, 0, Math.min(5, data.byteLength));
+    if (String.fromCharCode(...h) !== '%PDF-') return violation('ไฟล์ไม่ใช่ PDF (ตรวจ magic bytes ไม่ผ่าน)');
+  }
+  incoming.received += data.byteLength;
+  if (incoming.received > incoming.size) return violation('ข้อมูลเกินขนาดที่แจ้งไว้');
+  incoming.chunks.push(data);
+  incoming.ui.progress(incoming.received / incoming.size, 'กำลังรับ');
+  armStall();
 }
 
 function joinViewer() {
@@ -567,6 +732,7 @@ function joinViewer() {
       else viewerPendingCandidates.push(msg.candidate);
     } else if (msg.type === 'host-left' && msg.hostId === currentHostId) {
       cleanupViewerRtc();
+      currentHostId = null;
       setBadge(viewerStatusBadge, 'ผู้ส่งปิดห้องแล้ว (รอเปิดใหม่...)', 'waiting');
       clearInterval(joinRetryTimer);
       joinRetryTimer = setInterval(sendJoinRequest, 2500);
@@ -583,6 +749,7 @@ function leaveViewer() {
     mqttClient.publish(`${TOPIC_PREFIX}/${activeCode}/host`, JSON.stringify({ type: 'viewer-left', viewerId }));
   }
   cleanupViewerRtc();
+  currentHostId = null; closeReason = null;
   if (mqttClient) { mqttClient.end(true); mqttClient = null; }
   viewerCodeInput.disabled = false;
   viewerJoinBtn.classList.remove('hidden');
@@ -610,6 +777,16 @@ viewerJoinBtn.addEventListener('click', joinViewer);
 viewerLeaveBtn.addEventListener('click', leaveViewer);
 viewerCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') joinViewer(); });
 clearBtn.addEventListener('click', () => { feedEl.innerHTML = '<div class="empty">ยังไม่มีข้อความ</div>'; });
+
+const dropZone = $('dropZone'), fileInput = $('fileInput');
+$('pickFileBtn').addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => sendPdf(fileInput.files[0]));
+['dragenter', 'dragover'].forEach((ev) => dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.add('over'); }));
+['dragleave', 'drop'].forEach((ev) => dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.remove('over'); }));
+dropZone.addEventListener('drop', (e) => sendPdf(e.dataTransfer.files[0]));
+autoOpenCheckbox.addEventListener('change', () => {
+  if (autoOpenCheckbox.checked && !confirm('คำเตือน: ลิงก์จากผู้ส่งจะถูกเปิดอัตโนมัติโดยไม่ถามซ้ำ\nเปิดใช้เฉพาะเมื่อไว้ใจผู้ส่งเท่านั้น (จำกัด 1 ลิงก์ต่อ 10 วินาที)\n\nต้องการเปิดใช้หรือไม่?')) autoOpenCheckbox.checked = false;
+});
 
 const params = new URLSearchParams(location.search);
 const codeParam = (params.get('code') || '').replace(/\D/g, '').slice(0, 4);
